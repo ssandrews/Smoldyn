@@ -907,7 +907,7 @@ void rxnoutput(simptr sim,int order) {
 			simLog(sim,1,"   mutual rms step length: %g|L\n",step);
 			if(step>0) simLog(sim,1,"   step length / binding radius: %g (%s %s steps)\n",ratio,ratio>0.1 && ratio<10?"somewhat":"very",ratio>1?"large":"small");
 			if(step>0 && (!rev || rparamt!=RPconfspread || rparamt!=RPbounce)) {					// a normal bimolecular reaction
-				simLog(sim,1,"   activation-limited reaction rate: %g\n",1/(1/rate3-1/smolmodelrate));
+				simLog(sim,1,"   activation-limited reaction rate: %g|%s\n",1/(1/rate3-1/smolmodelrate),dim==1?"L/T":(dim==2?"L2/T":"L3/T"));
 				simLog(sim,1,"   dynamics are like two-radius Smoluchowski model with radius: %g|L\n",bindrad*chi);
 				simLog(sim,1,"   dynamics are like C&K model with gamma' and gamma: %g, %g|L\n",(1-chi)/chi,bindrad*(1-chi)/chi);
 				lambdap=(3.18243*chi-3.40864*chi*chi+0.984385*chi*chi*chi)/pow(1-chi,2.08761);
@@ -1770,12 +1770,12 @@ int RxnSetValue(simptr sim,const char *option,rxnptr rxn,double value) {
 
 	else if(!strcmp(option,"prob")) {
 		if(value<0) er=4;
-		if(rxn->rxnss->order>0 && value>1) er=4;
+		if(rxn->rxnss && rxn->rxnss->order>0 && value>1) er=4;
 		rxn->prob=value; }
 
 	else if(!strcmp(option,"chi")) {
 		if(value==0 || value>=1) er=4;
-		if(rxn->rxnss->order!=2) er=4;
+		if(rxn->rxnss && rxn->rxnss->order!=2) er=4;
 		rxn->chi=value; }
 
 	else if(!strcmp(option,"disable")) {

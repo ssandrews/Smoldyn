@@ -1,5 +1,7 @@
 # Cached movement and optional filament workers
 
+> Updated for upstream integration on 10 November 2026: see [compatibility choices and validation](UPSTREAM_INTEGRATION_2026-11-10.md). Native junction/end-state names and shared box storage supersede older implementation descriptions below. Historical timing tables describe their original revisions, not a new benchmark of the merged engine.
+
 ## Run choices
 
 Add **one global line**, outside `start_filament_type`, to the model:

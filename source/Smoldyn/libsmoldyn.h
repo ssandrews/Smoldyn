@@ -68,8 +68,11 @@ enum ErrorCode smolSetTimeStart(simptr sim,double timestart);
 enum ErrorCode smolSetTimeStop(simptr sim,double timestop);
 enum ErrorCode smolSetTimeNow(simptr sim,double timenow);
 enum ErrorCode smolSetTimeStep(simptr sim,double timestep);
+enum ErrorCode smolSetSimParams(simptr sim,const char *parameter,double value);
 enum ErrorCode smolSetRandomSeed(simptr sim,long int seed);
 enum ErrorCode smolSetPartitions(simptr sim,const char *method,double value);
+enum ErrorCode smolSetVariable(simptr sim,const char *name,double value);
+enum ErrorCode smolGetVariable(simptr sim,const char *name,double *value);
 
 /********************************** Graphics **********************************/
 
@@ -89,6 +92,7 @@ enum ErrorCode smolAddOutputFile(simptr sim,char *filename,int suffix,int append
 enum ErrorCode smolAddOutputData(simptr sim,char *dataname);
 enum ErrorCode smolOpenOutputFiles(simptr sim, int overwrite);
 //?? needs function for setting output precision
+enum ErrorCode smolSetOutputFormat(simptr sim,const char *format,int precision);
 enum ErrorCode smolAddCommand(simptr sim,char type,double on,double off,double step,double multiplier,const char *commandstring);
 enum ErrorCode smolAddCommandFromString(simptr sim,char *string);
 enum ErrorCode smolGetOutputData(simptr sim,char *dataname,int *nrow,int *ncol,double **array,int erase);
@@ -101,6 +105,7 @@ int            smolGetSpeciesIndex(simptr sim,const char *species);
 int            smolGetSpeciesIndexNT(simptr sim,const char *species);
 void          smolGetSpeciesName(simptr sim,int speciesindex,char *species);
 enum ErrorCode smolSetSpeciesMobility(simptr sim,const char *species,enum MolecState state,double difc,double *drift,double *difmatrix);
+enum ErrorCode smolSetSpeciesSurfaceDrift(simptr sim,const char *species,enum MolecState state,const char *surface,enum PanelShape panelshape,double *drift);
 enum ErrorCode smolSetMoleculeColor(simptr sim, const char *species, enum MolecState state, double *color);
 enum ErrorCode smolSetMoleculeSize(simptr sim, const char *species, enum MolecState state, double size);
 
@@ -116,6 +121,11 @@ enum ErrorCode smolAddCompartmentMolecules(simptr sim,const char *species,int nu
 enum ErrorCode smolAddSurfaceMolecules(simptr sim,const char *species,enum MolecState state,int number,const char *surface,enum PanelShape panelshape,const char *panel,double *position);
 int            smolGetMoleculeCount(simptr sim,const char *species,enum MolecState state);
 enum ErrorCode smolSetMoleculeStyle(simptr sim,const char *species,enum MolecState state,double size,double *color);
+enum ErrorCode smolAddSpeciesGroup(simptr sim,const char *group,const char *species);
+enum ErrorCode smolSetSpeciesMobilityRule(simptr sim,const char *species,enum MolecState state,double difc,double *drift,double *difmatrix);
+enum ErrorCode smolSetSpeciesSurfaceDriftRule(simptr sim,const char *species,enum MolecState state,const char *surface,enum PanelShape panelshape,double *drift);
+enum ErrorCode smolSetMolListRule(simptr sim,const char *species,enum MolecState state,const char *mollist);
+enum ErrorCode smolSetMoleculeStyleRule(simptr sim,const char *species,enum MolecState state,double size,double *color);
 
 /********************************** Surfaces **********************************/
 
@@ -127,6 +137,8 @@ char*          smolGetSurfaceName(simptr sim,int surfaceindex,char *surface);
 enum ErrorCode smolSetReactionIntersurface(simptr sim, const char *reaction, int *rulelist);
 enum ErrorCode smolSetSurfaceAction(simptr sim,const char *surface,enum PanelFace face,const char *species,enum MolecState state,enum SrfAction action,const char *newspecies);
 enum ErrorCode smolSetSurfaceRate(simptr sim,const char *surface,const char *species,enum MolecState state,enum MolecState state1,enum MolecState state2,double rate,const char *newspecies,int isinternal);
+enum ErrorCode smolSetSurfaceActionRule(simptr sim,const char *surface,enum PanelFace face,const char *species,enum MolecState state,enum SrfAction action);
+enum ErrorCode smolSetSurfaceRateRule(simptr sim,const char *surface,const char *species,enum MolecState state,enum MolecState state1,enum MolecState state2,double rate,const char *newspecies,int isinternal);
 enum ErrorCode smolAddPanel(simptr sim,const char *surface,enum PanelShape panelshape,const char *panel,const char *axisstring,double *params);
 int            smolGetPanelIndex(simptr sim,const char *surface,enum PanelShape *panelshapeptr,const char *panel);
 int            smolGetPanelIndexNT(simptr sim,const char *surface,enum PanelShape *panelshapeptr,const char *panel);
@@ -134,6 +146,7 @@ char*          smolGetPanelName(simptr sim,const char *surface,enum PanelShape p
 enum ErrorCode smolSetPanelJump(simptr sim,const char *surface,const char *panel1,enum PanelFace face1,const char *panel2,enum PanelFace face2,int isbidirectional);
 enum ErrorCode smolAddSurfaceUnboundedEmitter(simptr sim,const char *surface,enum PanelFace face,const char *species,double emitamount,double *emitposition);
 enum ErrorCode smolSetSurfaceSimParams(simptr sim,const char *parameter,double value);
+enum ErrorCode smolSetSurfaceNeighborAction(simptr sim,const char *surface,int hop);
 enum ErrorCode smolAddPanelNeighbor(simptr sim,const char *surface1,const char *panel1,const char *surface2,const char *panel2,int reciprocal);
 enum ErrorCode smolSetSurfaceStyle(simptr sim,const char *surface,enum PanelFace face,enum DrawMode mode,double thickness,double *color,int stipplefactor,int stipplepattern,double shininess);
 
@@ -157,6 +170,13 @@ enum ErrorCode smolSetReactionRate(simptr sim,const char *reaction,double rate,i
 enum ErrorCode smolGetReactionRate(simptr sim,const char *reaction,double *rate);
 enum ErrorCode smolSetReactionRegion(simptr sim,const char *reaction,const char *compartment,const char *surface);
 enum ErrorCode smolSetReactionProducts(simptr sim,const char *reaction,enum RevParam method,double parameter,const char *product,double *position);
+enum ErrorCode smolAddReactionRule(simptr sim,const char *rule,const char *reactant1,enum MolecState rstate1,const char *reactant2,enum MolecState rstate2,int nproduct,const char **productspecies,enum MolecState *productstates,double rate,const char *compartment,const char *surface);
+enum ErrorCode smolSetReactionSimParams(simptr sim,const char *reaction,const char *parameter,double value);
+enum ErrorCode smolSetReactionPermit(simptr sim,const char *reaction,enum MolecState *states,int permit);
+enum ErrorCode smolSetReactionSerialnum(simptr sim,const char *reaction,const char **codes);
+enum ErrorCode smolSetReactionRepresentation(simptr sim,const char *reaction,const enum SpeciesRepresentation *rctrep,const enum SpeciesRepresentation *prdrep);
+enum ErrorCode smolSetReactionLog(simptr sim,const char *filename,const char *reaction,int nserial,const long int *serialnums,int turnon);
+enum ErrorCode smolExpandRules(simptr sim,int iterations);
 
 /************************************ Ports ***********************************/
 
@@ -177,6 +197,16 @@ int            smolGetLatticeIndexNT(simptr sim,const char *lattice);
 char*          smolGetLatticeName(simptr sim,int latticeindex,char *lattice);
 enum ErrorCode smolAddLatticeMolecules(simptr sim,const char *lattice, const char *species,int number,double *lowposition,double *highposition);
 enum ErrorCode smolAddLatticeReaction(simptr sim,const char *lattice,const char *reaction, const int move);
+enum ErrorCode smolAddLatticeSurface(simptr sim,const char *lattice,const char *surface);
+enum ErrorCode smolSetLatticeMakeParticle(simptr sim,const char *lattice,enum PanelFace face,const char *species,int makeparticle);
+
+/************************************ BioNetGen ***********************************/
+
+enum ErrorCode smolAddBNG(simptr sim,const char *bng);
+enum ErrorCode smolSetBNGMultiply(simptr sim,const char *bng,const char *parameter,double amount);
+enum ErrorCode smolSetBNGMonomer(simptr sim,const char *bng,const char *monomer,enum MolecState state,double difc,double displaysize,double *color);
+enum ErrorCode smolLoadBNGNetFile(simptr sim,const char *bng,const char *filename);
+enum ErrorCode smolExpandBNGRules(simptr sim,const char *bng,const char *filename,const char *BNG2path);
 
 
 #ifdef __cplusplus

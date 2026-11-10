@@ -6,6 +6,7 @@
 #include "smoldyn.h"
 #include "smoldynfuncs.h"
 #include "smolfilamentsteric.h"
+#include "filament_test_compat.h"
 #include "random2.h"
 #undef CHECK
 #define CHECK(c) do {if(!(c)) {fprintf(stderr,"FAIL preconditioner line %d: %s\n",__LINE__,#c);exit(1);}} while(0)
@@ -13,7 +14,6 @@
 filamenttypeptr filAddFilamentType(simptr sim,const char *name);
 filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr type,const char *word,char *line);
 int filAddSegment(filamentptr fil,const double *x,double length,const double *angle,double thickness,char end);
-filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thickness,const char *name);
 void filComputeForces(filamentptr fil,int lo,int hi);
 void filNodes2Angles(filamentptr fil,int lo,int hi);
 static simptr scene(int dim) {

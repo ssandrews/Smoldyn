@@ -494,7 +494,8 @@ void bngoutput(simptr sim) {
 	bngssptr bngss;
 	bngptr bng;
 	int b,i,s;
-	char string[STRCHAR];
+	char string[STRCHAR],colorstr[STRCHAR];
+	double rgba[4];
 
 	bngss=sim->bngss;
 	if(!bngss) return;
@@ -515,7 +516,11 @@ void bngoutput(simptr sim) {
 		simLog(sim,2,"  monomers defined: %i\n",bng->nmonomer);
 		for(i=0;i<bng->nmonomer;i++) {
 			simLog(sim,2,"   %s: default state: %s, diffusion coeff.: %g|L2/T\n",bng->monomernames[i],molms2string(bng->monomerstate[i],string),bng->monomerdifc[i]);
-			simLog(sim,2,"    display size: %g|L, color: %g %g %g\n",bng->monomerdisplaysize[i],bng->monomercolor[i][0],bng->monomercolor[i][1],bng->monomercolor[i][2]);
+			rgba[0]=bng->monomercolor[i][0];
+			rgba[1]=bng->monomercolor[i][1];
+			rgba[2]=bng->monomercolor[i][2];
+			rgba[3]=1;
+			simLog(sim,2,"    display size: %g|L, color: %s\n",bng->monomerdisplaysize[i],graphicscolor2string(rgba,colorstr));
 			for(s=0;s<bng->bngmaxsurface;s++) {
 				simLog(sim,2,"    for surface %s: %s at front",sim->srfss->srflist[s]->sname,surfact2string(bng->monomeraction[i][s][PFfront],string));
 				simLog(sim,2,", %s at back\n",surfact2string(bng->monomeraction[i][s][PFback],string)); }}

@@ -967,6 +967,11 @@ void molsetdisplaysize(simptr sim,int ident,int *index,enum MolecState ms,double
 			molsetdisplaysize(sim,index[PDMAX+j],NULL,ms,dsize);
 		return; }
 
+	if(ident<0) {																			// all species
+		for(j=1;j<sim->mols->nspecies;j++)
+			molsetdisplaysize(sim,j,NULL,ms,dsize);
+		return; }
+
 	if(ms==MSbsoln) ms=MSsoln;
 	else if(ms==MSnone) return;
 	if(ms!=MSall) mshi=(enum MolecState)((mslo=ms)+1);
@@ -986,6 +991,11 @@ void molsetcolor(simptr sim,int ident,int *index,enum MolecState ms,const double
 	if(index) {
 		for(j=0;j<index[PDnresults];j++)
 			molsetcolor(sim,index[PDMAX+j],NULL,ms,color);
+		return; }
+
+	if(ident<0) {																			// all species
+		for(j=1;j<sim->mols->nspecies;j++)
+			molsetcolor(sim,j,NULL,ms,color);
 		return; }
 
 	if(ms==MSbsoln) ms=MSsoln;
@@ -2051,7 +2061,8 @@ void molssfree(molssptr mols,int maxsrf) {
 void molssoutput(simptr sim) {
 	int nspecies,i,ll,same,sum,s,pat,*index,vflag;
 	molssptr mols;
-	char string[STRCHAR];
+	char string[STRCHAR],colorstr[STRCHAR];
+	double rgba[4];
 	double maxstep;
 	enum MolecState ms;
 	enum PanelShape ps;
@@ -2161,15 +2172,23 @@ void molssoutput(simptr sim) {
 				if(mols->color[i][ms][2]!=mols->color[i][MSsoln][2]) same=0; }
 			if(same) {
 				simLog(sim,2,"  all states:");
-				if(mols->display[i][MSsoln])
-					simLog(sim,2," color= %g,%g,%g, size=%g|L\n",mols->color[i][MSsoln][0],mols->color[i][MSsoln][1],mols->color[i][MSsoln][2],mols->display[i][MSsoln]);
+				if(mols->display[i][MSsoln]) {
+					rgba[0]=mols->color[i][MSsoln][0];
+					rgba[1]=mols->color[i][MSsoln][1];
+					rgba[2]=mols->color[i][MSsoln][2];
+					rgba[3]=1;
+					simLog(sim,2," color= %s, size=%g|L\n",graphicscolor2string(rgba,colorstr),mols->display[i][MSsoln]); }
 				else simLog(sim,2," not displayed to graphics\n"); }
 			else {
 				for(ms=(enum MolecState)(0);ms<MSMAX;ms=(enum MolecState)(ms+1))
 					if(mols->exist && mols->exist[i] && mols->exist[i][ms]) {
 						simLog(sim,2,"  %s:",molms2string(ms,string));
-						if(mols->display[i][ms])
-							simLog(sim,2," color= %g,%g,%g, display size= %g|L\n",mols->color[i][ms][0],mols->color[i][ms][1],mols->color[i][ms][2],mols->display[i][ms]);
+						if(mols->display[i][ms]) {
+							rgba[0]=mols->color[i][ms][0];
+							rgba[1]=mols->color[i][ms][1];
+							rgba[2]=mols->color[i][ms][2];
+							rgba[3]=1;
+							simLog(sim,2," color= %s, display size= %g|L\n",graphicscolor2string(rgba,colorstr),mols->display[i][ms]); }
 						else simLog(sim,2," not displayed to graphics\n"); }}}}
 
 	if(mols->dead==NULL) simLog(sim,1," No dead list allocated\n");
@@ -2188,10 +2207,10 @@ void molssoutput(simptr sim) {
 /* writemols */
 void writemols(simptr sim,FILE *fptr) {
 	int i,d,ll,dim;
-	char **spname,string[STRCHAR];
+	char **spname,string[STRCHAR],colorstr[STRCHAR];
 	enum MolecState ms;
 	molssptr mols;
-	double val0,val1,val2;
+	double val0,val1,val2,rgba[4];
 
 	mols=sim->mols;
 	if(!mols) return;
@@ -2253,10 +2272,18 @@ void writemols(simptr sim,FILE *fptr) {
 		val1=mols->color[i][0][1];
 		val2=mols->color[i][0][2];
 		for(ms=(enum MolecState)(1);ms<MSMAX && mols->color[i][ms][0]==val0 && mols->color[i][ms][1]==val1 && mols->color[i][ms][2]==val2;ms=(enum MolecState)(ms+1));
-		if(ms==MSMAX) fprintf(fptr,"color %s(all) %g %g %g\n",spname[i],val0,val1,val2);
+		rgba[3]=1;
+		if(ms==MSMAX) {
+			rgba[0]=val0;
+			rgba[1]=val1;
+			rgba[2]=val2;
+			fprintf(fptr,"color %s(all) %s\n",spname[i],graphicscolor2string(rgba,colorstr)); }
 		else {
-			for(ms=(enum MolecState)(0);ms<MSMAX;ms=(enum MolecState)(ms+1))
-				fprintf(fptr,"color %s(%s) %g %g %g\n",spname[i],molms2string(ms,string),mols->color[i][ms][0],mols->color[i][ms][1],mols->color[i][ms][2]); }
+			for(ms=(enum MolecState)(0);ms<MSMAX;ms=(enum MolecState)(ms+1)) {
+				rgba[0]=mols->color[i][ms][0];
+				rgba[1]=mols->color[i][ms][1];
+				rgba[2]=mols->color[i][ms][2];
+				fprintf(fptr,"color %s(%s) %s\n",spname[i],molms2string(ms,string),graphicscolor2string(rgba,colorstr)); }}
 		fprintf(fptr,"\n"); }
 	return; }
 

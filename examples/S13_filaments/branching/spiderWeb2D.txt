@@ -1,0 +1,661 @@
+# A spider web made of filaments.
+#
+# This network has a closed hub ring at the center, 8 radial spokes, and 5 rings
+# of capture threads, with each ring made of 8 thread filaments between neighboring
+# spokes. Every thread attaches by its minus end to one spoke and by its plus end
+# to the same node of the next spoke, so each cell of the web is a closed loop.
+#
+# Smoldyn holds the attachments that form a tree exactly, and holds each remaining
+# attachment, which closes a loop, with a spring. Here, the hub is the root of the
+# tree, each spoke is pinned exactly to a hub node, and each thread is pinned
+# exactly to the spoke at its minus end. The 40 thread plus ends, and the hub's own
+# closure, are the loop-closing attachments, held by springs (junction_force). The
+# diagnostics output at the start lists them.
+#
+# The hub's standard_angle makes it a ring (2*pi/16 per node). The spokes leave the
+# hub at the branch angle pi/2 - pi/16 = 1.3744, and the threads leave the spokes at
+# pi/2 + pi/8 = 1.9635 at both of their ends, which are the angles of the regular
+# web, and branch_force_angle holds them there. The threads' segments are a little
+# longer than their standard_length, so the threads are under tension, as in a real
+# web; the tension pulls the spokes slightly inward between threads.
+#
+# A loop-closing spring passes its force through the rigid attachments to the hub,
+# so each spoke carries the springs of the 10 threads that end on it or on its
+# neighbors. The time step needs to be small enough that time_step * mobility *
+# (sum of those spring constants) is well below 1, which is why junction_force is 30
+# here; Smoldyn warns if it isn't.
+#
+# At time 30, something tears a hole in the web: two threads between spokes s3 and
+# s4 are removed, and the next thread out breaks at its plus end, so it stays
+# attached to spoke s3 by its minus end. The rest of the web relaxes around the
+# damage.
+#
+# smoldyn spiderWeb2D.txt
+
+graphics opengl_good
+graphic_iter 20
+background_color 0.05 0.05 0.15
+
+dim 2
+boundaries x -15 15
+boundaries y -15 15
+
+time_start 0
+time_stop 60
+time_step 0.001
+random_seed 1
+
+frame_thickness 0
+
+start_filament_type hub
+color 0.9 0.9 0.9
+thickness 3
+polygon e
+dynamics euler
+kT 0.002
+standard_length 0.3902      # 16 segments around a ring of radius 1
+standard_angle 0.3927       # 2*pi/16
+force_length 100
+force_angle 10
+mobility 1
+end_filament_type
+
+start_filament_type spoke
+color 0.9 0.9 0.9
+thickness 2
+polygon e
+dynamics euler
+kT 0.002
+standard_length 1
+standard_angle 0
+force_length 100
+force_angle 20
+mobility 1
+branch_angle 1.3744         # pi/2 - pi/16, radially outward from the hub
+branch_force_angle 20
+end_filament_type
+
+start_filament_type thread
+color 0.7 0.8 1
+thickness 1
+polygon e
+dynamics euler
+kT 0.002
+standard_length 0.9         # shorter than the segments, so threads are under tension
+standard_angle 0
+force_length 10
+force_angle 1
+junction_force 30           # holds each thread's plus end on its spoke
+mobility 1
+branch_angle 1.9635         # pi/2 + pi/8, from a spoke toward the next spoke
+branch_force_angle 2
+end_filament_type
+
+
+# the hub, a ring of 16 segments; its plus end attaches to its own node 0
+start_filament hub:hub
+first_segment 1.0000 0.0000 0.3902 1.7671
+add_segment 0.3902 0.3927
+add_segment 0.3902 0.3927
+add_segment 0.3902 0.3927
+add_segment 0.3902 0.3927
+add_segment 0.3902 0.3927
+add_segment 0.3902 0.3927
+add_segment 0.3902 0.3927
+add_segment 0.3902 0.3927
+add_segment 0.3902 0.3927
+add_segment 0.3902 0.3927
+add_segment 0.3902 0.3927
+add_segment 0.3902 0.3927
+add_segment 0.3902 0.3927
+add_segment 0.3902 0.3927
+add_segment 0.3902 0.3927
+attach plus hub:hub 0
+end_filament
+
+# the spokes, attached by their minus ends to the odd nodes of the hub
+start_filament spoke:s0
+first_segment 0.9239 0.3827 1 0.3927
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+attach minus hub:hub 1
+end_filament
+
+start_filament spoke:s1
+first_segment 0.3827 0.9239 1 1.1781
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+attach minus hub:hub 3
+end_filament
+
+start_filament spoke:s2
+first_segment -0.3827 0.9239 1 1.9635
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+attach minus hub:hub 5
+end_filament
+
+start_filament spoke:s3
+first_segment -0.9239 0.3827 1 2.7489
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+attach minus hub:hub 7
+end_filament
+
+start_filament spoke:s4
+first_segment -0.9239 -0.3827 1 -2.7489
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+attach minus hub:hub 9
+end_filament
+
+start_filament spoke:s5
+first_segment -0.3827 -0.9239 1 -1.9635
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+attach minus hub:hub 11
+end_filament
+
+start_filament spoke:s6
+first_segment 0.3827 -0.9239 1 -1.1781
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+attach minus hub:hub 13
+end_filament
+
+start_filament spoke:s7
+first_segment 0.9239 -0.3827 1 -0.3927
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+attach minus hub:hub 15
+end_filament
+
+# the capture threads, between the same nodes of neighboring spokes; each thread's
+# length is the distance between its two nodes, divided into nearly unit segments
+start_filament thread:t2_0
+first_segment 2.7716 1.1481 1.1481 2.3562
+add_segment 1.1481 0
+attach minus spoke:s0 2
+attach plus spoke:s1 2
+end_filament
+
+start_filament thread:t2_1
+first_segment 1.1481 2.7716 1.1481 3.1416
+add_segment 1.1481 0
+attach minus spoke:s1 2
+attach plus spoke:s2 2
+end_filament
+
+start_filament thread:t2_2
+first_segment -1.1481 2.7716 1.1481 -2.3562
+add_segment 1.1481 0
+attach minus spoke:s2 2
+attach plus spoke:s3 2
+end_filament
+
+start_filament thread:t2_3
+first_segment -2.7716 1.1481 1.1481 -1.5708
+add_segment 1.1481 0
+attach minus spoke:s3 2
+attach plus spoke:s4 2
+end_filament
+
+start_filament thread:t2_4
+first_segment -2.7716 -1.1481 1.1481 -0.7854
+add_segment 1.1481 0
+attach minus spoke:s4 2
+attach plus spoke:s5 2
+end_filament
+
+start_filament thread:t2_5
+first_segment -1.1481 -2.7716 1.1481 -0.0000
+add_segment 1.1481 0
+attach minus spoke:s5 2
+attach plus spoke:s6 2
+end_filament
+
+start_filament thread:t2_6
+first_segment 1.1481 -2.7716 1.1481 0.7854
+add_segment 1.1481 0
+attach minus spoke:s6 2
+attach plus spoke:s7 2
+end_filament
+
+start_filament thread:t2_7
+first_segment 2.7716 -1.1481 1.1481 1.5708
+add_segment 1.1481 0
+attach minus spoke:s7 2
+attach plus spoke:s0 2
+end_filament
+
+start_filament thread:t4_0
+first_segment 4.6194 1.9134 0.9567 2.3562
+add_segment 0.9567 0
+add_segment 0.9567 0
+add_segment 0.9567 0
+attach minus spoke:s0 4
+attach plus spoke:s1 4
+end_filament
+
+start_filament thread:t4_1
+first_segment 1.9134 4.6194 0.9567 3.1416
+add_segment 0.9567 0
+add_segment 0.9567 0
+add_segment 0.9567 0
+attach minus spoke:s1 4
+attach plus spoke:s2 4
+end_filament
+
+start_filament thread:t4_2
+first_segment -1.9134 4.6194 0.9567 -2.3562
+add_segment 0.9567 0
+add_segment 0.9567 0
+add_segment 0.9567 0
+attach minus spoke:s2 4
+attach plus spoke:s3 4
+end_filament
+
+start_filament thread:t4_3
+first_segment -4.6194 1.9134 0.9567 -1.5708
+add_segment 0.9567 0
+add_segment 0.9567 0
+add_segment 0.9567 0
+attach minus spoke:s3 4
+attach plus spoke:s4 4
+end_filament
+
+start_filament thread:t4_4
+first_segment -4.6194 -1.9134 0.9567 -0.7854
+add_segment 0.9567 0
+add_segment 0.9567 0
+add_segment 0.9567 0
+attach minus spoke:s4 4
+attach plus spoke:s5 4
+end_filament
+
+start_filament thread:t4_5
+first_segment -1.9134 -4.6194 0.9567 -0.0000
+add_segment 0.9567 0
+add_segment 0.9567 0
+add_segment 0.9567 0
+attach minus spoke:s5 4
+attach plus spoke:s6 4
+end_filament
+
+start_filament thread:t4_6
+first_segment 1.9134 -4.6194 0.9567 0.7854
+add_segment 0.9567 0
+add_segment 0.9567 0
+add_segment 0.9567 0
+attach minus spoke:s6 4
+attach plus spoke:s7 4
+end_filament
+
+start_filament thread:t4_7
+first_segment 4.6194 -1.9134 0.9567 1.5708
+add_segment 0.9567 0
+add_segment 0.9567 0
+add_segment 0.9567 0
+attach minus spoke:s7 4
+attach plus spoke:s0 4
+end_filament
+
+start_filament thread:t6_0
+first_segment 6.4672 2.6788 1.0715 2.3562
+add_segment 1.0715 0
+add_segment 1.0715 0
+add_segment 1.0715 0
+add_segment 1.0715 0
+attach minus spoke:s0 6
+attach plus spoke:s1 6
+end_filament
+
+start_filament thread:t6_1
+first_segment 2.6788 6.4672 1.0715 3.1416
+add_segment 1.0715 0
+add_segment 1.0715 0
+add_segment 1.0715 0
+add_segment 1.0715 0
+attach minus spoke:s1 6
+attach plus spoke:s2 6
+end_filament
+
+start_filament thread:t6_2
+first_segment -2.6788 6.4672 1.0715 -2.3562
+add_segment 1.0715 0
+add_segment 1.0715 0
+add_segment 1.0715 0
+add_segment 1.0715 0
+attach minus spoke:s2 6
+attach plus spoke:s3 6
+end_filament
+
+start_filament thread:t6_3
+first_segment -6.4672 2.6788 1.0715 -1.5708
+add_segment 1.0715 0
+add_segment 1.0715 0
+add_segment 1.0715 0
+add_segment 1.0715 0
+attach minus spoke:s3 6
+attach plus spoke:s4 6
+end_filament
+
+start_filament thread:t6_4
+first_segment -6.4672 -2.6788 1.0715 -0.7854
+add_segment 1.0715 0
+add_segment 1.0715 0
+add_segment 1.0715 0
+add_segment 1.0715 0
+attach minus spoke:s4 6
+attach plus spoke:s5 6
+end_filament
+
+start_filament thread:t6_5
+first_segment -2.6788 -6.4672 1.0715 0.0000
+add_segment 1.0715 0
+add_segment 1.0715 0
+add_segment 1.0715 0
+add_segment 1.0715 0
+attach minus spoke:s5 6
+attach plus spoke:s6 6
+end_filament
+
+start_filament thread:t6_6
+first_segment 2.6788 -6.4672 1.0715 0.7854
+add_segment 1.0715 0
+add_segment 1.0715 0
+add_segment 1.0715 0
+add_segment 1.0715 0
+attach minus spoke:s6 6
+attach plus spoke:s7 6
+end_filament
+
+start_filament thread:t6_7
+first_segment 6.4672 -2.6788 1.0715 1.5708
+add_segment 1.0715 0
+add_segment 1.0715 0
+add_segment 1.0715 0
+add_segment 1.0715 0
+attach minus spoke:s7 6
+attach plus spoke:s0 6
+end_filament
+
+start_filament thread:t8_0
+first_segment 8.3149 3.4442 0.9840 2.3562
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+attach minus spoke:s0 8
+attach plus spoke:s1 8
+end_filament
+
+start_filament thread:t8_1
+first_segment 3.4442 8.3149 0.9840 3.1416
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+attach minus spoke:s1 8
+attach plus spoke:s2 8
+end_filament
+
+start_filament thread:t8_2
+first_segment -3.4442 8.3149 0.9840 -2.3562
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+attach minus spoke:s2 8
+attach plus spoke:s3 8
+end_filament
+
+start_filament thread:t8_3
+first_segment -8.3149 3.4442 0.9840 -1.5708
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+attach minus spoke:s3 8
+attach plus spoke:s4 8
+end_filament
+
+start_filament thread:t8_4
+first_segment -8.3149 -3.4442 0.9840 -0.7854
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+attach minus spoke:s4 8
+attach plus spoke:s5 8
+end_filament
+
+start_filament thread:t8_5
+first_segment -3.4442 -8.3149 0.9840 -0.0000
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+attach minus spoke:s5 8
+attach plus spoke:s6 8
+end_filament
+
+start_filament thread:t8_6
+first_segment 3.4442 -8.3149 0.9840 0.7854
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+attach minus spoke:s6 8
+attach plus spoke:s7 8
+end_filament
+
+start_filament thread:t8_7
+first_segment 8.3149 -3.4442 0.9840 1.5708
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+add_segment 0.9840 0
+attach minus spoke:s7 8
+attach plus spoke:s0 8
+end_filament
+
+start_filament thread:t10_0
+first_segment 10.1627 4.2095 1.0524 2.3562
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+attach minus spoke:s0 10
+attach plus spoke:s1 10
+end_filament
+
+start_filament thread:t10_1
+first_segment 4.2095 10.1627 1.0524 3.1416
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+attach minus spoke:s1 10
+attach plus spoke:s2 10
+end_filament
+
+start_filament thread:t10_2
+first_segment -4.2095 10.1627 1.0524 -2.3562
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+attach minus spoke:s2 10
+attach plus spoke:s3 10
+end_filament
+
+start_filament thread:t10_3
+first_segment -10.1627 4.2095 1.0524 -1.5708
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+attach minus spoke:s3 10
+attach plus spoke:s4 10
+end_filament
+
+start_filament thread:t10_4
+first_segment -10.1627 -4.2095 1.0524 -0.7854
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+attach minus spoke:s4 10
+attach plus spoke:s5 10
+end_filament
+
+start_filament thread:t10_5
+first_segment -4.2095 -10.1627 1.0524 0.0000
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+attach minus spoke:s5 10
+attach plus spoke:s6 10
+end_filament
+
+start_filament thread:t10_6
+first_segment 4.2095 -10.1627 1.0524 0.7854
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+attach minus spoke:s6 10
+attach plus spoke:s7 10
+end_filament
+
+start_filament thread:t10_7
+first_segment 10.1627 -4.2095 1.0524 1.5708
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+add_segment 1.0524 0
+attach minus spoke:s7 10
+attach plus spoke:s0 10
+end_filament
+
+cmd b diagnostics filament
+
+cmd @ 30 set remove_filament thread:t4_3
+cmd @ 30 set remove_filament thread:t6_3
+cmd @ 30 set filament thread:t8_3 detach plus
+
+end_file

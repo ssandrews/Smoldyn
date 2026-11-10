@@ -1600,7 +1600,7 @@ int strmathsscanf(const char *str,const char *format,char **varnames,const doubl
 			if(barpos) *(barpos++)='\0';
 			value=strmatheval(expression,varnames,varvalues,nvar);
 			if(strmatherror(NULL,0)) break;
-			if(*(fmtpos2+4)=='|' && strlen(fmtpos2)>5)
+			if(*(fmtpos2+4)=='|' && strlen(fmtpos2)>5 && !isspace(*(fmtpos2+5)))	// "%mlg|" followed by a space is unitless
 				sscanf(fmtpos2+5,"%s",dimstr);
 			else
 				dimstr[0]='\0';
@@ -1700,14 +1700,15 @@ double strunits(const char *unitstring,const char *dimstring,double value,char *
 		else {
 			if(dstring[0]) {													// return working units for some combination of input units, e.g. dstring="L2/T" and returns "um2/ms"
 				strunits(dstring,NULL,1,NULL,"parse");
-				for(ut=0;ut<numType;ut++) {
-					count=strlen(outstring);
-					if(dimUnit[ut]!=0) {
-						if(count>0 && dimUnit[ut]>0) strcat(outstring,".");
-						else if(dimUnit[ut]<0) strcat(outstring,"/");
-						strcat(outstring,unitNames[ut][workUnits[ut]]);
-						if(dimUnit[ut]>1) sprintf(outstring+strlen(outstring),"%i",dimUnit[ut]);
-						else if(dimUnit[ut]<-1) sprintf(outstring+strlen(outstring),"%i",-dimUnit[ut]); }}}
+				for(power=1;power>=-1;power-=2)							// positive powers first, so "/" only precedes denominator units
+					for(ut=0;ut<numType;ut++) {
+						count=strlen(outstring);
+						if(dimUnit[ut]*power>0) {
+							if(count>0 && dimUnit[ut]>0) strcat(outstring,".");
+							else if(dimUnit[ut]<0) strcat(outstring,"/");
+							strcat(outstring,unitNames[ut][workUnits[ut]]);
+							if(dimUnit[ut]>1) sprintf(outstring+strlen(outstring),"%i",dimUnit[ut]);
+							else if(dimUnit[ut]<-1) sprintf(outstring+strlen(outstring),"%i",-dimUnit[ut]); }}}
 			else {																		// return list of working units, e.g. um ms
 				for(ut=0;ut<numType;ut++) {
 					if(ut>0) strcat(outstring," ");

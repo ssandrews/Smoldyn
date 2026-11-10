@@ -95,8 +95,8 @@ right=1 in}
 
 
 \title{Smoldyn User's Manual}
-\subtitle{Version 2.75}
-\date{\copyright July, 2025}
+\subtitle{Version 2.76}
+\date{\copyright October, 2026}
 \author{Steve Andrews}
 \maketitle
 
@@ -867,7 +867,7 @@ The following table lists the available color names.
 \begin{longtable}[c]{llll}
 maroon & olive & royal & darkred\\
 red & green & sky & darkorange\\
-scarlet & chartrouse & aquamarine & darkyellow\\
+scarlet & chartreuse & aquamarine & darkyellow\\
 rose & khaki & violet & darkgreen\\
 brick & purple & mauve & darkblue\\
 pink & magenta & orchid & darkviolet\\
@@ -1174,6 +1174,7 @@ Statement & function\\
 \ttt{neighbors} $panel\ neigh_1\ neigh_2\ ...$\\
 \multicolumn{2}{l}{
 \ttt{unbounded\_emitter} $face\ species\ amount\ pos_0\ pos_1\ ...\ pos_{dim-1}$}\\
+\ttt{mobility} $float$ & mobility for motion from filament forces\\
 \ttt{end\_surface}
 \end{longtable}
 
@@ -2207,26 +2208,118 @@ The other option is to define surfaces before expanding the reaction network wit
 % Filaments
 \chapter{Filaments}
 
-Smoldyn has very minimal filament support at present. Filaments can be defined and some of them can undergo Brownian motion, but these filaments can't interact with molecules or surfaces yet. See the examples in the S13\_filaments directory.
+Smoldyn filaments are in progress and have partial support at present. See the examples in the S13\_filaments directory.
 
 % Section: filament heirarchy
 \section{Filament heirarchy}
 
-Filaments are structured in a three-tier hierarchy. At the top level, one defines one or more filament types, where each type is represents a single kind of filament in a particular environment. For example, actin filaments in the cytoplasm might be one type, and another is double-stranded DNA in the nucleus. Within each type, every individual filament has the mechanical and graphical parameters. Also, every individual filament of a particular type has the same attributes, such as faces and monomer sequences, which are described below.
+Filaments are structured in a three-tier hierarchy. At the top level, one defines one or more filament types, where each type is represents a single kind of filament in a particular environment. For example, actin filaments in the cytoplasm might be one type, and another is double-stranded DNA in the nucleus. Within each type, every individual filament has the same mechanical and graphical parameters. Also, every individual filament of a particular type has the same attributes, such as faces and monomer sequences, which are described below.
 
-The next level of the heirarchy are individual filaments. Each filament has its own starting position and conformation. In some cases, filaments have ``monomer codes'', which are characters that are equally spaced along a filament's length, for representing things like DNA sequences and phosphorylation states. Filament energies can be computed from the conformation parameters. Filaments can branch off of other filaments, and, obviously, can have filaments that branch off of themselves.
+The next level of the heirarchy are individual filaments. Each filament has its own starting position and conformation. Filament ends are called their ``plus'' and ``minus'' ends, using the same terminology as is used for actin and microtubules; internally, filaments start at their minus ends and extend to their plus ends, although this directionality isn't necessarily important to a modeler. Filaments can branch off of other filaments, and, obviously, can have filaments that branch off of themselves. More generally, either end of a filament can be free or can attach to any node of any filament, including its own, so filaments can form tree-like topologies, web-like networks with loops, lassos, closed circles, or other topologies. Although it has only been developed minimially so far, filaments have ``sequence codes'', which are characters that are equally spaced along a filament's length, for representing things like DNA sequences and phosphorylation states. Also still in development, are filament ``faces'', which are lengthwise sides to a filament. They are designed to represent DNA major and minor grooves, or top and bottom faces of membrane-bound filaments.
 
-The bottom level of the heirarchy are the segments that compose individual filaments, where segments are cylindrical edges that connect the vertices. Filament shapes are straight lines along the segments (they are not B\'{e}zier curves that are defined by the vertices, also called control points). Segments are separated by rotation angles, enabling simulation with angle-biased chains and other models.
+The bottom level of the heirarchy are the segments that compose individual filaments. Segments are typically treated as infinitely thin straight lines, although they can also be assigned a radius if desired. The segment endpoints are called nodes, with the plus-end node of one segment being identical to the minus-end node of the following segment. The relative orientations of the two segments that connect at each node is defined by a set of rotation angles. Assigning bending energies to these rotation angles leads to the so-called angle-biased chain model \cite{Andrews_2014}, which is Smoldyn's standard filament modeling framework.
+
 
 % Section: defining filaments
 \section{Defining filaments}
 
-Start by defining one or more filament types. Use the \ttt{start\_filament\_type} statement and give the name of the filament type. Then, describe the filament type parameters, such as the dynamics type (e.g. ``alberts'', ``nedelec'', ``rigidbeads'', etc.), the dynamics parameters, and the graphics instructions. Close this section with \ttt{end\_filament\_type}.
+Start by defining one or more filament types. Use the \ttt{start\_filament\_type} statement and give the name of the filament type (enter filament types after molecule species and surfaces if you want to enable filament-molecule or filament-surface interactions). Then, enter as many of the filament type parameters as are relevant. These parameters include such things as the standard length of a segment (meaning the length when it's neither stretched nor compressed), the standard bending angles between segments, the diffusional mobility parameter, and the graphics parameters. Default values are used for parameters that aren't entered. See below for a full list of filament type options. Close this section with \ttt{end\_filament\_type}.
 
-To create a filament, one approach is \ttt{random\_filament}, in which you give the filament a name, a type, its number of segments, and its starting location. Alternatively, a filament can be started with \ttt{start\_filament} and ended with \ttt{end\_filament}, in between which are filament definitions, including the \ttt{type}.
+There several ways to create individual filaments. The simplest is shown in \ttt{minimal2D.txt} and \ttt{minimal3D.txt}, where individual filaments are defined segment by segment. Here, a filament block is started with \ttt{start\_filament}, the first segment is added with \ttt{first\_segment}, and subsequent segments are added with \ttt{add\_segment}. Another approach is shown in \ttt{static3D.txt}, where filaments are created with the \ttt{random\_filament} statement. In yet another approach, filaments can be copied from each other and then edited, such as by adding or removing segments. This is demonstrated in \ttt{FilDefineTest.txt}.
 
-The \ttt{filament} statement used to work as well, and several of the example files use it. However, this statement doesn't work at present.
+% Section: filament forces
+\section{Filament forces}
+\label{sec:FilForces}
 
+Filament mechanics are simulated with overdamped (Brownian) dynamics, in which velocity is proportional to force and there is no inertia. Each node of a filament moves according to
+$$\frac{d\bm{x}_i}{dt} = \mu m_i \bm{f}_i$$
+where $\bm{x}_i$ is the position of node $i$, $\mu$ is the filament type's mobility (\ttt{mobility} statement), $m_i$ is the node's mobility factor, which is 1 by default and can be changed with \ttt{node\_mobility} (e.g. 0 to hold a node fixed), and $\bm{f}_i$ is the total force on the node. By default, $m_i$ is also divided by the node's thickness, which is the average thickness of its adjacent segments, so thicker filaments have proportionally more drag; turn this off with \ttt{thickness\_drag 0}. Thickness doesn't affect equilibrium conformations through drag, only how quickly filaments move. In 3D, each segment can also rotate about its own axis, which changes the filament twist; a segment's roll angle changes at the rate $\mu_r m_k \tau_k$, where $\mu_r$ is the filament type's rotational mobility (\ttt{rotational\_mobility} statement), $\tau_k$ is the torque on segment $k$ about its axis, and $m_k$ is the average of the mobility factors of its two nodes. The rotational mobility has different units from the mobility, inverse energy times time rather than length$^2$/(energy$\cdot$time). If it isn't entered, it is computed from the viscosity (\ttt{viscosity}) if that was entered, or else it is $\mu/r^2$, where $r$ is the filament radius (\ttt{radius}), which is about right for a rod and equals $\mu$ for the default radius of 1.
+
+The forces and torques come from several sources. Stretching forces arise from the stretching energy,
+$$E_{stretch} = \frac{1}{2} t\,k_l(l-l\degree)^2$$
+for each segment, where $l$ is the segment length, $l\degree$ is the standard length (\ttt{standard\_length}), $k_l$ is the stretching force constant (\ttt{force\_length}), and $t$ is the segment's thickness, which is 1 by default and can be set when segments are created (e.g. with \ttt{add\_segment} or \ttt{random\_filament}); thicker segments are proportionally stiffer. Bending and twisting forces arise from the bending energy
+$$E_{bend} = \frac{1}{2} \bar{t} \left[k_\phi (\phi-\phi\degree)^2 + k_\theta (\theta-\theta\degree)^2 + k_\psi (\psi-\psi\degree)^2 \right]$$
+at each node between segments, where the $\phi$, $\theta$, and $\psi$ values are the yaw, pitch, and roll angles of a segment relative to the prior one, the degree symbols represent the standard angles (\ttt{standard\_angle}), the $k$ values are the bending and twisting force constants (\ttt{force\_angle}), and $\bar{t}$ is the average thickness of the two segments; in 2D, only the yaw angle is used. Thermal forces are random Gaussian forces, and in 3D random torques, which are drawn once per time step with root-mean-square value
+$$\sqrt{\frac{2kT}{\mu m \Delta t}}$$
+for each coordinate, where $m$ is the node's (or segment's) mobility factor, $\mu$ is replaced by $\mu_r$ for the segment torques, $kT$ is the thermal energy (\ttt{kT}) and $\Delta t$ is the time step; these give the correct Boltzmann distribution of conformations at equilibrium. Junction forces hold attached filaments at their branch angles and hold loop-closing attachments together (see \ttt{attach}, \ttt{branch\_force\_angle}, and \ttt{junction\_force}), and surface forces push nodes back to the side of a surface that the filament is on (see \ttt{surface\_interaction} and \ttt{confine\_surface}).
+
+A negative force constant makes the corresponding length or angle a fixed constraint, held exactly at its standard value: a negative \ttt{force\_length} fixes every segment's length at \ttt{standard\_length}, and a negative value in \ttt{force\_angle} fixes that angle (yaw, pitch, or roll) between each pair of adjacent segments at its \ttt{standard\_angle} value. For example, \ttt{force\_angle 5 -1 -1} in 3D gives a filament that bends freely within a plane but cannot leave it or twist, and negative values for all of the force constants give a rigid filament, which only diffuses and rotates as a whole.
+
+% Filament dynamics integration
+\section{Filament dynamics integration}
+
+Each time step, Smoldyn first performs treadmilling, branch nucleation, end-state changes, and elongation or shortening, then integrates the filament mechanics with the method that is set with the \ttt{dynamics} statement, then checks for numerical instability, and finally moves rigidly attached filaments so that they stay exactly on their junction nodes. The integration methods are as follows.
+
+\begin{itemize}
+\item \textbf{none}. Filaments do not move mechanically. They can still treadmill, branch, elongate, and shorten. This is the default.
+
+\item \textbf{Euler}. The forward Euler method, which is explicit. Each step is
+$$\bm{x}(t+\Delta t) = \bm{x}(t) + \mu \Delta t\, m\, \bm{f}(\bm{x}(t))$$
+where $\bm{x}$ represents all node positions, and in 3D the segment rolls, and $m$ represents the node mobility factors. This is the standard method for Brownian dynamics with thermal forces (also called the Euler-Maruyama method), but is only first order accurate and requires short time steps.
+
+\item \textbf{RK2} and \textbf{RK4}. The second and fourth order Runge-Kutta methods, which are also explicit. They compute the forces two or four times per time step, at intermediate states, and combine the results, which makes them more accurate than the Euler method for the deterministic forces. The thermal forces are the same at each intermediate state, so these methods are still only first order accurate when thermal forces are important. Their stability limits on the time step are similar to the Euler method's. In practice, RK2 is not much better than the Euler method, whereas RK4 is often very good.
+
+\item \textbf{Implicit}. The linearized implicit (backward) Euler method. Each step solves the linear equation
+$$(\bm{I} - \mu\Delta t\bm{M}\bm{J})\Delta \bm{x} = \mu\Delta t\,\bm{M}\bm{f}(\bm{x}(t))$$
+for the displacement $\Delta \bm{x}$, and then sets $\bm{x}(t+\Delta t)=\bm{x}(t)+\Delta \bm{x}$. Here, $\bm{J}$ is an approximate Jacobian of the forces, meaning the matrix of how each force changes with each coordinate. For stretching, bending, and twisting, it is computed analytically in the Gauss-Newton form, which captures the stiffness of the filament correctly near its equilibrium shape and which keeps the method stable for the filament's own forces even at long time steps. The junction and confinement parts are computed by finite differences. The linear equation is banded, because each force only depends on nearby nodes, and is solved with the biconjugate gradient stabilized (BiCGSTAB) method. This method is first order accurate, like the Euler method, but remains stable for time steps that are much longer than the explicit methods allow, so it is the best choice for stiff filaments, such as ones with short segments or large force constants. At long time steps, it relaxes fast motions more slowly than the true dynamics, which does not affect slower motions much. $\bm{M}$ is the diagonal matrix of node mobility factors (and their averages for segment rotations), so nodes with mobility factor 0 stay fixed.
+
+\item \textbf{EulerMat} and \textbf{ImplicitOld}. Matrix-based test methods. These express the stretching and bending forces as $\bm{F}\bm{x}$, where the matrix $\bm{F}$ has coefficients from the current spring and bending forces, and they add the thermal, junction, and confinement forces explicitly. EulerMat computes $\bm{x}(t+\Delta t) = (\bm{I}+\mu\Delta t\bm{M}\bm{F})\bm{x}(t)$ plus those additional displacements, where $\bm{M}$ is the diagonal matrix of node mobility factors, which gives the same results as the Euler method, apart from round-off error. ImplicitOld solves $(\bm{I}-\mu\Delta t\bm{M}\bm{F})\bm{x}(t+\Delta t) = \bm{x}(t)$ plus those additional displacements, using BiCGSTAB. Because $\bm{F}$ is not the Jacobian of the forces, ImplicitOld is not reliably stable, even for short time steps; it illustrates that a linearly implicit method needs a matrix that captures how the forces change, and not just one that reproduces the forces. Both methods include node mobility factors by multiplying the rows of $\bm{F}$ by them. Smoldyn displays a warning if either of these methods is chosen; use Euler or RK4 instead of EulerMat, and Implicit instead of ImplicitOld.
+\end{itemize}
+
+For the explicit methods (Euler, RK2, RK4, and EulerMat), the time step needs to be short enough that the stiffest motions in the filament are stable. Roughly, $\mu\Delta t\,k_l$ should be less than about 0.5 for stretching, and $\mu\Delta t\,k_\chi/l^{\circ 2}$ (where $k_\chi$ is any of $k_\phi$, $k_\theta$, or $k_\psi$) should be less than about 0.1 for bending and twisting, so short segments require much shorter time steps. Similar limits apply to stiff junction springs and confinement forces, which are integrated explicitly by all methods apart from Implicit, and Smoldyn warns about these when it checks the input parameters. Implicit avoids these limits for the filament's own forces, although junction forces that connect different filaments are effectively explicit in all methods.
+
+After each integration step, Smoldyn checks whether the filament mechanics have become numerically unstable, meaning that some node coordinate is not a finite number or some segment has become far longer than it should be (more than 100 times the system diagonal plus the standard length, or, with a stretching spring, more than 100 times the standard length plus its thermal spread). If so, Smoldyn displays an error message and stops the simulation, because a blown-up filament would otherwise produce meaningless results, and with branching, an unbounded number of daughter filaments. The usual remedies are to shorten the time step, to reduce the mobility or the force constants, or to use the Implicit method. Fixed constraints (negative force constants, described next) remove the corresponding stiff motions, so they also allow longer time steps.
+
+Smoldyn enforces constraints after each integration step by moving the filament back onto them, using the smallest move in proportion to the node mobilities (so nodes with mobility 0 don't move), and calculated along the constraint directions at the start of the step, as in the SHAKE algorithm. This works with all of the integration methods, and the constraints remain satisfied to high precision. With thermal forces, the remaining free motions follow the Boltzmann distribution of the rigidly constrained filament. This differs slightly from that of a filament with very stiff springs in place of the constraints, because rigid constraints remove some freedom of motion; for example, bending angles between fixed-length segments in 2D have variances that are larger than $kT/k$ by about 5\% for a filament with 2 segments and about 10\% for one with 10 segments. A filament whose initial lengths or angles differ from the standard values is moved onto the constraints at the first time step. If Smoldyn cannot satisfy the constraints, which can happen if the time step is very long, it displays a warning.
+
+% Filament branching and linking
+\section{Filament branching and linking}
+
+Smoldyn holds a network together in two ways. Attachments that form a tree (in graph theory, a spanning forest of the network) are held exactly, by moving each attached filament so that its attached end stays on its node. In other words, each branch is pinned to the mother filament, with the end node of the branch set to equal the node where it attaches to the mother filament.
+
+On the other hand, an attachment that closes a loop is held by a stiff spring between the attached end and its node. This only has an effect for filaments that have dynamics.
+
+
+% Filament interactions with surfaces
+\section{Filament interactions with surfaces}
+\label{sec:FilSurfInteractions}
+
+Filaments only interact with surfaces through interactions that are listed for their filament type, using the \ttt{surface\_interaction} statement. Without any listed interactions, filaments pass through surfaces as though the surfaces weren't there. Surface actions for molecules, such as reflection or adsorption, don't affect filaments. Each interaction is between some parts of the filament and one surface face (front or back). The filament parts are the minus end node, the plus end node, and the side nodes, meaning all of the nodes between the two ends. Each interaction also has an action, which is currently ``softwall'', ``repel'', ``reflect'', ``adsorb'', or ``desorb''.
+
+A ``softwall'' interaction is a soft wall. Each node of the listed parts that is on the other side of the surface (i.e. it crossed the surface and is now on the wrong side) is pushed back toward the closest point of the surface, with force $t\,k\,d$, where $t$ is the node's thickness, $k$ is the force constant, and $d$ is the distance to that point. Only the panel that is closest to the node acts on it; if the node is on the allowed side of that panel, the surface doesn't push on the node at all, even if the node is behind the planes of other panels. Thus, surfaces that are made of several panels, such as boxes, spheres made of hemispheres, or tiled floors, push on each node with only one panel at a time. The equilibrium penetration depth for a node that has thermal fluctuations is about $\sqrt{kT/(t\,k)}$. These forces only act on filaments that have dynamics. For flat panels, the test of which side a node is on uses the closest panel's infinite plane, so a node that is beyond the edge of a surface and behind its plane is pulled toward that edge; a surface that has a softwall interaction should span or enclose the region that the filaments occupy, or be a closed obstacle.
+
+A ``repel'' interaction is like a softwall interaction, except that the force starts at the repel distance $r$ from the surface, on the side that the filament is on, rather than at the surface. Each node of the listed parts that is closer than $r$ to the surface, or that is on the other side of it, is pushed away from the surface, toward the point that is $r$ from the closest point of the surface. As for softwall, only the closest panel acts on each node, so a node in a concave corner is only pushed away from the nearer wall. For a node that is over a panel, the force is $t\,k\,(r-s)$, where $s$ is the node's distance from the surface, which is negative on the other side. Thus, a repel interaction with $r=0$ is the same as a softwall interaction. Repel interactions are useful for keeping filaments a short distance away from a surface, such as to account for the filament's radius. Like softwall interactions, they only act on filaments that have dynamics, they don't stop filaments from growing toward the surface, and the test of a node's distance from a flat panel uses the panel's infinite plane.
+
+For both softwall and repel interactions, the surface feels the equal and opposite force. At the end of each time step, Smoldyn adds up the forces that filaments with dynamics exert on each panel, and the total over a surface's panels is the force that the filaments exert on the surface, which is listed in the surface output (for example, from the \ttt{diagnostics surface} command).
+
+A surface can move in response to these forces if it is given a mobility, using the \ttt{mobility} statement in its surface block. At the end of each time step, after the filaments have moved and the forces on the surfaces have been found, each surface that has a mobility $\mu_s$ is translated by $\mu_s\,\bm{F}\,\Delta t$, where $\bm{F}$ is the total force on it and $\Delta t$ is the time step. This force is the sum of the forces from filaments and any force applied to the surface with the \ttt{applysurfaceforce} command since the previous time step. Surfaces only translate; they don't rotate, so the torque on a surface has no effect, and the mobility doesn't depend on the surface's size or shape. Surfaces don't have thermal motion either. When a surface moves, its surface-bound molecules move with it. Solution-phase molecules that it runs into are pushed along with it, so that each one stays the same distance in front of the surface, as with the \ttt{translatecmpt} command; this applies to molecules for which either face of the surface has an action other than transmit. Filament nodes that are adsorbed to the surface move with it (see below), and the filament's mechanics then respond to any stretching or bending that this causes in the following time steps; branches that are rigidly attached to nodes that moved move with them. Free nodes of filaments with dynamics that have a reflect interaction with the surface are pushed along with it in the same way as solution-phase molecules, if the surface runs into them from the interaction's face; these pushed nodes aren't checked against other surfaces. Moving surfaces don't push filaments that only have softwall or repel interactions with them, since those interactions push back on the filaments through their forces instead. If a compartment is bounded by moving surfaces, its inside-defining points move with them if all of its surfaces move together, but its volume and its list of boxes aren't updated. The surface output lists each mobile surface's total displacement. The motion of the surface is explicit, so a surface with a large mobility can overshoot and oscillate when it is pushed by many nodes with stiff interactions; this is avoided if $\mu_s\,\Delta t$ times the sum of the force constants of the nodes that push on the surface (each one times its thickness) is well below 1.
+
+A ``reflect'' interaction is a hard wall. It stops filament ends from growing through the surface, and it stops the filament mechanics from moving nodes through the surface. When an end that is listed for the interaction adds a segment, from elongation or treadmilling, and the new segment would cross the surface from the interaction's face (or from either face, if the face is ``both''), then Smoldyn tries different random lengths and angles for the segment, and the end doesn't grow if all of these cross the surface. New branches from \ttt{branch\_rate} or from branch interactions that would cross the surface are also stopped, in the same way. For filaments with dynamics, each node of the listed parts that moves across the surface from the interaction's face during a time step, including from the motion that keeps branches attached to their mothers, is reflected back across it, so that it ends up the same distance from the surface as it had gone past it. The filament's stretching and bending forces then respond to the displaced node in the next time step. Smoldyn only checks the paths of the nodes, so a segment can still cut across the edge or corner of a surface while both of its nodes stay on the allowed side. Also, a node that is already on the other side of the surface, such as from a filament that was defined there, isn't affected unless the face is ``both'', in which case it stays on that side. The \ttt{S13\_filaments/elongation/surfaceInteraction2D.txt} example shows all three kinds of interactions.
+
+Individual filament nodes can also be adsorbed to surfaces, using the \ttt{adsorb\_node} statement in a filament block. An adsorbed node is held on one face of the surface, but it can move within the surface, so it moves laterally in response to forces and thermal noise, much like a surface-bound molecule diffuses on a surface. Its lateral mobility is its usual mobility (the filament type's mobility times the node's mobility factor and divided by its thickness, as described above) times a lateral mobility factor, which is 1 by default and can be 0 to anchor the node in place. Thus, the lateral diffusion coefficient of a node is $kT$ times its lateral mobility. When the filament mechanics move an adsorbed node, Smoldyn moves it back onto the surface, removing the part of its motion that is normal to the surface, and if it moves off the edge of its panel, it moves onto a neighboring panel in the same way as surface-bound molecules do, so surfaces made of several panels need their panel neighbors to be defined (see the \ttt{neighbors} statement). Softwall and repel interactions with the surface that a node is adsorbed to don't affect that node, and reflect interactions don't affect adsorbed nodes. The adsorbed state stays with its node when segments are added or removed, and a node that is removed is no longer adsorbed. The end of a branch that is rigidly attached to its mother can't be adsorbed, because the attachment holds it at the mother's node, but other nodes of the branch can be. Adsorbed nodes are listed in the filament output, such as from the \ttt{diagnostics filament} command. If \ttt{adsorb\_node} is used without a face, a node that is exactly on the surface goes to its front face.
+
+Nodes can also adsorb and desorb on their own, through ``adsorb'' and ``desorb'' interactions. In each time step, each free node of an adsorb interaction's listed parts that is within the interaction's capture distance of the surface, on the interaction's face (or on either face, if the face is ``both''), adsorbs with probability $1-e^{-k_a\Delta t}$, where $k_a$ is the adsorption rate. It then moves to the closest point of the surface, as for \ttt{adsorb\_node}, with the interaction's lateral mobility factor. Likewise, each adsorbed node of a desorb interaction's listed parts that is adsorbed to its surface, on its face (or either face for ``both''), desorbs with probability $1-e^{-k_d\Delta t}$, where $k_d$ is the desorption rate, and is then placed at the interaction's offset distance from the surface, on the side that it was adsorbed to. A node that desorbs in a time step doesn't also adsorb in that time step, and the attached end of a filament that is rigidly attached to its mother doesn't adsorb. Adsorption and desorption occur after the filament mechanics in each time step, and they also apply to filaments without dynamics. For a node that stays within the capture distance, as for a filament without dynamics and an offset of 0, the fraction of time that the node is adsorbed is $p_a/(p_a+p_d)$, where $p_a$ and $p_d$ are the adsorption and desorption probabilities per time step, which is about $k_a/(k_a+k_d)$ for short time steps. The \ttt{S13\_filaments/dynamics/adsorbDesorb3D.txt} example shows these interactions.
+
+Filaments can also branch near surfaces, through ``branch'' interactions, which have a distance and a branching rate $k_b$. In each time step, each node of the interaction's listed parts that is within the distance of the surface, on the interaction's face (or on either face, if the face is ``both''), branches with probability $1-e^{-k_b\Delta t}$. This includes the end nodes, since branches can attach at any node of a mother filament, but not ends that are themselves attached to another filament, such as the attached end of a daughter, because these sit on the other filament's node, which can branch itself. The new branch uses the filament type's branch parameters, which are \ttt{branch\_end}, \ttt{branch\_angle}, \ttt{branch\_spread}, \ttt{branch\_azimuth}, and \ttt{branch\_segments}, and is stopped by reflect interactions in the same way as other new branches. Nodes that are closer than \ttt{branch\_min\_spacing} to an existing branch don't branch, and each node branches at most once per time step. Daughters are the same filament type as their mothers, so they can also branch through these interactions, starting in the next time step. Unlike \ttt{branch\_rate}, whose rate is per unit of filament length, the branching rate is per node, and these interactions don't use \ttt{branch\_rate} or the \ttt{branch\_surface} and \ttt{branch\_compartment} location gates. For example, \ttt{surface\_interaction membrane front plus branch 0.1 2} gives each plus end a branching rate of 2 while it is within 0.1 of the front of surface membrane, and \ttt{plus(barbed)} would limit this to barbed plus ends.
+
+% Filament interactions with molecules
+\section{Filament interactions with molecules}
+
+Filaments don't interact with molecules yet, but this is planned for the future.
+
+% Filament interactions with filaments
+\section{Filament interactions with filaments}
+\label{sec:FilFilInteractions}
+
+Filaments only interact with each other through interactions that are listed for their filament type, using the \ttt{filament\_interaction} statement in a filament type block. Currently, the only interaction is a softwall contact force, which is entered as \ttt{filament\_interaction} $type$ \ttt{softwall} $k$. It acts between filaments of this type and filaments of type $type$, which can be this same type, in which case it also acts between different parts of a single filament. The interaction is symmetric, so it only needs to be entered for one of the two types, and $type$ needs to be defined first. Filaments can be different types with different radii, set with the \ttt{radius} statement.
+
+The force acts between pairs of segments. For two segments, Smoldyn finds the closest points of their centerlines, at distance $d$. If $d$ is less than the sum of the two filament radii, $D$, then the segments are pushed apart along the line between those points with force $k_{eff}(D-d)$, and there's no force otherwise. Here, $k_{eff}$ is $k$ times the harmonic mean of the two segment thicknesses, so it is $k$ times the thickness for segments of equal thickness, like a softwall interaction with a surface. This force comes from the energy $k_{eff}(D-d)^2/2$. It's split between the two nodes of each segment according to how close the contact point is to them, which conserves both force and torque. The same calculation applies to filament ends, because segments are finite, so two ends that meet head-on start to push apart when they're separated by $D$.
+
+Parts of the same filament aren't in contact if they're separated along the filament by less than $\pi D/2$, which is the contour length of a tight hairpin; without this rule, every filament would push on itself all along its length. The same rule applies across junctions, between a branch and its mother, and between branches on the same mother. A contact at a node that two segments share only counts once.
+
+Contact forces are computed once per time step, after end dynamics and before the filament dynamics integrators, and they stay the same during that time step. This makes them exactly equal and opposite, regardless of the filament order. For most dynamics methods, this means that they're explicit, so they are stable only if $\mu k \Delta t$ is well below 1, where $\mu$ is the filament mobility; Smoldyn displays a warning if it's above 0.5. The Implicit method is stable for much larger force constants, because its Jacobian includes the stiffness of each contact. It solves each filament with the filament that it touches held fixed, and has each one close its share of the overlap, in proportion to their mobilities, so an isolated pair of contacts relaxes as $1/(1+\mu k \Delta t)$ per time step, which is backward Euler behavior, for any force constant. This remains stable for filaments that are crowded together, although they can overshoot slightly at extreme values, of about $\mu k \Delta t=1000$. Contacts that form during a time step aren't in that step's Jacobian, so it's still best for nodes to move much less than the contact distance per time step. Filaments without dynamics act as fixed obstacles. Smoldyn uses the virtual boxes to find pairs of segments, so it's a good idea to set \ttt{boxsize} to make this efficient; the box size doesn't affect the results.
+
+Contact forces have a few limitations. The force is limited, with a maximum of $k_{eff}D$ when centerlines touch, and Smoldyn doesn't keep track of which side of another filament a filament is on, so a strong enough push can force one filament through another. Centerlines that touch or cross have no force between them because the force wouldn't have a direction, so filaments that are crossed in 2D stay crossed; in particular, avoid starting 2D filaments in crossed positions. Contacts aren't found across periodic boundaries. Barbed filament ends respond to contact forces, using the force from the previous time step (see \ttt{elongation\_rate}). The \ttt{S13\_filaments/dynamics/filamentContact2D.txt} example shows contact forces.
 
 
 
@@ -3224,9 +3317,10 @@ Initial suffix number of TIFF files that are saved. Default value is 1.
 
 Largest possible suffix number of TIFF files that are saved. Once this value has been reached, additional TIFFs cannot be saved. Default value is 999.
 
-\item{\ttt{light} $number\ parameter\ value_1\ value_2\ value_3\ [value_4]$}
+\item{\ttt{light} $number\ parameter\ value_1\ value_2\ value_3\ [value_4]$\\
+\ttt{light} $number\ parameter\ color\ [alpha]$}
 
-Set the parameters for a light source, for use with ``opengl\_better'' quality graphics. The light $number$ should be between 0 and 7 for which light is being set. It can also be either ``global'' or ``room'', which are the same thing and set the ambient room lights, which are non-directional; use the ``ambient'' parameter for the room light. The $parameter$ may be one of the strings: ``ambient'', ``diffuse'', ``specular'', ``position'', ``on'', ``off'', or ``auto''. For ``ambient'', ``diffuse'', and ``specular'', enter the color with the $value$ inputs for red, green, and blue color channels; optionally, end with alpha. Ambient light is non-directional and does not reflect off of a surface. Diffuse light is directional (from the light source) but lights the illuminated side of a surface evenly, as though it is a non-shiny surface. Specular light is also directional and reflects off of a surface as though it is shiny.
+Set the parameters for a light source, for use with ``opengl\_better'' quality graphics. The light $number$ should be between 0 and 7 for which light is being set. It can also be either ``global'' or ``room'', which are the same thing and set the ambient room lights, which are non-directional; use the ``ambient'' parameter for the room light. The $parameter$ may be one of the strings: ``ambient'', ``diffuse'', ``specular'', ``position'', ``on'', ``off'', or ``auto''. For ``ambient'', ``diffuse'', and ``specular'', enter the color with the $value$ inputs for red, green, and blue color channels, or as a single color name (see the \ttt{color} statement for the list of names); optionally, end with alpha. If a color name is the same as a defined variable name, it is interpreted as the color name. Ambient light is non-directional and does not reflect off of a surface. Diffuse light is directional (from the light source) but lights the illuminated side of a surface evenly, as though it is a non-shiny surface. Specular light is also directional and reflects off of a surface as though it is shiny.
 
 For parameter type ``position'', either enter the light's 3-dimensional position as $x$, $y$, and $z$ in the $value$s and then enter a value of 1 for the fourth value; or, enter the vector that the light points in using the $x$, $y$, and $z$ values, keeping each between 0 and 1, and then enter the fourth value as 0. Lights specified this way are automatically enabled (turned on). You can also turn a light on or off with parameter of ``on'' or ``off''. The ``auto'' parameter produces a low white light source; if used for the room, then this is ambient light and if used for a specific light, then this is a mix of diffuse and specular light.
 
@@ -3320,7 +3414,7 @@ The behavior of molecules named $species$ (and in state $state$, which is assume
 \item{\ttt{* rate species(state)} $state_1\ state_2\ value\ [new\_spec]$\\
 \ttt{* rate\_rule} $species(state)\ state_1\ state_2\ value\ [new\_spec]$}
 
-The rate constant for transitions from $state_1$ to $state_2$ of molecules named $species$ at this surface. For the species name, in $species$, ``all'' is permitted; however, ``all'' is not permitted anywhere else. Usually, $state$ is omitted, but see below for where it is needed. $state_1$ and $state_2$ can be any of: fsoln, bsoln (in solution, hitting the front or back of the panel, respectively), front, back, up, or down. $value$ is the rate constant or rate coefficient; enter it as $-1$ if you want the maximum possible value, typically meaning that the probability gets set to 1 (however, it may get set to a lower value if the rate of the reverse process is also set to $-1$, in which case both probabilities are chosen to maintain the appropriate equilibrium constant). If $new\_spec$, which is an optional parameter, is entered, then molecules change to the listed species at the same time as changing states. If the rule form is used (generally with wildcard characters), then the statement is not applied immediately but is stored for use during rule expansion; during rule expansion, it is applied to all species that match the given species pattern.
+The rate constant for transitions from $state_1$ to $state_2$ of molecules named $species$ at this surface. For the species name, in $species$, ``all'' is permitted; however, ``all'' is not permitted anywhere else. Usually, $state$ is omitted, but see below for where it is needed. $state_1$ and $state_2$ can be any of: fsoln, bsoln (in solution, hitting the front or back of the panel, respectively), front, back, up, or down. $value$ is the rate constant or rate coefficient; it is a rate coefficient, with units of length/time, if $state_1$ is fsoln or bsoln, and otherwise a rate constant, with units of 1/time; enter it as $-1$ if you want the maximum possible value, typically meaning that the probability gets set to 1 (however, it may get set to a lower value if the rate of the reverse process is also set to $-1$, in which case both probabilities are chosen to maintain the appropriate equilibrium constant). If $new\_spec$, which is an optional parameter, is entered, then molecules change to the listed species at the same time as changing states. If the rule form is used (generally with wildcard characters), then the statement is not applied immediately but is stored for use during rule expansion; during rule expansion, it is applied to all species that match the given species pattern.
 
 To specify interaction rates for molecules that collide with surface B, while diffusing along surface A, use the first $state$ parameter. In this case: $state$ is the starting surface-bound state on surface A; $state_1$ is fsoln to indicate collision with the front side of surface B or bsoln to indicate collision with the back side of surface B; and $state_2$ is fsoln or bsoln to indicate transmission through surface B and still bound to surface A (but cannot equal $state_1$) or $state_2$ can be a surface-bound state to indicate that the molecule hops from surface A to surface-bound on surface B.
 
@@ -3385,7 +3479,11 @@ Defines a list of panels that neighbor the panel named $panel$. Surface-bound mo
 
 \item{\ttt{* unbounded\_emitter} $face\ species\ amount\ pos_0\ pos_1\ ... pos_{dim-1}$}
 
-Declares a molecular source for which this surface should absorb molecules so as to yield a concentration distribution that is the same as that which would arise with unbounded diffusion. This statement does not create the molecular source, but only sets the panel absorption coefficients to yield the correct concentrations, assuming the emitter is created elsewhere (such as with a command or a zeroth order reaction). $face$ is the side of the surface that faces the emitter, $species$ is the emitted molecular species, $amount$ is the emission rate (it only matters if there is more than one emitter for this surface and species, and then it is only the relative rates of the different emitters that matters), and $pos$ is the system-dimensional position of the emitter. This statement is designed to be used with all emitters strictly inside a closed surface and all of them with positive amount values.
+Declares a molecular source for which this surface should absorb molecules so as to yield a concentration distribution that is the same as that which would arise with unbounded diffusion. This statement does not create the molecular source, but only sets the panel absorption coefficients to yield the correct concentrations, assuming the emitter is created elsewhere (such as with a command or a zeroth order reaction). $face$ is the side of the surface that faces the emitter, $species$ is the emitted molecular species, $amount$ is the emission rate, in units of 1/time (it only matters if there is more than one emitter for this surface and species, and then it is only the relative rates of the different emitters that matters), and $pos$ is the system-dimensional position of the emitter. This statement is designed to be used with all emitters strictly inside a closed surface and all of them with positive amount values.
+
+\item{\ttt{* mobility} $float$}
+
+Mobility of the surface, in units of length$^2$/(energy$\cdot$time), which makes it move in response to the forces that filaments exert on it through softwall and repel interactions. In each time step, the surface is translated by its mobility times the force on it times the time step, without rotating, where the force includes any force from the \ttt{applysurfaceforce} command. Its surface-bound molecules and adsorbed filament nodes move with it, and solution-phase molecules, and free filament nodes that have a reflect interaction with it, that it runs into are pushed along with it. The default is 0, meaning that the surface doesn't move. See the section on filament-surface interactions.
 
 \item{\ttt{* end\_surface}}
 
@@ -3628,7 +3726,7 @@ From within a filament type definition block, this switches to a new filament ty
 
 \item{\ttt{* dynamics} $dynamics$}
 
-Sets the dynamics for the filament type. Current options are: ``none'', ``Euler''. These are case-insensitive.
+Sets the dynamics for the filament type. Current options are: ``none'', ``Euler'', ``RK2'', ``RK4'', ``EulerMat'', ``Implicit'' and ``ImplicitOld''. These are case-insensitive. ``Euler'', ``RK2'', and ``RK4'' are explicit methods, which need short time steps for stiff filaments. ``Implicit'' is the implicit Euler method, which remains stable for much longer time steps. ``EulerMat'' and ``ImplicitOld'' are matrix-based test methods, for which Smoldyn displays a warning; ``EulerMat'' gives the same results as ``Euler'' but more slowly, and ``ImplicitOld'' can be unstable, so ``Implicit'' is better. In 3D, all of these methods also rotate each segment about its own axis in response to twisting torques, so twist relaxes toward the standard roll angle. If a filament becomes numerically unstable, usually because the time step is too long for an explicit method, Smoldyn displays an error message and stops the simulation.
 
 \item{\ttt{* color} $color$}
 
@@ -3652,15 +3750,15 @@ Shininess of the filament for drawing purposes. This value can range from 0 for 
 
 \item{\ttt{* kT} $value$}
 
-Set the thermal energy value, equal to Boltzmann's constant times temperature. Enter this in energy units that are consistent with other units in the input file. This is only used for some of the dynamics options.
+Set the thermal energy value, equal to Boltzmann's constant times temperature. Enter this in energy units that are consistent with other units in the input file. This is only used for some of the dynamics options. Thermal forces act on the filament nodes, and in 3D, thermal torques also twist each segment about its own axis, so bending and twisting both fluctuate.
 
 \item{\ttt{* treadmill\_rate} $value$}
 
-Some filaments treadmill, in which they drop off monomers at one end and add them to the other end. Set the treadmilling rate here.
+Some filaments treadmill, in which they drop off monomers at one end and add them to the other end. Set the treadmilling rate here. A positive value adds segments at the plus end and removes them from the minus end, and a negative value does the reverse. Treadmilling only occurs while the end that gains segments is in the ``open'' state (see \ttt{end\_state}). Treadmilling stops while the end that gains segments is blocked by a surface that it has a reflect interaction with (see \ttt{surface\_interaction}).
 
 \item{\ttt{* branch\_rate} $value$} %?? new
 
-Branching rate off of the mother filament, in units of per unit length per time.
+Branching rate off of the mother filament, in units of per unit length per time. If the filament type has a reflect interaction with a surface (see \ttt{surface\_interaction}) and a new branch would cross that surface, then Smoldyn tries again with new random branch angles, and the branch isn't created if all of these cross the surface.
 
 \item{\ttt{* branch\_angle} $yaw$} %?? new
 
@@ -3668,15 +3766,23 @@ Yaw angle for new branches off of the mother filament, which is given in radians
 
 \item{\ttt{* branch\_spread} $stddev$} %?? new
 
-Standard deviation of branching angle, entered in radians. Enter 0 for deterministic branching.
+Standard deviation of branching angle, entered in radians. Enter 0 for deterministic branching. If this is not entered and \ttt{branch\_force\_angle} is positive, the spread is set to the equilibrium spread of that spring, \ttt{sqrt(kT/k)} for thickness 1, and each new branch uses \ttt{sqrt(kT/(t*k))}, where \ttt{t} is the branch's thickness.
 
 \item{\ttt{* branch\_segments} $segs$} %?? new
 
 Length of initial daughter filament in segments.
 
+\item{\ttt{* branch\_min\_spacing} $distance$}
+
+Minimum distance between branch points on a mother filament, measured along the mother's contour. When \ttt{branch\_rate} or a branch surface interaction (see \ttt{surface\_interaction}) produces a new branch at a mother node that is closer than $distance$ to an existing branch on the same mother, that branch is not created, so \ttt{branch\_rate} becomes the branching rate per unit of mother length that is at least $distance$ from existing branches. Existing branches include those made by branching, by the \ttt{branch} statement, and by \ttt{attach} to a node other than the target's end nodes, as well as branches made earlier in the same time step. The distance is computed from the current segment lengths at the time of the branching event. Branches form at mother nodes, so the spacing is realized to within one segment length; any positive value smaller than a segment length only prevents two branches from forming at the same node. Branches entered with the \ttt{branch} or \ttt{attach} statements are not affected, but Smoldyn warns if they are closer together than $distance$. Also, filament mechanics can stretch or compress a mother after its branches form, which can move existing branches slightly closer together than $distance$. The default is 0, which means that there is no minimum spacing and branches can form at the same node.
+
+\item{\ttt{* branch\_end} $end$} %?? new
+
+Which end of a daughter filament attaches to its mother, entered as ``minus'' (the default) or ``plus''. This applies to branches created by \ttt{branch\_rate} and is the default for the \ttt{branch} statement. A daughter attached by its minus end has its minus end at the branch point and extends away from the mother toward its plus end. A daughter attached by its plus end has its plus end at the branch point, so its minus end is the free end. If such a daughter elongates, it does so by adding segments at the branch point, which pushes the rest of the daughter away from the mother (insertional growth).
+
 \item{\ttt{* branch\_force\_angle} $value$}%?? new
 
-Yaw spring constant at the branch point.
+Yaw spring constant at the branch point. As for the bending force constants, the spring constant at each branch point is this value times the average thickness of the branch's first segment and the parent filament's segment at the branch point.
 
 \item{\ttt{* branch\_azimuth} $string$}%?? new
 
@@ -3688,7 +3794,7 @@ Enter 1 to fix the branch azimuth at its initial value and 0 to allow it to vary
 
 \item{\ttt{* branch\_force\_azimuth} $value$}%?? new
 
-Azimuthal spring constant at the branch point.
+Azimuthal spring constant at the branch point. Like \ttt{branch\_force\_angle}, it is multiplied by the average thickness of the two segments at the branch point.
 
 \item{\ttt{* branch\_surface} $surface$ $distance$}%?? new
 
@@ -3698,17 +3804,33 @@ If branching should only be allowed close to a surface, enter the surface name i
 
 If branching should only be allowed within a certain compartment, enter that compartment name here.
 
+\item{\ttt{* junction\_force} $value$}
+
+The spring constant, in the same units as \ttt{force\_length}, for attachments that close a loop in a filament network (see \ttt{attach}). Such an attachment is held by the energy \ttt{0.5*k*d\^{}2}, where \ttt{k} is this value and \ttt{d} is the distance between the attached filament end and the node that it attaches to. The default is 0, which means that the \ttt{force\_length} value is used. In either case, the spring constant is multiplied by the thickness of the attached filament's end segment, as for segment force constants, so by default the junction is as stiff as that segment. Larger values hold loops more tightly but require smaller time steps; Smoldyn warns if the time step times the mobility times this value is more than 0.5. The forces of these springs are passed on through the attachments that are held exactly, so in a network with many loops, such as a web, a filament can carry the springs of many attachments; Smoldyn also warns if the time step times the mobility times the sum of the spring constants that one attachment carries is more than 0.5. The value of the attached filament's type is used.
+
 \item{\ttt{* confine\_surface} $surface$ $force$ [$face$]}%?? new
 
-If the filament should be confined by a surface, enter that surface name here in $surface$ and the force constant for that confinement in $force$. Afterward, there is an optional face entry. This only accepts ``front'' or ``back'' but should also accept ``both''.%??
+If the filament should be confined by a surface, enter that surface name here in $surface$ and the force constant for that confinement in $force$, in units of energy/length$^2$. Each node on the wrong side of the surface is pushed back with force constant $force$ times the node's thickness, which is the average thickness of its adjacent segments, as for the other filament force constants. Afterward, there is an optional face entry, which is ``front'' (the default) or ``back'', for the side of the surface that the filament is confined to. This statement is a shorthand for \ttt{surface\_interaction} $surface$ $face$ \ttt{all softwall} $force$.
 
-\item{\ttt{* plus\_end} $end$} %?? new
+\item{\ttt{* radius} $value$}
 
-Enter whether the front or the back of the filament is considered to be the plus end. Use full word ``back'' or ``front''.
+Radius of filaments of this type, which needs to be greater than 0. It is used for filament contact forces (see \ttt{filament\_interaction}), for computing mobilities from the \ttt{viscosity}, and for the default rotational mobility, and it's separate from the thickness of filament segments, which affects filament stiffness and drag. The default is 1.
+
+\item{\ttt{* filament\_interaction} $type$ \ttt{softwall} $k$}
+
+Adds a contact force between filaments of this type and filaments of type $type$, which needs to be defined before this statement and can be this type. Two segments are pushed apart when their centerlines are closer than the sum of the filaments' radii, with force constant $k$, in units of energy/length$^2$, times the harmonic mean of their thicknesses. Large force constants need dynamics Implicit. A value of 0 turns the force off. The interaction is symmetric, so it only needs to be entered for one of the two types, and entering it again from either type replaces $k$. If $type$ is this type, this also applies to different parts of a single filament. Filaments have no contact forces by default. See section \ref{sec:FilFilInteractions}. This statement can be used during a simulation with the \ttt{set} command.
+
+\item{\ttt{* surface\_interaction} $surface$ $face$ $parts$[($state$)] $action$ [$parameters$]}
+
+Adds an interaction between filaments of this type and surface $surface$, which needs to be defined before this filament type. Filaments only interact with surfaces through these interactions, so without any, filaments pass through surfaces (see section \ref{sec:FilSurfInteractions}). Enter $face$ as ``front'', ``back'', or ``both'', for the face of the surface that the filament is on. Enter $parts$ as ``minus'', ``plus'', ``side'', or ``all'', or as a comma-separated list such as ``plus,side'', where ``minus'' and ``plus'' are the end nodes and ``side'' is all nodes between them. Optionally, follow $parts$ with an end state in parentheses and without a space, such as \ttt{plus(open)}, where the state is ``open'', ``capped'', ``shrink'', or ``barbed'' (see \ttt{end\_state}); then the interaction only applies to a listed end while that end is in this state. For example, \ttt{surface\_interaction floor front plus(open) softwall 20} only acts on plus ends that are open. A state can only be given if $parts$ lists only ends, so not ``side'' or ``all''. Without a state, the interaction applies to the listed parts in every state. Enter $action$ as ``softwall'', ``repel'', ``reflect'', ``adsorb'', ``desorb'', or ``branch''. For ``softwall'', the parameter is a force constant, in units of energy/length$^2$, and each node of these parts that is on the other side of the surface is pushed back toward the surface with this force constant times the node's thickness; the face needs to be ``front'' or ``back''. For ``repel'', the parameters are a force constant and a repel distance, and the force is the same as for ``softwall'' except that it starts at the repel distance from the surface, on the filament's side, rather than at the surface; the face needs to be ``front'' or ``back''. For ``reflect'', there are no parameters, filament ends of these parts don't grow, from elongation or treadmilling, if the new segment would cross the surface from the given face, or from either face for ``both'', new branches from \ttt{branch\_rate} aren't created if they would cross the surface, and, for filaments with dynamics, nodes of these parts that move across the surface from that face are reflected back. For ``adsorb'', the parameters are an adsorption rate, a capture distance, and optionally a lateral mobility factor, which is 1 by default, and free nodes of these parts that are within the capture distance of the surface, on the given face or either face for ``both'', adsorb at the adsorption rate. For ``desorb'', the parameters are a desorption rate and optionally an offset, which is 0 by default, and nodes of these parts that are adsorbed to the surface, on the given face or either face for ``both'', desorb at the desorption rate and are placed at the offset distance from the surface (see section \ref{sec:FilSurfInteractions}). For ``branch'', the parameters are a distance and a branching rate, and each node of these parts that is within the distance of the surface, on the given face or either face for ``both'', branches at the branching rate, using the filament type's branch parameters. Entering an interaction again with the same surface, face, parts, state, and action replaces its parameters, so interactions for different states can have different parameters. This statement can be entered more than once to add multiple interactions, and can be used during a simulation with the \ttt{set} command.
 
 \item{\ttt{* elongation\_rate} $value$} %?? new
+\item{\ttt{* elongation\_rate} $end$ $state$ $value$}
+\item{\ttt{* elongation\_rate} $end$ \ttt{barbed} $a$ [$k$ [$b$]]}
 
-This is the elongation rate at the plus end in units of length/time. This is usually not used in combination with treadmilling.
+The rate at which a filament end changes length, in units of length/time. Each end of a filament is in one of four states, ``open'', ``capped'', ``shrink'', or ``barbed'' (see \ttt{end\_state} and \ttt{end\_transition}), and the end changes length at the rate given for its current state. In the second form, enter $end$ as ``minus'' or ``plus'', $state$ as ``open'', ``capped'', ``shrink'', or ``barbed'', and $value$ as the rate for that end in that state, which is positive for elongation and negative for shrinking. All rates are 0 by default. The first form, with only a $value$, is the same as \ttt{elongation\_rate plus open} $value$ and requires a value $\geq 0$. The state names are labels, and the rates define what the states do; typically, ``open'' has a positive rate, ``capped'' has a rate of 0, and ``shrink'' has a negative rate. Ends grow and shrink by whole segments, keeping track of the remaining length so that the average length change equals the rate times the elapsed time. A growing end adds segments with random lengths and angles; it stops growing if it is blocked by a surface that it has a reflect interaction with (see \ttt{surface\_interaction}) or reaches \ttt{elongation\_max\_length}. A shrinking end removes its end segment. When a filament that is down to one segment shrinks by that segment's full length, the filament is removed from the simulation, as with \ttt{remove\_filament}. Shrinking past a mother filament node where a branch attaches releases that branch. These rates are usually not used in combination with treadmilling.
+
+A barbed end elongates more slowly when something pushes against it. Its rate is \ttt{v=a*min(exp(-k*F),2)-b}, where $a$ is the polymerization rate with no force, $k$ is the force sensitivity, $b$ is the depolymerization rate, and \ttt{F} is the force pushing against the end node. This is the Brownian ratchet form, in which $a$ is the monomer on-rate constant times the monomer concentration times the length that one monomer adds, $k$ is that length divided by $kT$, or less if the load is shared among several filaments, and $b$ is the monomer off-rate times the length that one monomer adds. The rate with no force is \ttt{a-b}. As \ttt{F} increases, the rate decreases toward \ttt{-b}, so the end stalls at the force \ttt{F=ln(a/b)/k} if $b$ is positive, and beyond that it shrinks. $a$ and $b$ have units of length/time and $k$ has units of length/energy, which is inverse force. All three values are for the given end, and entering them again replaces them. $k$ and $b$ are 0 if they aren't entered, and all three values need to be $\geq 0$. \ttt{F} is the component along the end segment of the softwall and repel forces from surfaces on the end node (see \ttt{surface\_interaction}) and of the contact force from other filaments, from the previous time step (see \ttt{filament\_interaction}), and it is positive if it pushes the end node back toward the filament. It is computed at the start of each time step. It doesn't include the filament's own stretching and bending forces or thermal forces. It doesn't include reflect interactions either, since these don't exert forces, so a barbed end needs softwall or repel interactions to respond to a surface, and Smoldyn warns if a filament type has none of these or contact interactions. \ttt{F} can be negative, which pulls the end outward and increases the rate above \ttt{a-b}; this can happen when an end grows away from a repelling surface while it is still within the repel distance. The exponential factor is capped at 2, so it is 1 with no force, approaches 0 for large pushing forces, and is 2 for pulling forces of \ttt{ln(2)/k} or more, which makes the maximum rate \ttt{2a-b}. The \ttt{treadmill\_rate} statement only applies to open ends, so barbed ends don't treadmill. The \ttt{S13\_filaments/dynamics/barbedEnd2D.txt} example shows barbed ends.
 
 \item{\ttt{* elongation\_max\_length} $value$} %?? new
 
@@ -3716,15 +3838,37 @@ Maximum filament contour length when elongation can occur. Longer filaments don'
 
 \item{\ttt{* capping\_rate} $value$} %?? new
 
-Capping rate at the plus end. Units are inverse time. Capped filaments don't elongate.
+Capping rate at the plus end, in inverse time units. This is the same as \ttt{end\_transition plus open capped} $value$.
 
 \item{\ttt{* uncapping\_rate} $value$} %?? new
 
-Uncapping rate at the plus end. Units are inverse time. Uncapped filaments can elongate.
+Uncapping rate at the plus end, in inverse time units. This is the same as \ttt{end\_transition plus capped open} $value$.
+
+\item{\ttt{* end\_transition} $end$ $state1$ $state2$ $rate$}
+
+The rate, in inverse time units, at which filament end $end$ (``minus'' or ``plus'') changes from state $state1$ to state $state2$, where the states are ``open'', ``capped'', ``shrink'', or ``barbed''. All transition rates are 0 by default. In each time step, an end leaves its current state with probability \ttt{1-exp(-R*dt)}, where \ttt{R} is the sum of the rates out of that state and \ttt{dt} is the time step, and goes to one of the other states with probability proportional to the individual rates. For example, dynamic instability at the plus end can be represented with \ttt{end\_transition plus open shrink} $k_{cat}$ and \ttt{end\_transition plus shrink open} $k_{res}$, for catastrophe and rescue rates, along with a positive \ttt{elongation\_rate plus open} and a negative \ttt{elongation\_rate plus shrink}.
+
+\item{\ttt{* end\_state} $end$ $state$}
+
+The state that end $end$ (``minus'' or ``plus'') of new filaments of this type starts in, which is ``open'', ``capped'', ``shrink'', or ``barbed''. The default is ``open'' for both ends. This applies to filaments that are created after this statement, including branches, and does not change existing filaments. It can be changed during a simulation with the \ttt{set} command, for example \ttt{cmd @ 0.5 set filament\_type actin end\_state plus capped}, which affects filaments created after that time. The state of an individual filament's end can be set with the \ttt{end\_state} statement in a filament block, including during a simulation with a command such as \ttt{cmd @ 0.5 set filament actin:fil0 end\_state plus capped}.
 
 \item{\ttt{* mobility} $value$}
 
-Mobility of the nodes within the surrounding medium.
+Mobility of the nodes within the surrounding medium, in units of length$^2$/(energy$\cdot$time), so that a node's velocity is its mobility times the force on it (see section \ref{sec:FilForces}). The default is 1, unless \ttt{viscosity} is entered, in which case the mobility is computed from it.
+
+\item{\ttt{* viscosity} $value$}%?? new
+
+Viscosity of the surrounding medium, in units of energy$\cdot$time/length$^3$ (for example, water's viscosity of 1 mPa$\cdot$s can be entered as \ttt{1e-3|J.s/m3}, which is 1 zJ$\cdot$s/$\upmu$m$^3$). If this is entered, then Smoldyn computes the mobility and the rotational mobility from it, unless they are entered directly, treating each node as carrying the drag of one segment, which is a cylinder with length $l$ equal to \ttt{standard\_length} and radius $a$ equal to \ttt{radius}, in viscosity $\eta$. The mobility is the orientation-averaged mobility of a cylinder, from Tirado and Garc\'{i}a de la Torre (\textit{J. Chem. Phys.} 71:2581, 1979, and 73:1986, 1980),
+$$\mu = \frac{\ln p + \nu}{3\pi\eta l}, \qquad \nu = 0.312+\frac{0.565}{p}-\frac{0.100}{p^2}$$
+where $p=l/2a$ is the aspect ratio, which is set to at least 2 because the expression is only accurate for $p$ from about 2 to 30. The rotational mobility about the segment axis is $\mu_r = 1/(4\pi\eta a^2 l)$, which is exact for a long cylinder. These values are for thickness 1; with \ttt{thickness\_drag}, thicker segments have proportionally more drag. These are approximations, because they ignore hydrodynamic interactions between segments and the anisotropy of drag along and across a filament.
+
+\item{\ttt{* rotational\_mobility} $value$}%?? new
+
+Rotational mobility of segments about their own axes, for 3D simulations, in units of 1/(energy$\cdot$time), so that a segment's roll rate is its rotational mobility times the torque on it about its axis. This affects how quickly filaments twist but not their equilibrium twist. If this isn't entered, it is computed from the \ttt{viscosity} if that was entered, and otherwise it is the \ttt{mobility} value divided by the square of the filament \ttt{radius}, which is about right for a rod, since its rotational drag per unit length is roughly its translational drag per unit length times its radius squared. With the default radius of 1, this default equals the \ttt{mobility} value.
+
+\item{\ttt{* thickness\_drag} $0/1$}
+
+Whether the thickness of a filament affects its drag. With 1, which is the default, each node's mobility is divided by its thickness, which is the average thickness of the segments on either side of it, so a filament with thickness 3 moves and diffuses 3 times more slowly than one with thickness 1, as for a bundle of 3 filaments. With 0, mobility does not depend on thickness. In either case, thickness also multiplies the force constants, and thermal forces are scaled to match the mobility, so equilibrium conformations are the same.
 
 \item{\ttt{* standard\_length} $length$}
 
@@ -3733,16 +3877,24 @@ Relaxed length of a filament segment. It can change through stretching or compre
 \item{\ttt{* standard\_angle} $yaw$\\
 \ttt{* standard\_angle} $yaw$ $pitch$ $roll$}
 
-Relaxed angles between adjacent filament segments. When facing toward the filament's front end, yaw represents left-right bending, pitch represents up-down bending, and roll represents rotation about the filament axis. For 2D simulations, only enter a single bending angle.
+Relaxed angles between adjacent filament segments. When looking along the filament from its minus end toward its plus end, yaw represents left-right bending, pitch represents up-down bending, and roll represents rotation about the filament axis. For 2D simulations, only enter a single bending angle.
 
 \item{\ttt{* force\_length} $value$}
 
-Stretching force constant for filament segments.
+Stretching force constant for filament segments, in units of energy/length$^2$. The force constant of each segment is this value times the segment's thickness, which is 1 by default. A negative value makes the segment lengths fixed at \ttt{standard\_length} (see section \ref{sec:FilForces}).
 
 \item{\ttt{* force\_angle} $yaw$\\
 \ttt{* force\_angle} $yaw$ $pitch$ $roll$}
 
-Force constants for bending and torsion.
+Force constants for bending and torsion, in energy units (energy/radian$^2$). The force constants at each node between segments are these values times the average thickness of the two segments, which is 1 by default. A negative value makes that angle fixed at its \ttt{standard\_angle} value (see section \ref{sec:FilForces}). Alternatively, the force constants can be computed from persistence lengths, using \ttt{persistence\_length} and \ttt{persistence\_length\_twist}.
+
+\item{\ttt{* persistence\_length} $length$}%?? new
+
+Persistence length for filament bending, for thickness 1, which Smoldyn uses to compute the yaw and pitch force constants, so \ttt{force\_angle} doesn't need to be entered. The persistence length, $L_p$, is defined by $\left< \bm{t}_0 \cdot \bm{t}_s \right> = e^{-s/L_p}$, where $\bm{t}_0$ and $\bm{t}_s$ are the directions of two segments separated by contour length $s$. In 3D, the yaw and pitch force constants are both set to $k_\phi=k_\theta=kT L_p/l$, where $l$ is the standard length; in 2D, the single bending force constant is set to $k_\phi=kT L_p/2l$. These are computed from the current \ttt{kT} and \ttt{standard\_length} values, regardless of the order in which the statements are entered, and both values need to be positive. In 3D, if neither the roll force constant (in \ttt{force\_angle}) nor \ttt{persistence\_length\_twist} is entered, then the torsional persistence length is set to 3 times the persistence length. The persistence length takes precedence over yaw and pitch force constants that are entered with \ttt{force\_angle}. Smoldyn lists the persistence length in its filament type output, whether it was entered or computed from \ttt{force\_angle}.
+
+\item{\ttt{* persistence\_length\_twist} $length$}%?? new
+
+Torsional persistence length, for thickness 1 and 3D simulations only, which Smoldyn uses to compute the roll force constant. The torsional persistence length, $L_t$, is defined by $\left< \cos \Delta \psi \right> = e^{-s/L_t}$, where $\Delta \psi$ is the total twist over contour length $s$, and the roll force constant is set to $k_\psi=kT L_t/2l$. Note that a common alternative definition, often used for DNA, is that the twist variance is $\left< \Delta\psi^2 \right> = s/L_t$, which gives values that are half as large as those here. This takes precedence over the roll force constant entered with \ttt{force\_angle}.
 
 \item{\ttt{* end\_filament\_type}}
 
@@ -3758,6 +3910,10 @@ Filaments can be entered either in a block or with the single \ttt{random\_filam
 \ttt{random\_filament} $type$:$name$ $segments$ $[x$ $y$ $z$ $\phi$ $\theta$ $\psi]$ $[thickness]$
 
 Create a new filament with random segments. It is named $name$, is of type $type$, has $segments$ number of segments, and, optionally, has its starting location at $(x,y,z)$ and initial yaw-pitch-roll angle $(\phi, \theta, \psi)$. For 2D, only enter $x,y$ and $\phi$. It also has optional thickness $thickness$.
+
+\item{\ttt{remove\_filament} $type$:$name$}
+
+Removes the filament named $name$, of type $type$, from the simulation. The type is optional if the filament name is unique. All attachments that involve this filament are removed: any filament ends that attach to it are released, so they continue as free ends, and its own ends are detached. A removed filament's name can be used again. Smoldyn keeps the memory of removed filaments and reuses it for filaments that are created later. This statement can be used during a simulation with the \ttt{set} command, for example \ttt{cmd @ 0.5 set remove\_filament actin:fil0}.
 
 \item{\ttt{start\_filament} $type$:$name$}
 
@@ -3775,25 +3931,25 @@ Name of the filament for editing. This statement is not required because the fil
 \item{\ttt{* first\_segment} $x$ $y$ $length$ $angle$ $[thickness]$\\
 \ttt{* first\_segment} $x$ $y$ $z$ $length$ $yaw$ $pitch$ $roll$ $[thickness]$}
 
-Defines the first segment of a filament. Enter the starting location in $x$, $y$, and $z$, the segment length in $length$, and its absolute orientation with the angle values. For 2D, the angle is the angle from the $x$-axis and in 3D these values are the yaw-pitch-roll values away from the $x$-axis. The thickness value is optional.
+Defines the first segment of a filament. Enter the starting location in $x$, $y$, and $z$, the segment length in $length$, and its absolute orientation with the angle values. For 2D, the angle is the angle from the $x$-axis and in 3D these values are the yaw-pitch-roll values away from the $x$-axis. The thickness value is optional; it is unitless, because it multiplies the force constants (and divides the node mobilities, see \ttt{thickness\_drag}), and it is 1 by default.
 
 \item{\ttt{* add\_segment} $length$ $angle$ $[thickness\ [end]]$\\
 \ttt{* add\_segment} $length$ $yaw$ $pitch$ $roll$ $[thickness\ [end]]$}
 
-Add a segment to the filament, with the given length. The angles are relative angles from the prior segment using yaw-pitch-roll values, and the thickness is optional. The segment can be added to either end, given in $end$, where the options are $front$ or $back$.
+Add a segment to the filament, with the given length. The angles are relative angles from the prior segment using yaw-pitch-roll values, and the thickness, which is unitless, is optional. The segment can be added to either end, given in $end$, where the options are ``plus'' (the default) or ``minus''.
 
 \item{\ttt{* remove\_segment} $end$}
 
-Remove one segment from end $end$ of the filament (``front'' or ``back'').
+Remove one segment from end $end$ of the filament (``plus'' or ``minus'').
 
-\item{\ttt{* modify\_segment} $segment$ length/angle/thickness +/-/= $value(s)$ $end$}
+\item{\ttt{* modify\_segment} $segment$ length/angle/minus\_position/thickness +/-/= $value(s)$ $[end]$}
 
-This modifies the length, relative angle, position, or thickness parameters for the single segment number $segment$. After the segment number, enter one of ``length'', ``angle'', ``front\_position'', or ``thickness''. Then, enter ``+'' to increase the current value by the given amount, ``-'' to decrease the current value by the given amount, or ``='' to set the value to the given amount, where the given amount is entered in $value$. For the angle option with 3D, enter 3 values for yaw, pitch, and roll. For the position option, enter two values for 2D and three values for 3D. Finally, for the length and angle options, enter $end$ as either ``front'' or ``back'' for which filament end gets moved in the process.
+This modifies the length, relative angle, position, or thickness parameters for the single segment number $segment$. After the segment number, enter one of ``length'', ``angle'', ``minus\_position'', or ``thickness''. Then, enter ``+'' to increase the current value by the given amount, ``-'' to decrease the current value by the given amount, or ``='' to set the value to the given amount, where the given amount is entered in $value$. For the angle option with 3D, enter 3 values for yaw, pitch, and roll. For the position option, enter two values for 2D and three values for 3D. Finally, for the length and angle options, optionally enter $end$ as either ``plus'' (the default) or ``minus'' for which filament end gets moved in the process.
 
 \item{\ttt{* random\_segments} $number$ $[x$ $y$ $\phi]$ $[thickness]$}
 \item{\ttt{* random\_segments} $number$ $[x$ $y$ $z$ $\phi$ $\theta$ $\psi]$ $[thickness]$}
 
-Add $number$ of random segments to the filament. If the filament doesn't have any segments yet, then enter the front position in $(x,y)$ for 2D or $(x,y,z)$ for 3D and also enter the front segment angle in $\phi$ for 2D and $(\phi,\theta,\psi)$ for 3D. These position and angle values can be `u' for uniform distributions. The thickness parameter is optional.
+Add $number$ of random segments to the filament. If the filament doesn't have any segments yet, then enter the minus end position in $(x,y)$ for 2D or $(x,y,z)$ for 3D and also enter the minus end segment angle in $\phi$ for 2D and $(\phi,\theta,\psi)$ for 3D. These position and angle values can be `u' for uniform distributions. The thickness parameter is optional.
 
 \item{\ttt{* translate} $symbol$ $x$ $y$ $z$}
 
@@ -3803,9 +3959,9 @@ Translate the filament. Set $symbol$ to ``='' for absolute coordinates, ``+'' fo
 
 Copy the current filament to $filament$, which is created here if it doesn't already exist; any prior data in $filament$ is overwritten.
 
-\item{\ttt{* branch} $daughter$ $segment$ [$yaw$ $pitch$ $roll$]}
+\item{\ttt{* branch} $daughter$ $node$ [$end$] [$length$ [$yaw$ $pitch$ $roll$]]}
 
-Create a branch off of the current filament (the mother filament). Enter $daughter$ as the name of the new branch filament (the daughter) and $segment$ as the branching position off of the mother. The $yaw pitch roll$ angles are optional. If they are entered, they are the bending angle away from the mother filament. If they are not entered, then the standard bending angles are taken from the filament type definition (branch\_angle).
+Create a branch off of the current filament (the mother filament). Enter $daughter$ as the name of the new branch filament (the daughter) and $node$ as the node number on the mother where the branch attaches. Optionally, enter $end$ as ``minus'' or ``plus'' for which end of the daughter attaches at this node; the default is the filament type's \ttt{branch\_end} value, which is ``minus'' unless it was set otherwise. Optionally, enter $length$ as the length of the daughter's segment 0; if it is omitted, the length is chosen randomly from the filament type's length distribution, as for other new segments. For a daughter attached by its minus end, segment 0 is the segment at the branch point, and for a daughter attached by its plus end with more than one segment, segment 0 is the segment at the daughter's free minus end. The first number after $node$ and $end$ is always $length$, so the angles can only be entered after a length. The node can be any node of the mother, from 0 (its minus end) to the number of mother segments (its plus end). The branch angles are measured relative to the mother segment that ends at this node, and they give the direction of the daughter away from the mother, whichever end attaches. The $yaw$ $pitch$ $roll$ angles are optional (and only enter $yaw$ for 2D). If they are entered, they are the bending angle away from the mother filament. If they are not entered, then the standard bending angles are taken from the filament type definition (branch\_angle).
 
 \item{\ttt{* sequence} $sequence$}
 
@@ -3813,7 +3969,27 @@ Enter the sequence string for a filament.
 
 \item{\ttt{* node\_mobility} $node$ $mobility$}
 
-Sets a unitless node mobility factor, which is multiplied by the mobility that's defined in the filament type, to give the total node mobility value. Enter $node$ as the node number, where 0 is the front of the filament. Alternatively, enter $node$ as a negative value to count from the back of the filament, where $-1$ is the back end. The $mobility$ value has a default value of 1, and can be set to other values here. In particular, setting it to 0 means that the node is fixed in space.
+Sets a unitless node mobility factor, which is multiplied by the mobility that's defined in the filament type, to give the total node mobility value (and is divided by the node's thickness unless \ttt{thickness\_drag} is 0). Enter $node$ as the node number, where 0 is the minus end of the filament. Alternatively, enter $node$ as a negative value to count from the plus end of the filament, where $-1$ is the plus end. The $mobility$ value has a default value of 1, and can be set to other values here. In particular, setting it to 0 means that the node is fixed in space.
+
+\item{\ttt{* adsorb\_node} $node$ $surface$ [$face$ [$mobility$]]}
+
+Adsorbs node $node$ of this filament to surface $surface$ (see section \ref{sec:FilSurfInteractions}). Enter $node$ as for \ttt{node\_mobility}, where 0 is the minus end and negative values count from the plus end, so $-1$ is the plus end. The node is moved to the closest point of the surface, onto face $face$, which is ``front'' or ``back''; if $face$ is omitted, it is the side of the surface that the node was on. An adsorbed node stays on the surface, but can move within it with its usual mobility times the lateral mobility factor $mobility$, which is 1 by default and can be 0 to anchor the node in place. The end of a filament that is rigidly attached to its mother can't be adsorbed. This statement can be used during a simulation with the \ttt{set} command, for example \ttt{cmd @ 10 set filament actin:fil0 adsorb\_node 0 membrane front}.
+
+\item{\ttt{* desorb\_node} $node$}
+
+Desorbs node $node$ of this filament from its surface, if it is adsorbed, so that it can move freely again. Enter $node$ as for \ttt{adsorb\_node}. This statement can be used during a simulation with the \ttt{set} command.
+
+\item{\ttt{* attach} $end$ $target$ $node$}
+
+Attaches end $end$ (``minus'' or ``plus'') of this filament, which needs to be free, to node $node$ of filament $target$. The target is entered as $type$:$name$, or just $name$ if the name is unique, and can be this filament itself. The node is from 0 to the number of target segments. If this attachment adds to a tree of attachments, the filament is moved so that its end is at the target node, and later stays there exactly, along with the filaments attached to it. If it closes a loop, for example by attaching the second end of a filament, attaching a filament to itself, or connecting two filaments that are already connected, then only the end node of this filament is moved onto the target node, and a spring holds it there afterward (see \ttt{junction\_force}). An attachment at the target's minus or plus end node is an end-to-end join, whose angle is held by the filament type's bending spring (\ttt{standard\_angle} and \ttt{force\_angle}, scaled by the average thickness of the two joined segments), so the join bends like any other node; for example, \ttt{attach plus} $type$:$name$ \ttt{0}, for the filament's own name, closes it into a circle. An attachment at any other node is held at the branch angle, using \ttt{branch\_angle}, \ttt{branch\_force\_angle}, and \ttt{branch\_force\_azimuth}. Attaching or detaching an end can change which other attachments are held exactly and which by springs. In 3D, avoid \ttt{branch\_force\_azimuth} for filaments in loops, because the azimuthal spring only acts on the attached filament, so it can make a loop rotate steadily; Smoldyn warns about this. This statement can be used during a simulation with the \ttt{set} command.
+
+\item{\ttt{* detach} $end$}
+
+Detaches end $end$ (``minus'' or ``plus'') of this filament, which leaves it free.
+
+\item{\ttt{* end\_state} $end$ $state$}
+
+Sets the current state of end $end$ (``minus'' or ``plus'') of this filament to $state$, which is ``open'', ``capped'', ``shrink'', or ``barbed''. See the \ttt{end\_state}, \ttt{elongation\_rate}, and \ttt{end\_transition} statements for filament types.
 
 \item{\ttt{* end\_filament}}
 
@@ -3899,7 +4075,7 @@ Virtual boxes are set up initially so the average number of molecules per box is
 
 \item{\ttt{boxsize} $float$}
 
-Rather than using \ttt{molperbox} to specify the sizes of the virtual boxes, \ttt{boxsize} can be used to request the width of the boxes. The actual box volumes will be no larger than the volume calculated from the width given here.
+Rather than using \ttt{molperbox} to specify the sizes of the virtual boxes, \ttt{boxsize} can be used to request the width of the boxes. The actual box volumes will be no larger than the volume calculated from the width given here. Virtual boxes are also used to find filament interactions more efficiently. The number of boxes is computed from the number of molecules, so a simulation without molecules has only one box unless \ttt{boxsize} is entered; Smoldyn warns if filaments have surface interactions and there is only one box.
 
 \item{\ttt{gauss\_table\_size} $int$}
 
@@ -4178,7 +4354,7 @@ This function computes residence times of individual molecules of type $species$
 
 \item{\ttt{diagnostics} $type$}
 
-Displays diagnostics about various parts of the data structures to the screen. These are identical to those that are displayed at program initialization, but for later times. The options for the type word are: ``simulation'', ``wall'', ``molecule'', ``surface'', ``command'', ``box'', ``reaction'', ``compartment'', ``port'', ``check'', and ``all''.
+Displays diagnostics about various parts of the data structures to the screen. These are identical to those that are displayed at program initialization, but for later times. The options for the type word are: ``simulation'', ``wall'', ``molecule'', ``surface'', ``command'', ``box'', ``reaction'', ``compartment'', ``port'', ``filament'', ``check'', and ``all''.
 
 \item{\ttt{executiontime} $filename$}
 
@@ -4194,7 +4370,7 @@ Prints information about the specified filament. The $code$ input should be a st
 
 \item{\ttt{printFilaments} $filename$}
 
-Prints out every filament (all types) as a flat polyline of node coordinates, one line each: \ttt{FIL <time> <type>:<name> <nseg> <parent-or-"-"> x0 y0 [z0] x1 y1 [z1] ...}. Auto-named daughters are included, so this captures a whole branched network.
+Prints out every filament (all types) as a flat polyline of node coordinates, one line each: \ttt{FIL <time> <type>:<name> <nseg> <minus-attach> <plus-attach> <minus-state> <plus-state> x0 y0 [z0] x1 y1 [z1] ...}, where the attachments are what each end is attached to, as $type$:$name$:$node$, or ``-'' for a free end, and the states are the end states (``open'', ``capped'', ``shrink'', or ``barbed''). Auto-named daughters are included, so this captures a whole branched network.
 
 \item{\ttt{writeVTK} $filepath/filename$}
 
@@ -4359,6 +4535,12 @@ Expand, or contract, everything in system, which includes molecule locations and
 
 Translate the compartment called $compartment$ by the shift value given in $\Delta x$, $\Delta y$, and $\Delta z$ (with fewer values for lower dimensions). The $code$ value describes which attributes of the compartment should be moved; add the codes for the individual attributes for the final code value. The individual codes are: 1 for translating the compartment surfaces, 2 for translating the molecules that are bound to those surfaces, 4 for translating the molecules that are within the compartment, and 8 for shifting the molecules that are outside of the compartment but that get bumped into by the moving surfaces. Thus, use a code of 15 to get all of these behaviors at once. With code of 4, all molecules within the compartment are translated, regardless of their surface actions. With code of 8, all molecules that a compartment surface would bump into get translated, unless their surface action is ``transmit''. If a molecule gets ``squeezed'', meaning that it gets bumped into by the moving compartment, but then gets bumped back due to some other surface, then that molecule will end up inside of the compartment.
 
+\item{\ttt{applysurfaceforce} $surface\ F_x$\\
+\ttt{applysurfaceforce} $surface\ F_x\ F_y$\\
+\ttt{applysurfaceforce} $surface\ F_x\ F_y\ F_z$}
+
+Applies the force given by $F_x$, $F_y$, and $F_z$ (with fewer values for lower dimensions), in units of energy/length, to the surface called $surface$, or to every surface if $surface$ is ``all''. The force only affects surfaces that have a mobility (see the \ttt{mobility} statement), which move in response to it in the same way as to the forces from filaments, including carrying their surface-bound molecules and adsorbed filament nodes, and pushing molecules that they run into (see the section on filament-surface interactions). The force is added to the forces from filaments for the next time step only, so in that step the surface moves by its mobility times the force times the time step, and it is then cleared. Thus, to apply a constant force, run this command at every time step, as in \ttt{cmd E applysurfaceforce membrane 0 0 -2}; running it every $n$ time steps applies the force for only one of those time steps. Running it more than once in a time step adds the forces together. The force values can be expressions that use variables. The output for the \ttt{diagnostics surface} command lists a force that has been applied but hasn't acted yet.
+
 \item{\ttt{diffusecmpt} $compartment\ code\ stddev_x\ [cmpt\_bound\ radius\ nsample]$\\
 \ttt{diffusecmpt} $compartment\ code\ stddev_x\ stddev_y\ [cmpt\_bound\ radius\ nsample]$\\
 \ttt{diffusecmpt} $compartment\ code\ stddev_x\ stddev_y\ stddev_z\ [cmpt\_bound\ radius\ nsample]$}
@@ -4367,7 +4549,7 @@ This is similar to \ttt{translatecmpt}, except that this translates the compartm
 
 \item{\ttt{longrangeforce} $species_1(state)\ species_2(state)\ mobility_1\ mobility_2\ rad_{min}\ rad_{max}\ equation$}
 
-This simulates a long range force between molecules of $species_1$ and $species_2$, moving them in response to it. The force is computed from $equation$. This equation needs to be a function of $r$, which is the radius. For example, it could be \ttt{-4*r\^{}(-2)+2*r\^{}(-4)}, where \ttt{r} represents the distance between two molecules; do not include any spaces in the equation. Negative values represent attractive forces, and note that exponents will probably be negative for most physically reasonable forces. This equation applies for all separations between $rad_{min}$ and $rad_{max}$, and the force is zero elsewhere. For computational efficiency, it's a good idea to keep $rad_{max}$ reasonably small. Molecules of $species_1$ move distance $mobility_1 \Delta t$ times the force, while those of $species_2$ move $mobility_2 \Delta t$ times the force, where $\Delta t$ is the simulation time step. Except in very unusual circumstances, both mobilities should be positive values. Note that this accounts for the simulation time step, which is unusual for commands. However, it does not account for the command being run at wide intervals, such as every 2, 3, or 4 time steps. Instead, to be quantitatively accurate, it needs to run at every time step (or run it every $n$ time steps, and multiply the force or mobility by $n$).
+This simulates a long range force between molecules of $species_1$ and $species_2$, moving them in response to it. The force is computed from $equation$. This equation needs to be a function of $r$, which is the radius. For example, it could be \ttt{-4*r\^{}(-2)+2*r\^{}(-4)}, where \ttt{r} represents the distance between two molecules; do not include any spaces in the equation. Negative values represent attractive forces, and note that exponents will probably be negative for most physically reasonable forces. This equation applies for all separations between $rad_{min}$ and $rad_{max}$, and the force is zero elsewhere. For computational efficiency, it's a good idea to keep $rad_{max}$ reasonably small. The mobilities have units of length$^2$/(energy$\cdot$time) and the force is in energy/length units. Molecules of $species_1$ move distance $mobility_1 \Delta t$ times the force, while those of $species_2$ move $mobility_2 \Delta t$ times the force, where $\Delta t$ is the simulation time step. Except in very unusual circumstances, both mobilities should be positive values. Note that this accounts for the simulation time step, which is unusual for commands. However, it does not account for the command being run at wide intervals, such as every 2, 3, or 4 time steps. Instead, to be quantitatively accurate, it needs to run at every time step (or run it every $n$ time steps, and multiply the force or mobility by $n$).
 
 \item{\ttt{translatemol}} $species(state)\ equation_x$\\
 \ttt{translatemol} $species(state)\ equation_x\ equation_y$\\
@@ -4687,6 +4869,27 @@ C/C++: \ttt{enum ErrorCode smolSetPartitions(simptr sim, char *method, double va
 Python: \ttt{S.Simulation.setPartitions(sim, str method, float value)}\\
 Sets the virtual partitions in the simulation volume. Enter \ttt{method} as ``molperbox" and then enter \ttt{value} with the requested number of molecules per partition volume; the default, which is used if this function is not called at all, is a target of 4 molecules per box. Or, enter \ttt{method} as ``boxsize" and enter \ttt{value} with the requested partition spacing. In this latter case, the actual partition spacing may be larger or smaller than the requested value in order to fit an integer number of partitions into each coordinate of the simulation volume.
 
+\item[SetSimParams]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetSimParams(simptr sim, const char *parameter, double value)}\\
+Python: \ttt{ErrorCode setSimParams(str parameter, float value)}\\
+Python: $sim$.\ttt{setSimParams(accuracy=None, gauss\_table\_size=None, quit\_at\_end=None)}\\
+Sets the simulation parameter named with \ttt{parameter} to value \ttt{value}. The possible parameters are ``accuracy'' (the \ttt{accuracy} statement, on a scale from 0 to 10), ``gauss\_table\_size'' (the \ttt{gauss\_table\_size} statement, which needs to be an integer power of two), and ``quit\_at\_end'' (the \ttt{quit\_at\_end} statement, with 1 for yes and 0 for no). The Python $sim$ version only sets the parameters that are given.
+
+\item[SetVariable]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetVariable(simptr sim, const char *name, double value)}\\
+Python: \ttt{ErrorCode setVariable(str name, float value)}\\
+Python: $sim$.\ttt{setVariable(name, value)}\\
+Defines the variable \ttt{name}, or changes its value, which is equivalent to the \ttt{variable} statement. The name needs to start with a letter and then be alphanumeric with optional underscores, and cannot be ``time'', ``x'', ``y'', ``z'', or ``r''. Statements use a variable's value when they are read, so changing a variable does not change parameters that were already set from it. Runtime commands read their arguments each time they run, so they use the current value.
+
+\item[GetVariable]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolGetVariable(simptr sim, const char *name, double *value)}\\
+Python: \ttt{float getVariable(str name)}\\
+Python: $sim$.\ttt{getVariable(name)}\\
+Returns the value of the variable \ttt{name} in \ttt{value}. Returns \ttt{ECnonexist} if the variable has not been defined.
+
 \item[MoleculePerBox]
 \hfill \\
 Python: \ttt{MoleculePerBox(size: float)}\\
@@ -4735,6 +4938,13 @@ Python: \textit{species}\ttt{.difc}\\
 Sets any or all of the mobility coefficients for species \ttt{species} (which may be ``all") and state \ttt{state} (which may be \ttt{MSall}). \ttt{difc} is the isotropic diffusion coefficient, \ttt{drift} is the drift vector, and \ttt{difmatrix} is the square of the anisotropic diffusion matrix (see the User's manual). To not set coefficients, enter a negative number in \ttt{difc} and/or enter a \ttt{NULL} pointer in the other inputs, respectively.
 
 The last version shown can also be used to get the diffusion coefficient for a species.
+
+\item[SetSpeciesSurfaceDrift]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetSpeciesSurfaceDrift(simptr sim, const char *species, enum MolecState state, const char *surface, enum PanelShape panelshape, double *drift)}\\
+Python: \ttt{ErrorCode setSpeciesSurfaceDrift(str species, MolecState state, str surface, PanelShape panelshape, List[float] drift)}\\
+Python: \textit{species}\ttt{.setSurfaceDrift(surface, drift, state=None, panelshape="all")}\\
+Sets the drift velocity of surface-bound molecules of species \ttt{species} (which may be ``all''), relative to the panels they are bound to, which is equivalent to the \ttt{surface\_drift} statement. \ttt{state} needs to be a surface-bound state or \ttt{MSall}. The drift applies to panels of surface \ttt{surface} (which may be ``all'') that have shape \ttt{panelshape} (which may be \ttt{PSall}). \ttt{drift} has $dim-1$ values, in the coordinates of the panel, as described for the statement. In the Python \textit{species} version, \ttt{state} defaults to the species' state if it is surface-bound, and to ``all'' otherwise.
 
 
 \item[AddMolList]
@@ -4818,6 +5028,39 @@ Python: \textit{species}\ttt{.color}\\
 Python: \textit{species}\ttt{.size}\\
 Sets the graphical display parameters for molecules of species \ttt{species} (``all" is permitted) and state \ttt{state} (\ttt{MSall} is permitted). Enter \ttt{size} with the drawing size (in pixels if graphics method is ``opengl" and in simulation system length units for better drawing methods) or with a negative number to not set the size. Enter \ttt{color} with the 3-value color vector or with \ttt{NULL} to not set the color (or, in Python, a color word).
 
+\item[AddSpeciesGroup]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolAddSpeciesGroup(simptr sim, const char *group, const char *species)}\\
+Python: \ttt{ErrorCode addSpeciesGroup(str group, str species="")}\\
+Python: $sim$.\ttt{addSpeciesGroup(name, species=[])}\\
+Adds species \ttt{species}, which may include wildcards, to the species group \ttt{group}, creating the group if needed, which is equivalent to the \ttt{species\_group} statement. Enter \ttt{species} as \ttt{NULL} or an empty string to create an empty group. The group name cannot be a species name. The Python \textit{sim} version takes a list of species.
+
+\item[SetSpeciesMobilityRule]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetSpeciesMobilityRule(simptr sim, const char *species, enum MolecState state, double difc, double *drift, double *difmatrix)}\\
+Python: \ttt{ErrorCode setSpeciesMobilityRule(str species, MolecState state, float difc, List[float] drift, List[float] difmatrix)}\\
+Python: $sim$.\ttt{addSpeciesRule(pattern, state="soln", difc=None, drift=None, difm=None, mol\_list=None, display\_size=None, color=None)}\\
+Like \ttt{smolSetSpeciesMobility}, but as a rule, which is equivalent to the \ttt{difc\_rule}, \ttt{drift\_rule}, and \ttt{difm\_rule} statements. Rules apply to all species that match the species pattern \ttt{species}, which may include wildcards, including species that are generated later by rule expansion (see \ttt{smolExpandRules}). The state is entered separately in \ttt{state}, so the pattern should not include a state. To not set a coefficient, enter a negative number in \ttt{difc} and/or a \ttt{NULL} pointer in the other inputs. The Python \textit{sim} version also sets the molecule list and style rules.
+
+\item[SetSpeciesSurfaceDriftRule]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetSpeciesSurfaceDriftRule(simptr sim, const char *species, enum MolecState state, const char *surface, enum PanelShape panelshape, double *drift)}\\
+Python: \ttt{ErrorCode setSpeciesSurfaceDriftRule(str species, MolecState state, str surface, PanelShape panelshape, List[float] drift)}\\
+Python: $sim$.\ttt{addSurfaceDriftRule(pattern, surface, drift, state="all", panelshape="all")}\\
+Like \ttt{smolSetSpeciesSurfaceDrift}, but as a rule, which is equivalent to the \ttt{surface\_drift\_rule} statement. Rules apply to all species that match the species pattern \ttt{species}, which may include wildcards, including species that are generated later by rule expansion (see \ttt{smolExpandRules}). The state is entered separately in \ttt{state}, so the pattern should not include a state. 
+
+\item[SetMolListRule]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetMolListRule(simptr sim, const char *species, enum MolecState state, const char *mollist)}\\
+Python: \ttt{ErrorCode setMolListRule(str species, MolecState state, str mollist)}\\
+Like \ttt{smolSetMolList}, but as a rule, which is equivalent to the \ttt{mol\_list\_rule} statement. Rules apply to all species that match the species pattern \ttt{species}, which may include wildcards, including species that are generated later by rule expansion (see \ttt{smolExpandRules}). The state is entered separately in \ttt{state}, so the pattern should not include a state. 
+
+\item[SetMoleculeStyleRule]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetMoleculeStyleRule(simptr sim, const char *species, enum MolecState state, double size, double *color)}\\
+Python: \ttt{ErrorCode setMoleculeStyleRule(str species, MolecState state, float size=-1, List[float] color=[])}\\
+Like \ttt{smolSetMoleculeStyle}, but as a rule, which is equivalent to the \ttt{display\_size\_rule} and \ttt{color\_rule} statements. Rules apply to all species that match the species pattern \ttt{species}, which may include wildcards, including species that are generated later by rule expansion (see \ttt{smolExpandRules}). The state is entered separately in \ttt{state}, so the pattern should not include a state. Here, \ttt{color} needs 4 values (red, green, blue, and alpha); the Python version also accepts 3 values, with alpha set to 1.
+
 \end{description}
 
 
@@ -4893,6 +5136,13 @@ Sets the file path for text output files to \ttt{path}.
 C/C++: \ttt{enum ErrorCode smolAddOutputFile(simptr sim, char *filename, int suffix, int append)}\\
 Python: \ttt{ErrorCode addOutputFile(string filename, int suffix, int append)}\\
 Declares the file called \ttt{filename} as a file for output by one or more runtime commands. Note that spaces are not permitted in the file name. If \ttt{suffix} is non-negative, then the file name is suffixed by this integer, which can be helpful for creating output file stacks. Enter \ttt{append} as 1 if any current file should simply be appended, or to 0 if any current file should be overwritten.
+
+\item[SetOutputFormat]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetOutputFormat(simptr sim, const char *format, int precision)}\\
+Python: \ttt{ErrorCode setOutputFormat(str format="", int precision=-1)}\\
+Python: $sim$.\ttt{setOutputFormat(format=None, precision=None)}\\
+Sets the format of output files written by runtime commands, which is equivalent to the \ttt{output\_format} and \ttt{output\_precision} statements. Enter \ttt{format} as ``ssv'' for space-separated values or ``csv'' for comma-separated values, or as \ttt{NULL} or an empty string to not change it. Enter \ttt{precision} as the number of significant digits for numbers in output files, or as a negative number to not change it.
 
 \item[AddOutputData]
 \hfill \\
@@ -5033,6 +5283,20 @@ bound state&"&"&bound&\emph{no change}\\
 impossible&"&bound'&any&\emph{nonsense}\\
 \end{longtable}
 
+\item[SetSurfaceActionRule]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetSurfaceActionRule(simptr sim, const char *surface, enum PanelFace face, const char *species, enum MolecState state, enum SrfAction action)}\\
+Python: \ttt{ErrorCode setSurfaceActionRule(str surface, PanelFace face, str species, MolecState state, SrfAction action)}\\
+Python: \textit{surface}\ttt{.setActionRule(face, pattern, action, state="soln")}\\
+Like \ttt{smolSetSurfaceAction}, but as a rule, which is equivalent to the \ttt{action\_rule} statement. Rules apply to all species that match the species pattern \ttt{species}, which may include wildcards, including species that are generated later by rule expansion (see \ttt{smolExpandRules}). The state is entered separately in \ttt{state}, so the pattern should not include a state. \ttt{surface} may be ``all''.
+
+\item[SetSurfaceRateRule]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetSurfaceRateRule(simptr sim, const char *surface, const char *species, enum MolecState state, enum MolecState state1, enum MolecState state2, double rate, const char *newspecies, int isinternal)}\\
+Python: \ttt{ErrorCode setSurfaceRateRule(str surface, str species, MolecState state, MolecState state1, MolecState state2, float rate, str newspecies, int isinternal)}\\
+Python: \textit{surface}\ttt{.setRateRule(pattern, state1, state2, rate, state="soln", new\_species=None, isinternal=False)}\\
+Like \ttt{smolSetSurfaceRate}, but as a rule, which is equivalent to the \ttt{rate\_rule} and \ttt{rate\_internal\_rule} statements. Rules apply to all species that match the species pattern \ttt{species}, which may include wildcards, including species that are generated later by rule expansion (see \ttt{smolExpandRules}). The state is entered separately in \ttt{state}, so the pattern should not include a state. \ttt{surface} may be ``all''. If \ttt{isinternal} is 0, \ttt{rate} can also be -1 for the maximum rate.
+
 \item[AddPanel]
 \hfill \\
 C/C++: \ttt{int smolAddPanel(simptr sim, char *surface, enum PanelShape panelshape, char *panel, char *axisstring, double *params)}\\
@@ -5079,6 +5343,13 @@ Adds information about a point molecular source so that face \ttt{face} of surfa
 C/C++: \ttt{enum ErrorCode smolSetSurfaceSimParams(simptr sim, const char *parameter, double value)}\\
 Python: \ttt{ErrorCode setSurfaceSimParams(str parameter, float value)}\\
 Sets the surface simulation parameter named with \ttt{parameter} to value \ttt{value}. The possible parameters are ``epsilon", ``margin", and ``neighbordist". In all cases, the defaults are nearly always good, although this function allows them to be modified if desired. Epsilon is the maximum distance away from a surface that Smoldyn is allowed to place a surface-bound molecule. Margin is the distance inside from the edge of a surface panel that Smoldyn will place surface-bound molecules that hop onto this panel. Neighbor distance is the maximum distance over which surface-bound molecules are allowed to hop to transition from one panel to a neighboring panel.
+
+\item[SetSurfaceNeighborAction]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetSurfaceNeighborAction(simptr sim, const char *surface, int hop)}\\
+Python: \ttt{ErrorCode setSurfaceNeighborAction(str surface, bool hop)}\\
+Python: \textit{surface}\ttt{.setNeighborAction(action)}\\
+Sets what surface-bound molecules on surface \ttt{surface} (which may be ``all'') do when they collide with a panel that is a neighbor of their own panel, which is equivalent to the \ttt{neighbor\_action} statement. Enter \ttt{hop} as 0 (the default) for molecules to ignore the neighboring panel and diffuse through it, or as 1 for them to hop onto it with 50\% probability. In Python, \ttt{action} is ``stay'' or ``hop''.
 
 \item[AddPanelNeighbor]
 \hfill \\
@@ -5162,6 +5433,60 @@ Sets the reaction product parameters for reaction \ttt{reaction}. At a minimum, 
 \end{longtable}
 
 If \ttt{method} is \ttt{RPbounce}, then a negative number for the \ttt{parameter} indicates default bounce behavior, which is that molecules are separated by an amount that is equal to their previous overlap.
+
+\item[AddReactionRule]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolAddReactionRule(simptr sim, const char *rule, const char *reactant1, enum MolecState rstate1, const char *reactant2, enum MolecState rstate2, int nproduct, const char **productspecies, enum MolecState *productstates, double rate, const char *compartment, const char *surface)}\\
+Python: \ttt{ErrorCode addReactionRule(str rule, str reactant1, MolecState rstate1, str reactant2, MolecState rstate2, List[str] productspecies, List[MolecState] productstates, float rate, str compartment, str surface)}\\
+Adds a reaction rule called \ttt{rule}, which is equivalent to the \ttt{reaction\_rule} statement. The parameters are the same as for \ttt{smolAddReaction}, except that the reactant and product species can include wildcards and other species patterns, and reactant states can be \ttt{MSall}. To limit the rule to a compartment or surface, enter its name in \ttt{compartment} or \ttt{surface}; otherwise, enter \ttt{NULL} or an empty string. Enter \ttt{rate} as a negative number to leave the rate unset. Use \ttt{smolExpandRules} to generate reactions from the rule.
+
+\item[SetReactionSimParams]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetReactionSimParams(simptr sim, const char *reaction, const char *parameter, double value)}\\
+Python: \ttt{ErrorCode setReactionSimParams(str reaction, str parameter, float value)}\\
+Sets the parameter \ttt{parameter} of the reaction called \ttt{reaction} to \ttt{value}. As with the equivalent statements, \ttt{reaction} can be a reaction name, or a reaction rule name, in which case the value is applied to the rule and to reactions that have already been generated from it. The options for \ttt{parameter} are listed below.
+
+\begin{longtable}[c]{ll}
+\ttt{parameter} & equivalent statement\\
+\hline
+\ttt{rate} & \ttt{reaction\_rate}\\
+\ttt{multiplicity} & \ttt{reaction\_multiplicity}\\
+\ttt{confspread\_radius} & \ttt{confspread\_radius}\\
+\ttt{binding\_radius} & \ttt{binding\_radius}\\
+\ttt{probability} & \ttt{reaction\_probability}\\
+\ttt{chi} & \ttt{reaction\_chi}\\
+\ttt{production} & \ttt{reaction\_production}\\
+\end{longtable}
+
+\item[SetReactionPermit]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetReactionPermit(simptr sim, const char *reaction, enum MolecState *states, int permit)}\\
+Python: \ttt{ErrorCode setReactionPermit(str reaction, List[MolecState] states, bool permit)}\\
+Permits (\ttt{permit} = 1) or forbids (\ttt{permit} = 0) the reaction called \ttt{reaction} for the reactant states listed in \ttt{states}, which needs one entry for each reactant. Entries can be \ttt{MSall}. This is equivalent to the \ttt{reaction\_permit} and \ttt{reaction\_forbid} statements, and is not allowed for zeroth order reactions.
+
+\item[SetReactionSerialnum]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetReactionSerialnum(simptr sim, const char *reaction, const char **codes)}\\
+Python: \ttt{ErrorCode setReactionSerialnum(str reaction, List[str] codes)}\\
+Sets the serial number rules for the products of reaction \ttt{reaction}, which is equivalent to the \ttt{reaction\_serialnum} statement. \ttt{codes} needs one string for each product, with the same codes used in that statement, such as ``r1'', ``p2'', ``new'', or ``r1.new''.
+
+\item[SetReactionRepresentation]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetReactionRepresentation(simptr sim, const char *reaction, const enum SpeciesRepresentation *rctrep, const enum SpeciesRepresentation *prdrep)}\\
+Python: \ttt{ErrorCode setReactionRepresentation(str reaction, List[SpeciesRepresentation] rctrep, List[SpeciesRepresentation] prdrep)}\\
+Sets the particle or lattice representations of the reactants and products of reaction \ttt{reaction}, which is equivalent to the \ttt{reaction\_representation} statement. \ttt{rctrep} needs one entry for each reactant, each of which is \ttt{SRparticle}, \ttt{SRlattice}, or \ttt{SRboth}. \ttt{prdrep} needs one entry for each product, each of which is \ttt{SRparticle} or \ttt{SRlattice}.
+
+\item[SetReactionLog]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetReactionLog(simptr sim, const char *filename, const char *reaction, int nserial, const long int *serialnums, int turnon)}\\
+Python: \ttt{ErrorCode setReactionLog(str filename, str reaction, List[int] serialnums, bool turnon)}\\
+Turns reaction logging on (\ttt{turnon} = 1) or off (\ttt{turnon} = 0), which is equivalent to the \ttt{reaction\_log} and \ttt{reaction\_log\_off} statements. To turn logging on, \ttt{filename} is the name of the output file, which must also be declared with \ttt{smolAddOutputFile}; \ttt{filename} is ignored when turning logging off. Enter \ttt{reaction} as a reaction or reaction rule name, or as ``all'', the empty string, or \ttt{NULL} for all current reactions. To log only reactions that involve specific molecules, list their serial numbers in \ttt{serialnums} and the number of them in \ttt{nserial}; otherwise, enter \ttt{nserial} as 0 for all molecules.
+
+\item[ExpandRules]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolExpandRules(simptr sim, int iterations)}\\
+Python: \ttt{ErrorCode expandRules(int iterations)}\\
+Expands rules to generate species and reactions, which is equivalent to the \ttt{expand\_rules} statement. Enter \ttt{iterations} as the number of expansion iterations, as -1 to expand rules completely, or as -2 for on-the-fly expansion.
 
 \end{description}
 
@@ -5298,6 +5623,62 @@ Not all particle-based Smoldyn species are necessarily listed in a lattice porti
 C/C++: \ttt{enum ErrorCode smolAddLatticeReaction(simptr sim,const char *lattice, const char *reaction, const int move)}\\
 Python: \ttt{ErrorCode AddLatticeReaction(str lattice, str reaction, int move)}\\
 Not all particle-based Smoldyn reactions are necessarily listed in a lattice portion of space, so use this function to add reactions to the lattice region of space. Clearly, the lattice is \ttt{lattice} and the reaction being added is \ttt{reaction}.
+
+\item[AddLatticeSurface]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolAddLatticeSurface(simptr sim, const char *lattice, const char *surface)}\\
+Python: \ttt{ErrorCode addLatticeSurface(str lattice, str surface)}\\
+Adds surface \ttt{surface} (which may be ``all'') to lattice \ttt{lattice}, so that the lattice accounts for it, which is equivalent to the \ttt{surfaces} statement in a lattice block.
+
+\item[SetLatticeMakeParticle]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetLatticeMakeParticle(simptr sim, const char *lattice, enum PanelFace face, const char *species, int makeparticle)}\\
+Python: \ttt{ErrorCode setLatticeMakeParticle(str lattice, PanelFace face, str species, bool makeparticle=True)}\\
+Sets whether molecules of species \ttt{species} (which may be ``all'') that leave lattice \ttt{lattice} through face \ttt{face} of its port (\ttt{PFfront}, \ttt{PFback}, or \ttt{PFboth}) become particles (\ttt{makeparticle} = 1) or stay on the lattice (\ttt{makeparticle} = 0), which is equivalent to the \ttt{make\_particle} statement in a lattice block. The species need to have been added to the lattice with \ttt{smolAddLatticeSpecies} first. There is no function for the lattice \ttt{type} statement because NSV, which \ttt{smolAddLattice} uses, is the only lattice type that is currently implemented.
+
+\end{description}
+
+% Section: BioNetGen
+\section{BioNetGen}
+
+These functions are equivalent to the statements in a \ttt{start\_bng} block. Define the Smoldyn species for the monomers first, then create the BioNetGen structure, set its monomer properties, and finally expand the rules or load a network file that BioNetGen generated earlier.
+
+\begin{description}
+
+\item[AddBNG]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolAddBNG(simptr sim, const char *bng)}\\
+Python: \ttt{ErrorCode addBNG(str bng)}\\
+Python: $bng$=$sim$.\ttt{addBNG(name)}\\
+Adds a BioNetGen structure named \ttt{bng}, which is equivalent to starting a \ttt{start\_bng} block with this name.
+
+\item[SetBNGMultiply]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetBNGMultiply(simptr sim, const char *bng, const char *parameter, double amount)}\\
+Python: \ttt{ErrorCode setBNGMultiply(str bng, str parameter, float amount)}\\
+Python: $bng$.\ttt{multiply(unimolecular\_rate=None, bimolecular\_rate=None)}\\
+Multiplies the BioNetGen rate constants named with \ttt{parameter} (``unimolecular\_rate'' or ``bimolecular\_rate'') by \ttt{amount}, which is equivalent to the \ttt{multiply} statement.
+
+\item[SetBNGMonomer]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetBNGMonomer(simptr sim, const char *bng, const char *monomer, enum MolecState state, double difc, double displaysize, double *color)}\\
+Python: \ttt{ErrorCode setBNGMonomer(str bng, str monomer, MolecState state=MSnone, float difc=-1, float displaysize=-1, List[float] color=[])}\\
+Python: $bng$.\ttt{setMonomer(monomer, state=None, difc=None, display\_size=None, color=None)}\\
+Declares monomer \ttt{monomer} and optionally sets its default state, diffusion coefficient, display size, and 3-value color, which is equivalent to the \ttt{monomer}, \ttt{monomer\_state}, \ttt{monomer\_difc}, \ttt{monomer\_display\_size}, and \ttt{monomer\_color} statements. Enter \ttt{monomer} as ``all'' to set properties of all monomers. To not set a property, enter \ttt{state} as \ttt{MSnone}, \ttt{difc} or \ttt{displaysize} as a negative number, or \ttt{color} as \ttt{NULL}.
+
+\item[ExpandBNGRules]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolExpandBNGRules(simptr sim, const char *bng, const char *filename, const char *BNG2path)}\\
+Python: \ttt{ErrorCode expandBNGRules(str bng, str filename, str BNG2path="")}\\
+Python: $bng$.\ttt{expandRules(filename, BNG2path=None)}\\
+Runs BioNetGen's BNG2.pl program on the BNGL file \ttt{filename}, and then loads the resulting network file, which is equivalent to the \ttt{BNG2\_path} and \ttt{expand\_rules} statements followed by reading the .net file. This requires perl and BioNetGen. Enter \ttt{BNG2path} as the path to BNG2.pl, or as \ttt{NULL} or an empty string to use the default path. File names are relative to the current directory.
+
+\item[LoadBNGNetFile]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolLoadBNGNetFile(simptr sim, const char *bng, const char *filename)}\\
+Python: \ttt{ErrorCode loadBNGNetFile(str bng, str filename)}\\
+Python: $bng$.\ttt{loadNetFile(filename)}\\
+Loads the BioNetGen network file \ttt{filename}, which BioNetGen generated earlier, which is equivalent to reading the .net file within a \ttt{start\_bng} block. This adds the network's species and reactions to the simulation and does not require BioNetGen. The file name is relative to the current directory.
 
 \end{description}
 

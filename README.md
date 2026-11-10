@@ -66,3 +66,5 @@ enable developers to collaborate on the code for Smoldyn.
 New contributions to the code are welcome. To maximize the impact of
 contributions to Smoldyn, please contact the main author to discuss
 potential additions. Steve can be reached at steven.s.andrews@gmail.com.
+
+For this exploratory branch's optional filament extensions and current upstream compatibility, see [the integration report](UPSTREAM_INTEGRATION_2026-11-10.md).

@@ -517,7 +517,7 @@ void writesim(simptr sim,FILE *fptr) {
 	fprintf(fptr,"accuracy %g\n",sim->accur);
 	if(sim->boxs->mpbox) fprintf(fptr,"molperbox %g\n",sim->boxs->mpbox);
 	else if(sim->boxs->boxsize) fprintf(fptr,"boxsize %g\n",sim->boxs->boxsize);
-	if(sim->filss && sim->filss->ntype) fprintf(fptr,"filament_box_density %g\n",sim->boxs->filamentdensity);
+	if(sim->filss && sim->filss->ntype && (sim->boxs->filamentdensityset || filStericEnabled(sim) || filImplicitEnabled(sim))) fprintf(fptr,"filament_box_density %g\n",sim->boxs->filamentdensity);
 	if(sim->filss) fprintf(fptr,"filament_workers %i\n",sim->filss->workers);
 	fprintf(fptr,"\n");
 	return; }
@@ -629,7 +629,7 @@ int simsettime(simptr sim,double time,int code) {
 int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 	char nm[STRCHAR],nm1[STRCHAR],shapenm[STRCHAR],ch,rname[STRCHAR],fname[STRCHAR],pattern[STRCHAR];
 	char str1[STRCHAR],str2[STRCHAR],str3[STRCHAR],str4[STRCHAR],str5[STRCHAR],str6[STRCHAR];
-	char errstr[STRCHARLONG];
+	char errstr[STRCHARLONG],*chptr;
 	int er,i,nmol,d,i1,s,c,ll,order,*index,ft;
 	int rulelist[MAXORDER+MAXPRODUCT],r,ord,rct,prd,itct,prt,lt,detailsi[8];
 	long int pserno,sernolist[MAXPRODUCT];
@@ -1017,8 +1017,8 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 			else {
 				itct=sscanf(line2,"%lg-%lg",&flt1,&flt2);
 				if(itct==2) {
-					poslo[d]=flt1;
-					poshi[d]=flt2; }
+					poslo[d]=strunits(NULL,"L",flt1,NULL,"convert");		// convert range from default to working units
+					poshi[d]=strunits(NULL,"L",flt2,NULL,"convert"); }
 				else {
 					itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);
 					CHECKM(itct==1,"cannot read position value for mol. ");
@@ -1243,7 +1243,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(er!=4,"color name not recognized");
 		CHECKS(er!=6,"alpha values need to be between 0 and 1");
 		CHECKS(er==0,"format is either 3 numbers or color name, and then optional alpha value");
-		er=graphicssetbackcolor(sim,v2);
+		er=graphicssettextcolor(sim,v2);
 		CHECKS(er!=1,"out of memory enabling graphics");
 		CHECKS(er!=2,"BUG: missing parameter");
 		CHECKS(er!=3,"text_color values need to be between 0 and 1");
@@ -1277,10 +1277,16 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		if(ltparam==LPon || ltparam==LPoff || ltparam==LPauto) v2[0]=0;
 		else if(ltparam==LPambient || ltparam==LPdiffuse || ltparam==LPspecular) {
 			CHECKS(line2,"light format: light_number parameter values");
-			itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&v2[0],&v2[1],&v2[2]);
-			CHECKM(itct==3,"light is missing one or more values. ");
+			itct=sscanf(line2,"%s",nm);
+			CHECKS(itct==1,"light is missing one or more values");
+			chptr=nm;
+			if(graphicsreadcolor(&chptr,v2)==0)				// color name
+				line2=strnword(line2,2);
+			else {																	// numbers
+				itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&v2[0],&v2[1],&v2[2]);
+				CHECKM(itct==3,"light is missing one or more values. ");
+				line2=strnword(line2,4); }
 			v2[3]=1;
-			line2=strnword(line2,4);
 			if(line2) {
 				itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&v2[3]);
 				CHECKM(itct==1,"failed to read alpha light value. ");
@@ -1594,6 +1600,21 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		if(!fil) pfp=NULL;
 		CHECK(fil!=NULL); }
 
+	else if(!strcmp(word,"remove_filament")) {		// remove_filament
+		CHECKS(sim->filss,"need to enter a filament type before remove_filament");
+		itct=sscanf(line2,"%s",nm);
+		CHECKS(itct==1,"remove_filament format: type:name");
+		filtype=NULL;
+		fil=NULL;
+		er=filReadFilName(sim,nm,&filtype,&fil,NULL);
+		CHECKS(er!=-1 && er!=-3,"cannot read filament name");
+		CHECKS(er!=-2,"no filaments have been defined");
+		CHECKS(er!=-4,"unknown filament type");
+		CHECKS(er!=-5,"unknown filament name");
+		er=filRemoveFilament(fil);
+		CHECKS(!er,"BUG: filament is not in its type's list");
+		CHECKS(!strnword(line2,2),"unexpected text following remove_filament"); }
+
 	else if(!strcmp(word,"random_filament")) {		// random_filament
 		CHECKS(sim->filss,"need to enter a filament type before random_filament");
 		itct=sscanf(line2,"%s",nm);
@@ -1635,7 +1656,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 			sprintf(str6,"%i",0); }
 		thick=1;
 		if(line2) {
-			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
+			itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&thick);
 			CHECKM(itct==1,"random_segments format: type:name number [x y z phi theta psi] [thickness]. ");
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2); }
@@ -2690,6 +2711,9 @@ int simulatetimestep(simptr sim) {
 	SMOL_PROFILE_RUN(SP_FILAMENT,er=filDynamics(sim));
 	if(er) return 11;
 
+	er=surfmovebyforces(sim);												// move mobile surfaces from the forces on them
+	if(er) return 10;
+
 #ifdef ENABLE_PYTHON_CALLBACK
         for(unsigned int i = 0; i < sim->ncallbacks; i++) {
             auto callback = sim->callbacks[i];
@@ -2729,6 +2753,7 @@ void endsimulate(simptr sim,int er) {
 	else if(er==7) simLog(sim,5,"Simulation stopped by a runtime command\n");
 	else if(er==8) simLog(sim,5,"Simulation terminated during simulation state updating\n  Out of memory\n");
 	else if(er==9) simLog(sim,5,"Simulation terminated during diffusion\n  Out of memory\n");
+	else if(er==10) simLog(sim,5,"Simulation terminated during surface motion\n  Out of memory\n");
 	else if(er==11) simLog(sim,5,"Simulation terminated during filament dynamics\n");
 	else if(er==12) simLog(sim,5,"Simulation terminated during lattice simulation\n");
 	else if(er==13) simLog(sim,5,"Simulation terminated during reaction network expansion\n");

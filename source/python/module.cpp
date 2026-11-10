@@ -522,6 +522,32 @@ PYBIND11_MODULE(_smoldyn, m)
             return smolSetPartitions(sim.getSimPtr(), method, value);
         })
 
+      // enum ErrorCode smolSetVariable(simptr sim, const char *name, double
+      // value);
+      .def("setVariable",
+        [](Simulation& sim, const char* name, double value) {
+            return smolSetVariable(sim.getSimPtr(), name, value);
+        })
+
+      // enum ErrorCode smolGetVariable(simptr sim, const char *name, double
+      // *value);
+      .def("getVariable",
+        [](Simulation& sim, const char* name) {
+            double value = 0.0;
+            auto rc = smolGetVariable(sim.getSimPtr(), name, &value);
+            if (rc != ErrorCode::ECok)
+                throw std::runtime_error(string("getVariable failed for '") +
+                                         name + "'");
+            return value;
+        })
+
+      // enum ErrorCode smolSetSimParams(simptr sim, const char *parameter,
+      //     double value);
+      .def("setSimParams",
+        [](Simulation& sim, const char* parameter, double value) {
+            return smolSetSimParams(sim.getSimPtr(), parameter, value);
+        })
+
       /*********************************
        *  Graphics related functions.  *
        *********************************/
@@ -643,6 +669,16 @@ PYBIND11_MODULE(_smoldyn, m)
             return smolAddOutputFile(sim.getSimPtr(), filename, suffix, append);
         })
 
+      // enum ErrorCode smolSetOutputFormat(simptr sim, const char *format,
+      //     int precision);
+      .def(
+        "setOutputFormat",
+        [](Simulation& sim, const char* format, int precision) {
+            return smolSetOutputFormat(sim.getSimPtr(), format, precision);
+        },
+        "format"_a = "",
+        "precision"_a = -1)
+
       /****************
        * Commands *
        ****************/
@@ -729,7 +765,117 @@ PYBIND11_MODULE(_smoldyn, m)
         "drift"_a = std::vector<double>(),
         "difmatrix"_a = std::vector<double>())
 
-      //?? needs function smolSetSpeciesSurfaceDrift
+      // enum ErrorCode smolSetSpeciesSurfaceDrift(simptr sim, const char
+      //     *species, enum MolecState state, const char *surface, enum
+      //     PanelShape panelshape, double *drift);
+      .def(
+        "setSpeciesSurfaceDrift",
+        [](Simulation& sim,
+          const char* species,
+          MolecState state,
+          const char* surface,
+          PanelShape panelshape,
+          vector<double>& drift) {
+            const auto dim = static_cast<size_t>(sim.getSimPtr()->dim);
+            if(dim < 2 || drift.size() != dim - 1)
+              throw py::value_error("drift must contain dim-1 values");
+            return smolSetSpeciesSurfaceDrift(
+              sim.getSimPtr(), species, state, surface, panelshape, drift.data());
+        },
+        "species"_a,
+        "state"_a,
+        "surface"_a,
+        "panelshape"_a,
+        "drift"_a)
+
+      // enum ErrorCode smolAddSpeciesGroup(simptr sim, const char *group,
+      //     const char *species);
+      .def(
+        "addSpeciesGroup",
+        [](Simulation& sim, const char* group, const char* species) {
+            return smolAddSpeciesGroup(sim.getSimPtr(), group, species);
+        },
+        "group"_a,
+        "species"_a = "")
+
+      // enum ErrorCode smolSetSpeciesMobilityRule(simptr sim, const char
+      //     *species, enum MolecState state, double difc, double *drift,
+      //     double *difmatrix);
+      .def(
+        "setSpeciesMobilityRule",
+        [](Simulation& sim,
+          const char* species,
+          MolecState state,
+          double difc,
+          vector<double>& drift,
+          vector<double>& difmatrix) {
+            const auto dim = static_cast<size_t>(sim.getSimPtr()->dim);
+            if(!drift.empty() && drift.size()!=dim)
+              throw py::value_error("drift must contain one value per simulation dimension");
+            if(!difmatrix.empty() && difmatrix.size()!=dim*dim)
+              throw py::value_error("difmatrix must contain dim*dim values");
+            return smolSetSpeciesMobilityRule(
+              sim.getSimPtr(), species, state, difc,
+              drift.empty() ? nullptr : drift.data(),
+              difmatrix.empty() ? nullptr : difmatrix.data());
+        },
+        "species"_a,
+        "state"_a,
+        "diffConst"_a,
+        "drift"_a = std::vector<double>(),
+        "difmatrix"_a = std::vector<double>())
+
+      // enum ErrorCode smolSetSpeciesSurfaceDriftRule(simptr sim, const char
+      //     *species, enum MolecState state, const char *surface, enum
+      //     PanelShape panelshape, double *drift);
+      .def(
+        "setSpeciesSurfaceDriftRule",
+        [](Simulation& sim,
+          const char* species,
+          MolecState state,
+          const char* surface,
+          PanelShape panelshape,
+          vector<double>& drift) {
+            const auto dim = static_cast<size_t>(sim.getSimPtr()->dim);
+            if(dim < 2 || drift.size() != dim - 1)
+              throw py::value_error("drift must contain dim-1 values");
+            return smolSetSpeciesSurfaceDriftRule(
+              sim.getSimPtr(), species, state, surface, panelshape, drift.data());
+        },
+        "species"_a,
+        "state"_a,
+        "surface"_a,
+        "panelshape"_a,
+        "drift"_a)
+
+      // enum ErrorCode smolSetMolListRule(simptr sim, const char *species,
+      //     enum MolecState state, const char *mollist);
+      .def("setMolListRule",
+        [](Simulation& sim, const char* species, MolecState state, const char* mollist) {
+            return smolSetMolListRule(sim.getSimPtr(), species, state, mollist);
+        })
+
+      // enum ErrorCode smolSetMoleculeStyleRule(simptr sim, const char
+      //     *species, enum MolecState state, double size, double *color);
+      .def(
+        "setMoleculeStyleRule",
+        [](Simulation& sim,
+          const char* species,
+          MolecState state,
+          double size,
+          vector<double>& color) {
+            if(!color.empty() && color.size()!=3 && color.size()!=4)
+              throw py::value_error("color must contain 3 or 4 values (rgb or rgba)");
+            if(color.size()==3)
+              color.push_back(1.0);
+            return smolSetMoleculeStyleRule(sim.getSimPtr(), species, state, size,
+              color.empty() ? nullptr : color.data());
+        },
+        "species"_a,
+        "state"_a,
+        "size"_a = -1.0,
+        "color"_a = std::vector<double>())
+
       // enum ErrorCode smolAddMolList(simptr sim, const char *mollist);
       .def("addMolList",
         [](Simulation& sim, const char* mollist) {
@@ -950,6 +1096,38 @@ PYBIND11_MODULE(_smoldyn, m)
               newspecies,
               isinternal);
         })
+
+      // enum ErrorCode smolSetSurfaceActionRule(simptr sim, const char
+      //     *surface, enum PanelFace face, const char *species, enum
+      //     MolecState state, enum SrfAction action);
+      .def("setSurfaceActionRule",
+        [](Simulation& sim,
+          const char* surface,
+          PanelFace face,
+          const char* species,
+          MolecState state,
+          SrfAction action) {
+            return smolSetSurfaceActionRule(
+              sim.getSimPtr(), surface, face, species, state, action);
+        })
+
+      // enum ErrorCode smolSetSurfaceRateRule(simptr sim, const char
+      //     *surface, const char *species, enum MolecState state, enum
+      //     MolecState state1, enum MolecState state2, double rate, const
+      //     char *newspecies, int isinternal);
+      .def("setSurfaceRateRule",
+        [](Simulation& sim,
+          const char* surface,
+          const char* species,
+          MolecState state,
+          MolecState state1,
+          MolecState state2,
+          double rate,
+          const char* newspecies,
+          bool isinternal) {
+            return smolSetSurfaceRateRule(sim.getSimPtr(), surface, species, state,
+              state1, state2, rate, newspecies, isinternal);
+        })
       // enum ErrorCode smolAddPanel(simptr sim, const char *surface,
       //     enum PanelShape panelshape, const char *panel, const char
       //     *axisstring, double *params);
@@ -1026,6 +1204,13 @@ PYBIND11_MODULE(_smoldyn, m)
       .def("setSurfaceSimParams",
         [](Simulation& sim, const char* parameter, double value) {
             return smolSetSurfaceSimParams(sim.getSimPtr(), parameter, value);
+        })
+
+      // enum ErrorCode smolSetSurfaceNeighborAction(simptr sim, const char
+      //     *surface, int hop);
+      .def("setSurfaceNeighborAction",
+        [](Simulation& sim, const char* surface, bool hop) {
+            return smolSetSurfaceNeighborAction(sim.getSimPtr(), surface, hop ? 1 : 0);
         })
 
       // enum ErrorCode smolAddPanelNeighbor(simptr sim, const char *surface1,
@@ -1259,6 +1444,96 @@ PYBIND11_MODULE(_smoldyn, m)
             return smolSetReactionIntersurface(sim.getSimPtr(), reaction, &rules[0]);
         })
 
+      // enum ErrorCode smolAddReactionRule(simptr sim, const char *rule,
+      //     const char *reactant1, enum MolecState rstate1, const char
+      //     *reactant2, enum MolecState rstate2, int nproduct, const char
+      //     **productspecies, enum MolecState *productstates, double rate,
+      //     const char *compartment, const char *surface);
+      .def("addReactionRule",
+        [](Simulation& sim,
+          const char* rule,
+          const char* reactant1,
+          MolecState rstate1,
+          const char* reactant2,
+          MolecState rstate2,
+          vector<string>& productSpeciesStr,
+          vector<MolecState>& productStates,
+          double rate,
+          const char* compartment,
+          const char* surface) {
+            size_t nprd = productStates.size();
+            if (nprd >= MAXPRODUCT || productSpeciesStr.size() != nprd) {
+                py::print("productSpecies and productStates need the same length, less than ", MAXPRODUCT);
+                return ErrorCode::ECbounds;
+            }
+            vector<const char*> productSpecies(nprd);
+            for (size_t i = 0; i < nprd; i++)
+                productSpecies[i] = productSpeciesStr[i].c_str();
+            return smolAddReactionRule(sim.getSimPtr(), rule, reactant1, rstate1,
+              reactant2, rstate2, (int)nprd, nprd ? &productSpecies[0] : nullptr,
+              nprd ? &productStates[0] : nullptr, rate, compartment, surface);
+        })
+
+      // enum ErrorCode smolSetReactionSimParams(simptr sim, const char
+      //     *reaction, const char *parameter, double value);
+      .def("setReactionSimParams",
+        [](Simulation& sim, const char* reaction, const char* parameter, double value) {
+            return smolSetReactionSimParams(sim.getSimPtr(), reaction, parameter, value);
+        })
+
+      // enum ErrorCode smolSetReactionPermit(simptr sim, const char
+      //     *reaction, enum MolecState *states, int permit);
+      .def("setReactionPermit",
+        [](Simulation& sim, const char* reaction, vector<MolecState>& states, bool permit) {
+            if (states.empty())
+                return ErrorCode::ECmissing;
+            return smolSetReactionPermit(sim.getSimPtr(), reaction, &states[0], permit ? 1 : 0);
+        })
+
+      // enum ErrorCode smolSetReactionSerialnum(simptr sim, const char
+      //     *reaction, const char **codes);
+      .def("setReactionSerialnum",
+        [](Simulation& sim, const char* reaction, vector<string>& codesStr) {
+            vector<const char*> codes(codesStr.size());
+            for (size_t i = 0; i < codesStr.size(); i++)
+                codes[i] = codesStr[i].c_str();
+            return smolSetReactionSerialnum(
+              sim.getSimPtr(), reaction, codes.empty() ? nullptr : &codes[0]);
+        })
+
+      // enum ErrorCode smolSetReactionRepresentation(simptr sim, const char
+      //     *reaction, const enum SpeciesRepresentation *rctrep, const enum
+      //     SpeciesRepresentation *prdrep);
+      .def("setReactionRepresentation",
+        [](Simulation& sim,
+          const char* reaction,
+          vector<SpeciesRepresentation>& rctrep,
+          vector<SpeciesRepresentation>& prdrep) {
+            return smolSetReactionRepresentation(sim.getSimPtr(), reaction,
+              rctrep.empty() ? nullptr : &rctrep[0],
+              prdrep.empty() ? nullptr : &prdrep[0]);
+        })
+
+      // enum ErrorCode smolSetReactionLog(simptr sim, const char *filename,
+      //     const char *reaction, int nserial, const long int *serialnums,
+      //     int turnon);
+      .def("setReactionLog",
+        [](Simulation& sim,
+          const char* filename,
+          const char* reaction,
+          vector<long int>& serialnums,
+          bool turnon) {
+            return smolSetReactionLog(sim.getSimPtr(), filename, reaction,
+              (int)serialnums.size(), serialnums.empty() ? nullptr : &serialnums[0],
+              turnon ? 1 : 0);
+        })
+
+      // enum ErrorCode smolExpandRules(simptr sim, int iterations);
+      .def("expandRules",
+        [](Simulation& sim, int iterations) {
+            return smolExpandRules(sim.getSimPtr(), iterations);
+        })
+
       /***********
        *  Ports  *
        ***********/
@@ -1389,6 +1664,84 @@ PYBIND11_MODULE(_smoldyn, m)
         [](Simulation& sim, const char* lattice, const char* reaction, const int move) {
             return smolAddLatticeReaction(sim.getSimPtr(), lattice, reaction, move);
         })
+
+      // enum ErrorCode smolAddLatticeSurface(simptr sim, const char *lattice,
+      //     const char *surface);
+      .def("addLatticeSurface",
+        [](Simulation& sim, const char* lattice, const char* surface) {
+            return smolAddLatticeSurface(sim.getSimPtr(), lattice, surface);
+        })
+
+      // enum ErrorCode smolSetLatticeMakeParticle(simptr sim, const char
+      //     *lattice, enum PanelFace face, const char *species, int
+      //     makeparticle);
+      .def(
+        "setLatticeMakeParticle",
+        [](Simulation& sim, const char* lattice, PanelFace face, const char* species,
+          bool makeparticle) {
+            return smolSetLatticeMakeParticle(
+              sim.getSimPtr(), lattice, face, species, makeparticle ? 1 : 0);
+        },
+        "lattice"_a,
+        "face"_a,
+        "species"_a,
+        "makeparticle"_a = true)
+
+      /***************
+       *  BioNetGen  *
+       ***************/
+      // enum ErrorCode smolAddBNG(simptr sim, const char *bng);
+      .def("addBNG",
+        [](Simulation& sim, const char* bng) { return smolAddBNG(sim.getSimPtr(), bng); })
+
+      // enum ErrorCode smolSetBNGMultiply(simptr sim, const char *bng, const
+      //     char *parameter, double amount);
+      .def("setBNGMultiply",
+        [](Simulation& sim, const char* bng, const char* parameter, double amount) {
+            return smolSetBNGMultiply(sim.getSimPtr(), bng, parameter, amount);
+        })
+
+      // enum ErrorCode smolSetBNGMonomer(simptr sim, const char *bng, const
+      //     char *monomer, enum MolecState state, double difc, double
+      //     displaysize, double *color);
+      .def(
+        "setBNGMonomer",
+        [](Simulation& sim,
+          const char* bng,
+          const char* monomer,
+          MolecState state,
+          double difc,
+          double displaysize,
+          vector<double>& color) {
+            if(!color.empty() && color.size()!=3)
+              throw py::value_error("color must contain 3 values (rgb)");
+            return smolSetBNGMonomer(sim.getSimPtr(), bng, monomer, state, difc,
+              displaysize, color.empty() ? nullptr : color.data());
+        },
+        "bng"_a,
+        "monomer"_a,
+        "state"_a = MolecState::MSnone,
+        "difc"_a = -1.0,
+        "displaysize"_a = -1.0,
+        "color"_a = std::vector<double>())
+
+      // enum ErrorCode smolLoadBNGNetFile(simptr sim, const char *bng, const
+      //     char *filename);
+      .def("loadBNGNetFile",
+        [](Simulation& sim, const char* bng, const char* filename) {
+            return smolLoadBNGNetFile(sim.getSimPtr(), bng, filename);
+        })
+
+      // enum ErrorCode smolExpandBNGRules(simptr sim, const char *bng, const
+      //     char *filename, const char *BNG2path);
+      .def(
+        "expandBNGRules",
+        [](Simulation& sim, const char* bng, const char* filename, const char* BNG2path) {
+            return smolExpandBNGRules(sim.getSimPtr(), bng, filename, BNG2path);
+        },
+        "bng"_a,
+        "filename"_a,
+        "BNG2path"_a = "")
 
       .def("loadSimFromFile",
         [](Simulation& sim, const string& filepath, const char* flags) {

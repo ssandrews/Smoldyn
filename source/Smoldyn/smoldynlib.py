@@ -71,6 +71,35 @@ smolSetPartitions = smoldyn.smolSetPartitions
 smolSetPartitions.restype = c_int
 smolSetPartitions.argtypes = [c_void_p, c_char_p, c_double]
 
+smolSetVariable = smoldyn.smolSetVariable
+smolSetVariable.restype = c_int
+smolSetVariable.argtypes = [c_void_p, c_char_p, c_double]
+
+smolGetVariable = smoldyn.smolGetVariable
+smolGetVariable.restype = c_int
+smolGetVariable.argtypes = [c_void_p, c_char_p, c_void_p]
+
+smolSetSimParams = smoldyn.smolSetSimParams
+smolSetSimParams.restype = c_int
+smolSetSimParams.argtypes = [c_void_p, c_char_p, c_double]
+
+# Species groups and species rules
+smolAddSpeciesGroup = smoldyn.smolAddSpeciesGroup
+smolAddSpeciesGroup.restype = c_int
+smolAddSpeciesGroup.argtypes = [c_void_p, c_char_p, c_char_p]
+
+smolSetSpeciesMobilityRule = smoldyn.smolSetSpeciesMobilityRule
+smolSetSpeciesMobilityRule.restype = c_int
+smolSetSpeciesMobilityRule.argtypes = [c_void_p, c_char_p, c_int, c_double, c_void_p, c_void_p]
+
+smolSetMolListRule = smoldyn.smolSetMolListRule
+smolSetMolListRule.restype = c_int
+smolSetMolListRule.argtypes = [c_void_p, c_char_p, c_int, c_char_p]
+
+smolSetMoleculeStyleRule = smoldyn.smolSetMoleculeStyleRule
+smolSetMoleculeStyleRule.restype = c_int
+smolSetMoleculeStyleRule.argtypes = [c_void_p, c_char_p, c_int, c_double, c_void_p]
+
 # Runtime commands (Output values to file)
 smolSetOutputPath = smoldyn.smolSetOutputPath
 smolSetOutputPath.restype = c_int
@@ -79,6 +108,10 @@ smolSetOutputPath.argtypes = [c_void_p, c_char_p]
 smolAddOutputFile = smoldyn.smolAddOutputFile
 smolAddOutputFile.restype = c_int
 smolAddOutputFile.argtypes = [c_void_p, c_char_p, c_int, c_int]
+
+smolSetOutputFormat = smoldyn.smolSetOutputFormat
+smolSetOutputFormat.restype = c_int
+smolSetOutputFormat.argtypes = [c_void_p, c_char_p, c_int]
 
 smolAddCommand = smoldyn.smolAddCommand
 smolAddCommand.restype = c_int
@@ -147,6 +180,10 @@ smolSetSurfaceSimParams = smoldyn.smolSetSurfaceSimParams
 smolSetSurfaceSimParams.restype = c_int
 smolSetSurfaceSimParams.argtypes = [c_void_p, c_char_p, c_double]
 
+smolSetSurfaceNeighborAction = smoldyn.smolSetSurfaceNeighborAction
+smolSetSurfaceNeighborAction.restype = c_int
+smolSetSurfaceNeighborAction.argtypes = [c_void_p, c_char_p, c_int]
+
 smolAddPanelNeighbor = smoldyn.smolAddPanelNeighbor
 smolAddPanelNeighbor.restype = c_int
 smolAddPanelNeighbor.argtypes = [c_void_p, c_char_p, c_char_p, c_char_p, c_char_p, c_int]
@@ -154,6 +191,22 @@ smolAddPanelNeighbor.argtypes = [c_void_p, c_char_p, c_char_p, c_char_p, c_char_
 smolSetSurfaceStyle = smoldyn.smolSetSurfaceStyle
 smolSetSurfaceStyle.restype = c_int
 smolSetSurfaceStyle.argtypes = [c_void_p, c_char_p, c_int, c_int, c_double, c_void_p, c_int, c_int, c_double]
+
+smolSetSpeciesSurfaceDrift = smoldyn.smolSetSpeciesSurfaceDrift
+smolSetSpeciesSurfaceDrift.restype = c_int
+smolSetSpeciesSurfaceDrift.argtypes = [c_void_p, c_char_p, c_int, c_char_p, c_int, c_void_p]
+
+smolSetSurfaceActionRule = smoldyn.smolSetSurfaceActionRule
+smolSetSurfaceActionRule.restype = c_int
+smolSetSurfaceActionRule.argtypes = [c_void_p, c_char_p, c_int, c_char_p, c_int, c_int]
+
+smolSetSurfaceRateRule = smoldyn.smolSetSurfaceRateRule
+smolSetSurfaceRateRule.restype = c_int
+smolSetSurfaceRateRule.argtypes = [c_void_p, c_char_p, c_char_p, c_int, c_int, c_int, c_double, c_char_p, c_int]
+
+smolSetSpeciesSurfaceDriftRule = smoldyn.smolSetSpeciesSurfaceDriftRule
+smolSetSpeciesSurfaceDriftRule.restype = c_int
+smolSetSpeciesSurfaceDriftRule.argtypes = [c_void_p, c_char_p, c_int, c_char_p, c_int, c_void_p]
 
 
 # Compartments
@@ -214,6 +267,66 @@ smolSetReactionRegion.argtypes = [c_void_p, c_char_p, c_char_p, c_char_p]
 smolSetReactionProducts = smoldyn.smolSetReactionProducts
 smolSetReactionProducts.restype = c_int
 smolSetReactionProducts.argtypes = [c_void_p, c_char_p, c_int, c_double, c_char_p, c_void_p]
+
+smolAddReactionRule = smoldyn.smolAddReactionRule
+smolAddReactionRule.restype = c_int
+smolAddReactionRule.argtypes = [c_void_p, c_char_p, c_char_p, c_int, c_char_p, c_int, c_int, c_void_p, c_void_p, c_double, c_char_p, c_char_p]
+
+smolSetReactionSimParams = smoldyn.smolSetReactionSimParams
+smolSetReactionSimParams.restype = c_int
+smolSetReactionSimParams.argtypes = [c_void_p, c_char_p, c_char_p, c_double]
+
+smolSetReactionPermit = smoldyn.smolSetReactionPermit
+smolSetReactionPermit.restype = c_int
+smolSetReactionPermit.argtypes = [c_void_p, c_char_p, c_void_p, c_int]
+
+smolSetReactionSerialnum = smoldyn.smolSetReactionSerialnum
+smolSetReactionSerialnum.restype = c_int
+smolSetReactionSerialnum.argtypes = [c_void_p, c_char_p, c_void_p]
+
+smolSetReactionRepresentation = smoldyn.smolSetReactionRepresentation
+smolSetReactionRepresentation.restype = c_int
+smolSetReactionRepresentation.argtypes = [c_void_p, c_char_p, c_void_p, c_void_p]
+
+smolSetReactionLog = smoldyn.smolSetReactionLog
+smolSetReactionLog.restype = c_int
+smolSetReactionLog.argtypes = [c_void_p, c_char_p, c_char_p, c_int, c_void_p, c_int]
+
+smolExpandRules = smoldyn.smolExpandRules
+smolExpandRules.restype = c_int
+smolExpandRules.argtypes = [c_void_p, c_int]
+
+
+# Lattices
+smolAddLatticeSurface = smoldyn.smolAddLatticeSurface
+smolAddLatticeSurface.restype = c_int
+smolAddLatticeSurface.argtypes = [c_void_p, c_char_p, c_char_p]
+
+smolSetLatticeMakeParticle = smoldyn.smolSetLatticeMakeParticle
+smolSetLatticeMakeParticle.restype = c_int
+smolSetLatticeMakeParticle.argtypes = [c_void_p, c_char_p, c_int, c_char_p, c_int]
+
+
+# BioNetGen
+smolAddBNG = smoldyn.smolAddBNG
+smolAddBNG.restype = c_int
+smolAddBNG.argtypes = [c_void_p, c_char_p]
+
+smolSetBNGMultiply = smoldyn.smolSetBNGMultiply
+smolSetBNGMultiply.restype = c_int
+smolSetBNGMultiply.argtypes = [c_void_p, c_char_p, c_char_p, c_double]
+
+smolSetBNGMonomer = smoldyn.smolSetBNGMonomer
+smolSetBNGMonomer.restype = c_int
+smolSetBNGMonomer.argtypes = [c_void_p, c_char_p, c_char_p, c_int, c_double, c_double, c_void_p]
+
+smolLoadBNGNetFile = smoldyn.smolLoadBNGNetFile
+smolLoadBNGNetFile.restype = c_int
+smolLoadBNGNetFile.argtypes = [c_void_p, c_char_p, c_char_p]
+
+smolExpandBNGRules = smoldyn.smolExpandBNGRules
+smolExpandBNGRules.restype = c_int
+smolExpandBNGRules.argtypes = [c_void_p, c_char_p, c_char_p, c_char_p]
 
 
 # Bit of test code

@@ -1,7 +1,7 @@
 /* Optional banded filament preconditioner for coupled backward Euler. LGPL.
    Stretching and bending outer products follow Steven Andrews' analytic
-   filComputeDerivForceMat (upstream 2026-10-24). Adapted here to the older
-   local force conventions: no thickness multiplier, translational blocks only.
+   filComputeDerivForceMat and upstream thickness-scaled force conventions.
+   These are local translational blocks, not a full network Hessian.
    Relative material rolls retain the existing diagonal preconditioner.
    This approximation never changes forces, constraints, or acceptance tests. */
 #include <stdlib.h>
@@ -16,8 +16,6 @@
 #include <omp.h>
 #endif
 
-int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daughter,int dim,double *tm,double *td,double *lenm,double *lend,double *costh,double *sinth);
-int filBranchDazim(const filamentptr mother,int br,double *dphi);
 
 struct filamentprecondstruct {
  size_t capacity;
@@ -44,28 +42,18 @@ static void filPrecondRank(double *a,int width,const int *idx,const double *g,in
    diagonal assembly still gathers both partners. Cross-filament derivatives
    remain in the matrix-free operator. */
 static void filPrecondJunction(simptr sim,filamentptr fil,double *band,int width) {
- int dim=sim->dim,br,spot,d,idx[6];double tm[3],td[3],lm,ld,c,s,g[6],phi,bound;
- filamenttypeptr t=fil->filtype;filamentptr mother=fil->frontend,daughter;
- if(mother) for(br=0;br<mother->nbranch;br++) if(mother->branches[br]==fil) {
-  spot=mother->branchspots[br];
-  if(spot<0 || spot>=mother->nseg || !filJunctionGeometry(mother,spot,fil,dim,tm,td,&lm,&ld,&c,&s)) break;
-  for(d=0;d<2*dim;d++) idx[d]=d;
-  for(d=0;d<dim;d++) {g[d]=-(tm[d]-c*td[d])/(ld*s);g[dim+d]=-g[d];}
-  filPrecondRank(band,width,idx,g,2*dim,t->branchforceangle);
-  if(dim==3 && filBranchDazim(mother,br,&phi)) {
-   bound=fmax(s,0.1);
-   for(d=0;d<3;d++) {int b=(d+1)%3,a=(d+2)%3;g[d]=-(tm[b]*td[a]-tm[a]*td[b])/(ld*bound*bound);g[3+d]=-g[d];}
-   filPrecondRank(band,width,idx,g,6,t->branchforceazimuth);
-  }
-  break;
- }
- for(br=0;br<fil->nbranch;br++) {
-  daughter=fil->branches[br];spot=fil->branchspots[br];
-  if(!daughter || daughter->frontend!=fil || !daughter->nseg || spot<0 || spot>=fil->nseg ||
-      !filJunctionGeometry(fil,spot,daughter,dim,tm,td,&lm,&ld,&c,&s)) continue;
-  for(d=0;d<2*dim;d++) idx[d]=dim*spot+d;
-  for(d=0;d<dim;d++) {g[d]=-(td[d]-c*tm[d])/(lm*s);g[dim+d]=-g[d];}
-  filPrecondRank(band,width,idx,g,2*dim,t->branchforceangle);
+ int dim=sim->dim,j,d,ma,mb,lo,idx[6];double tm[3],td[3],lm,ld,c,s,g[6],kappa,theta,kaz,kj;
+ /* One block per upstream junction side; the cross-filament part stays in
+    the operator. Ordered node pairs keep the Cholesky band indexing valid. */
+ for(j=0;j<2+fil->njunct;j++) {
+  filjunctionptr joint=j<2?fil->endjunct[j]:fil->juncts[j-2];
+  if(!joint || !joint->fil->nseg || !joint->target->nseg ||
+     !filJunctionGeometry(joint,dim,tm,td,&lm,&ld,&c,&s,&ma,&mb)) continue;
+  filJunctionParams(joint,dim,&kappa,&theta,&kaz,&kj);
+  lo=j<2?(joint->end=='m'?0:fil->nseg-1):(ma<mb?ma:mb);
+  for(d=0;d<2*dim;d++) idx[d]=dim*lo+d;
+  for(d=0;d<dim;d++) {g[d]=j<2?-(tm[d]-c*td[d])/(ld*s):-(td[d]-c*tm[d])/(lm*s);g[dim+d]=-g[d];}
+  filPrecondRank(band,width,idx,g,2*dim,kappa);
  }
 }
 
@@ -82,10 +70,10 @@ static void filPrecondElastic(simptr sim,int f,struct filamentprecondstruct *p) 
   len=0;
   for(d=0;d<dim;d++) {u[d]=fil->nodes[j+1][d]-fil->nodes[j][d];len+=u[d]*u[d];}
   len=sqrt(len);for(d=0;d<dim;d++) u[d]/=len;
-  /* The local stretch force has no segment-thickness multiplier. Positive
-     transverse stiffness is retained in tension; omit it in compression. */
+  /* Use the upstream thickness-scaled axial stiffness. Positive transverse
+     stiffness is retained in tension; omit it in compression. */
   {double rest=type->elongmodel?filSegmentRestLength(fil,j):type->stdlen;
-   k=fmax(0,type->elongmodel?filSegmentStiffness(fil,j):type->klen);kperp=len>rest?k*(1-rest/len):0;}
+   k=fmax(0,filSegmentStiffness(fil,j));kperp=len>rest?k*(1-rest/len):0;}
   for(d=0;d<dim;d++) {idx[d]=dim*j+d;idx[dim+d]=dim*(j+1)+d;g[d]=-u[d];g[dim+d]=u[d];}
   filPrecondRank(band,width,idx,g,2*dim,k-kperp);
   for(a=0;a<dim;a++) {
@@ -103,22 +91,21 @@ static void filPrecondElastic(simptr sim,int f,struct filamentprecondstruct *p) 
   if(dim==2) {
    cm[0]=-xm[1]/lm2;cm[1]=xm[0]/lm2;cp3[0]=-xp[1]/lp2;cp3[1]=xp[0]/lp2;
    for(d=0;d<dim;d++) {g[d]=cm[d];g[dim+d]=-cm[d]-cp3[d];g[2*dim+d]=cp3[d];}
-   filPrecondRank(band,width,idx,g,6,type->kypr[0]);
+   filPrecondRank(band,width,idx,g,6,0.5*(fil->segments[j-1]->thk+fil->segments[j]->thk)*type->kypr[0]);
   } else {
    for(a=0;a<3;a++) {unit[0]=unit[1]=unit[2]=0;unit[a]=1;Sph_QtniRotate(fil->segments[j-1]->qabs,unit,e[a]);}
    cy=cos(fil->segments[j]->ypr[0]);sy=sin(fil->segments[j]->ypr[0]);
    cp=fmax(cos(fil->segments[j]->ypr[1]),0.05);sp=sin(fil->segments[j]->ypr[1]);
    for(a=0;a<2;a++) {
-    /* Upstream Euler-angle gradient outer products, used as a positive
-       local surrogate. The older local torque is not the upstream torque
-       at finite bends. No claim of an exact 3D Jacobian is made here. */
+    /* Upstream Euler-angle gradient outer products form a positive local
+       surrogate; the full force operator retains nonlinear corrections. */
     for(d=0;d<3;d++) wa[d]=a==0?e[2][d]+sp/cp*(cy*e[0][d]+sy*e[1][d]):-sy*e[0][d]+cy*e[1][d];
     for(d=0;d<3;d++) {
      int b=(d+1)%3,c=(d+2)%3;
      cm[d]=(wa[b]*xm[c]-wa[c]*xm[b])/lm2;cp3[d]=(wa[b]*xp[c]-wa[c]*xp[b])/lp2;
      g[d]=cm[d];g[3+d]=-cm[d]-cp3[d];g[6+d]=cp3[d];
     }
-    filPrecondRank(band,width,idx,g,9,type->kypr[a]);
+    filPrecondRank(band,width,idx,g,9,0.5*(fil->segments[j-1]->thk+fil->segments[j]->thk)*type->kypr[a]);
    }
   }
  }

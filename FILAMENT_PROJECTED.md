@@ -1,5 +1,7 @@
 # Optional projected semi-implicit filament stepping
 
+> Updated for upstream integration on 10 November 2026: see [compatibility choices and validation](UPSTREAM_INTEGRATION_2026-11-10.md). Native junction/end-state names and shared box storage supersede older implementation descriptions below. Historical timing tables describe their original revisions, not a new benchmark of the merged engine.
+
 This is an optional integration method for the existing fixed-length network
 model. It preserves the filament type, shared-node, box/contact, surface force
 clamp and mechanical rollback structures. Full Newton remains the default.

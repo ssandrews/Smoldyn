@@ -148,6 +148,7 @@ enum CMDcode cmdincludeecoli(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdsetreactionratemolcount(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdexpandsystem(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdtranslatecmpt(simptr sim,cmdptr cmd,char *line2);
+enum CMDcode cmdapplysurfaceforce(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmddiffusecmpt(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdlongrangeforce(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdtranslatemol(simptr sim,cmdptr cmd,char *line2);
@@ -294,6 +295,7 @@ enum CMDcode docommand(void *simvd,cmdptr cmd,char *line) {
 	else if(!strcmp(word,"setreactionratemolcount")) return cmdsetreactionratemolcount(sim,cmd,line2);
 	else if(!strcmp(word,"expandsystem")) return cmdexpandsystem(sim,cmd,line2);
 	else if(!strcmp(word,"translatecmpt")) return cmdtranslatecmpt(sim,cmd,line2);
+	else if(!strcmp(word,"applysurfaceforce")) return cmdapplysurfaceforce(sim,cmd,line2);
 	else if(!strcmp(word,"diffusecmpt")) return cmddiffusecmpt(sim,cmd,line2);
 	else if(!strcmp(word,"longrangeforce")) return cmdlongrangeforce(sim,cmd,line2);
 	else if(!strcmp(word,"translatemol")) return cmdtranslatemol(sim,cmd,line2);
@@ -3077,6 +3079,7 @@ enum CMDcode cmddiagnostics(simptr sim,cmdptr cmd,char *line2) {
 	if(ss==SSrule || ss==SSall) ruleoutput(sim);
 	if(ss==SScmpt || ss==SSall) compartoutput(sim);
 	if(ss==SSport || ss==SSall) portoutput(sim);
+	if((ss==SSfilament || ss==SSall) && sim->filss) filssOutput(sim);
 	if(ss==SScheck || ss==SSall) checksimparams(sim);
 	return CMDok; }
 
@@ -3152,9 +3155,9 @@ enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2) {
 			segment=fil->segments[seg];
 			if(strchr(code,'x')) {							// x is node positions, lengths, and angles
 				if(sim->dim==2)
-					scmdfprintf(cmd->cmds,fptr," %i len=%1.3g thick=%1.3g pos.=(%1.3g,%1.3g)->(%1.3g,%1.3g) angle=%1.3g",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->xyzback[0],segment->xyzback[1],segment->ypr[0]);
+					scmdfprintf(cmd->cmds,fptr," %i len=%1.3g thick=%1.3g pos.=(%1.3g,%1.3g)->(%1.3g,%1.3g) angle=%1.3g",segment->index,segment->len,segment->thk,segment->xyzminus[0],segment->xyzminus[1],segment->xyzplus[0],segment->xyzplus[1],segment->ypr[0]);
 				else
-					scmdfprintf(cmd->cmds,fptr," %i len=%1.3g thick=%1.3g pos.=(%1.3g,%1.3g,%1.3g)->(%1.3g,%1.3g,%1.3g) angle=(%1.3g,%1.3g,%1.3g)",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->xyzfront[2],segment->xyzback[0],segment->xyzback[1],segment->xyzback[2],segment->ypr[0],segment->ypr[1],segment->ypr[2]); }
+					scmdfprintf(cmd->cmds,fptr," %i len=%1.3g thick=%1.3g pos.=(%1.3g,%1.3g,%1.3g)->(%1.3g,%1.3g,%1.3g) angle=(%1.3g,%1.3g,%1.3g)",segment->index,segment->len,segment->thk,segment->xyzminus[0],segment->xyzminus[1],segment->xyzminus[2],segment->xyzplus[0],segment->xyzplus[1],segment->xyzplus[2],segment->ypr[0],segment->ypr[1],segment->ypr[2]); }
 			if(strchr(code,'a')) {							// a is relative quaternions
 				scmdfprintf(cmd->cmds,fptr," a=(%1.3g,%1.3g,%1.3g,%1.3g)",segment->qrel[0],segment->qrel[1],segment->qrel[2],segment->qrel[3]); }
 			if(strchr(code,'b')) {							// b is absolute quaternions
@@ -3167,9 +3170,9 @@ enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2) {
 			scmdfprintf(cmd->cmds,fptr,"\n"); }
 		if(strchr(code,'f') && filwork) {
 			if(sim->dim==2)
-				scmdfprintf(cmd->cmds,fptr," back F=(%1.3g,%1.3g)\n",filwork->forces[seg][0],filwork->forces[seg][1]);
+				scmdfprintf(cmd->cmds,fptr," plus F=(%1.3g,%1.3g)\n",filwork->forces[seg][0],filwork->forces[seg][1]);
 			else
-				scmdfprintf(cmd->cmds,fptr," back F=(%1.3g,%1.3g,%1.3g)\n",filwork->forces[seg][0],filwork->forces[seg][1],filwork->forces[seg][2]); }}
+				scmdfprintf(cmd->cmds,fptr," plus F=(%1.3g,%1.3g,%1.3g)\n",filwork->forces[seg][0],filwork->forces[seg][1],filwork->forces[seg][2]); }}
 	if(strpbrk(code,"m")) {
 		sparsePrintM(filwork->forcemat,1);	//?? This only prints to stdout and doesn't use scmdprintf function
 		}
@@ -3203,15 +3206,19 @@ enum CMDcode cmdprintForceClamps(simptr sim,cmdptr cmd,char *line2) {
 
 /* cmdprintFilaments */
 // Dump every filament (all types) as a flat polyline of node coordinates, one line each:
-//   FIL <time> <type>:<name> <nseg> <parent-or-"-"> <capped> x0 y0 [z0] x1 y1 [z1] ...
+//   FIL <time> <type>:<name> <nseg> <minus-attach> <plus-attach> <minus-state> <plus-state> x0 y0 [z0] x1 y1 [z1] ...
 // Auto-named daughters are included, so this captures a whole branched network.
-// <capped> is the plus-end state, 1 when capped and 0 when free.
+// <minus-attach> and <plus-attach> are what each end attaches to, as type:name:node, or
+// "-" for a free end. <minus-state> and <plus-state> are the end states: open, capped, or
+// shrink.
 enum CMDcode cmdprintFilaments(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
 	filamentssptr filss;
 	filamenttypeptr filtype;
 	filamentptr fil;
-	int er,ft,f,nd,d,dim;
+	int er,ft,f,nd,d,dim,e;
+	char string1[STRCHAR],string2[STRCHAR],attach[2][STRCHARLONG];
+	filjunctionptr junct;
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
 	SCMDCHECK(sim->filss,"No filaments defined");
@@ -3224,9 +3231,12 @@ enum CMDcode cmdprintFilaments(simptr sim,cmdptr cmd,char *line2) {
 		filtype=filss->filtypes[ft];
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
-			scmdfprintf(cmd->cmds,fptr,"FIL %g %s:%s %i %s %i",sim->time,filtype->ftname,fil->filname,fil->nseg,
-				fil->frontend?fil->frontend->filname:(fil->backend?fil->backend->filname:"-"),
-				(fil->capped)?1:0);
+			for(e=0;e<2;e++) {
+				junct=fil->endjunct[e];
+				if(junct) snprintf(attach[e],STRCHARLONG,"%s:%s:%i",junct->target->filtype->ftname,junct->target->filname,junct->node);
+				else strcpy(attach[e],"-"); }
+			scmdfprintf(cmd->cmds,fptr,"FIL %g %s:%s %i %s %s %s %s",sim->time,filtype->ftname,fil->filname,fil->nseg,
+				attach[0],attach[1],filFES2string(fil->endstate[0],string1),filFES2string(fil->endstate[1],string2));
 			for(nd=0;nd<=fil->nseg;nd++)
 				for(d=0;d<dim;d++)
 					scmdfprintf(cmd->cmds,fptr," %g",fil->nodes[nd][d]);
@@ -4749,6 +4759,43 @@ enum CMDcode cmdtranslatecmpt(simptr sim,cmdptr cmd,char *line2) {
 	return CMDok; }
 
 
+/* cmdapplysurfaceforce */
+enum CMDcode cmdapplysurfaceforce(simptr sim,cmdptr cmd,char *line2) {
+	int itct,dim,s,d;
+	surfacessptr srfss;
+	char sname[STRCHAR];
+	double force[DIMMAX];
+
+	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
+
+	dim=sim->dim;
+	srfss=sim->srfss;
+	SCMDCHECK(srfss,"no surfaces defined");
+	SCMDCHECK(line2,"first argument should be surface name");
+	itct=sscanf(line2,"%s",sname);
+	SCMDCHECK(itct==1,"cannot read surface name");
+	if(!strcmp(sname,"all")) s=-1;
+	else {
+		s=stringfind(srfss->snames,srfss->nsrf,sname);
+		SCMDCHECK(s>=0,"surface name not recognized"); }
+
+	SCMDCHECK(line2=strnword(line2,2),"missing arguments for force values");
+	if(dim==1) itct=strmathsscanf(line2,"%mlg|E/L",Varnames,Varvalues,Nvar,&force[0]);
+	else if(dim==2) itct=strmathsscanf(line2,"%mlg|E/L %mlg|E/L",Varnames,Varvalues,Nvar,&force[0],&force[1]);
+	else itct=strmathsscanf(line2,"%mlg|E/L %mlg|E/L %mlg|E/L",Varnames,Varvalues,Nvar,&force[0],&force[1],&force[2]);
+	SCMDCHECK(itct==dim && !strmatherror(ErrString,1),"cannot read force values or wrong number of them. %s",ErrString);
+	SCMDCHECK(!strnword(line2,dim+1),"unexpected text following force values");
+	for(d=0;d<dim;d++)
+		SCMDCHECK(isfinite(force[d]),"force values need to be finite numbers");
+
+	if(s>=0) surfapplyforce(srfss->srflist[s],force,dim);
+	else
+		for(s=0;s<srfss->nsrf;s++)
+			surfapplyforce(srfss->srflist[s],force,dim);
+
+	return CMDok; }
+
+
 /* cmddiffusecmpt */
 enum CMDcode cmddiffusecmpt(simptr sim,cmdptr cmd,char *line2) {
 	int itct,dim,c,code,d,valid,pt,is,nsample,attempts;
@@ -4853,7 +4900,7 @@ enum CMDcode cmdlongrangeforce(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(i2!=-7,"error allocating memory");
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"longrangeforce format: species1(state) species2(state) mobility1 mobility2 r_min r_max equation");
-	itct=strmathsscanf(line2,"%mlg|L/T %mlg|L/T %mlg|L %mlg|L %s",Varnames,Varvalues,Nvar,&mobility1,&mobility2,&rmin,&rmax,eqstring);
+	itct=strmathsscanf(line2,"%mlg|L2/E/T %mlg|L2/E/T %mlg|L %mlg|L %s",Varnames,Varvalues,Nvar,&mobility1,&mobility2,&rmin,&rmax,eqstring);
 	SCMDCHECK(itct==5 && !strmatherror(ErrString,1),"longrangeforce format: species1(state) species2(state) mobility1 mobility2 r_min r_max equation. %s",ErrString);
 	SCMDCHECK(rmin>0,"minimum radius needs to be >0");
 	SCMDCHECK(rmax>=0,"maximum radius needs to be >=0");
@@ -4998,7 +5045,7 @@ enum CMDcode cmdRotateFilamentToY(simptr sim,cmdptr cmd,char *line2) {
 	filamenttypeptr filtype;
 	filamentptr fil;
 	int er,node;
-	double meany,meanz,meanfact,*front,oldy,oldz,**nodes;
+	double meany,meanz,meanfact,*minus,oldy,oldz,**nodes;
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
 	filtype=NULL;
@@ -5006,11 +5053,11 @@ enum CMDcode cmdRotateFilamentToY(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(!er,"unable to read filament name");
 
 	nodes=fil->nodes;					//?? Should rewrite this function by first calling function to find COM.
-	front=nodes[0];						//?? Then rotate filament using filRotateVertex
+	minus=nodes[0];						//?? Then rotate filament using filRotateVertex
 	meany=meanz=0;
 	for(node=1;node<=fil->nseg;node++) {
-		meany+=nodes[node][1]-front[1];						// mean y and z positions of nodes
-		meanz+=nodes[node][2]-front[2]; }
+		meany+=nodes[node][1]-minus[1];						// mean y and z positions of nodes
+		meanz+=nodes[node][2]-minus[2]; }
 	meanfact=sqrt(meany*meany+meanz*meanz);
 	if(meanfact==0) return CMDok;
 	meanfact=1.0/meanfact;
@@ -5018,10 +5065,10 @@ enum CMDcode cmdRotateFilamentToY(simptr sim,cmdptr cmd,char *line2) {
 	meanz*=meanfact;
 
 	for(node=1;node<=fil->nseg;node++) {
-		oldy=nodes[node][1]-front[1];
-		oldz=nodes[node][2]-front[2];
-		nodes[node][1]=front[1]+meany*oldy+meanz*oldz;
-		nodes[node][2]=front[2]-meanz*oldy+meany*oldz; }
+		oldy=nodes[node][1]-minus[1];
+		oldz=nodes[node][2]-minus[2];
+		nodes[node][1]=minus[1]+meany*oldy+meanz*oldz;
+		nodes[node][2]=minus[2]-meanz*oldy+meany*oldz; }
 
 	return CMDok; }
 

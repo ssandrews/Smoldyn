@@ -6,12 +6,12 @@
 #include "smoldyn.h"
 #include "smoldynfuncs.h"
 #include "smolfilamentsteric.h"
+#include "filament_test_compat.h"
 #undef CHECK
 #define CHECK(c) do {if(!(c)) {fprintf(stderr,"FAIL growth line %d: %s\n",__LINE__,#c);exit(1);}} while(0)
 #define NEAR(a,b,t) CHECK(fabs((a)-(b))<(t))
 filamenttypeptr filAddFilamentType(simptr sim,const char *name);
 int filAddSegment(filamentptr fil,const double *pos,double len,const double *angle,double thick,char end);
-filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thick,const char *name);
 int filElongate(simptr sim,filamentptr fil,double length);
 void filNodes2Angles(filamentptr fil,int lo,int hi);
 double filStretchEnergy(const filamentptr fil,int lo,int hi);
@@ -46,28 +46,28 @@ static void kinetics_and_energy(void) {
  simptr sim=scene();filamenttypeptr t=type(sim,"actin",1);filamentptr f=rod(t,1,0);
  double old=f->nodes[1][2],length=1e-6,stall=t->elongenergy/t->elongstep,EA=t->klen*t->stdlen,g=.25*stall;
  CHECK(!filGrowthValidate(t));CHECK(filElongate(sim,f,length)==0);
- NEAR(f->growbank,length,1e-15);NEAR(f->nodes[1][2],old,1e-15);
+ NEAR(f->lenbank[1],length,1e-15);NEAR(f->nodes[1][2],old,1e-15);
  CHECK(filStretchEnergy(f,-1,-1)<=stall*length+1e-14);
- f->growbank=0;f->nodes[1][2]=.01*sqrt(1-2*g/EA);filNodes2Angles(f,-1,-1);
+ f->lenbank[1]=0;f->nodes[1][2]=.01*sqrt(1-2*g/EA);filNodes2Angles(f,-1,-1);
  CHECK(filElongate(sim,f,1e-9)==0);
- NEAR(f->growbank/1e-9,(exp(-g*t->elongstep/t->kT)-exp(-t->elongenergy/t->kT))/(1-exp(-t->elongenergy/t->kT)),1e-12);
- f->growbank=0;f->nodes[1][2]=.01*sqrt(1-3*stall/EA);filNodes2Angles(f,-1,-1);
- CHECK(filElongate(sim,f,length)==0);NEAR(f->growbank,0,1e-15);
- f->nodes[1][2]=.01;filNodes2Angles(f,-1,-1);f->capped=1;
- CHECK(filElongate(sim,f,length)==0);NEAR(f->growbank,0,1e-15);
- f->capped=0;t->elongmaxlen=.0100005;CHECK(filElongate(sim,f,length)==0);NEAR(filNominalLength(f),.0100005,1e-15);
- t->klen=-1;CHECK(filGrowthValidate(t));t->klen=10000;t->plusend='f';CHECK(filGrowthValidate(t));
+ NEAR(f->lenbank[1]/1e-9,(exp(-g*t->elongstep/t->kT)-exp(-t->elongenergy/t->kT))/(1-exp(-t->elongenergy/t->kT)),1e-12);
+ f->lenbank[1]=0;f->nodes[1][2]=.01*sqrt(1-3*stall/EA);filNodes2Angles(f,-1,-1);
+ CHECK(filElongate(sim,f,length)==0);NEAR(f->lenbank[1],0,1e-15);
+ f->nodes[1][2]=.01;filNodes2Angles(f,-1,-1);f->endstate[1]=1;
+ CHECK(filElongate(sim,f,length)==0);NEAR(f->lenbank[1],0,1e-15);
+ f->endstate[1]=0;t->elongmaxlen=.0100005;CHECK(filElongate(sim,f,length)==0);NEAR(filNominalLength(f),.0100005,1e-15);
+ t->klen=-1;CHECK(filGrowthValidate(t));t->klen=10000;t->plusend='m';CHECK(filGrowthValidate(t));
  simfree(sim);puts("PASS growth kinetics, finite work, stall, cap, length ceiling and mode validation");
 }
 static void refinement(void) {
  simptr sim=scene();filamenttypeptr t=type(sim,"actin",1);filamentptr f=rod(t,1,0),child;
  double angle[3]={1,0,0},end=.0199,EA=t->klen*t->stdlen,expected;
- f->nodes[1][2]=end;filNodes2Angles(f,-1,-1);f->growbank=.0099;
- child=filAddBranch(sim,f,0,angle,1,NULL);CHECK(child);CHECK(f->branchspots[0]==0);
+ f->nodes[1][2]=end;filNodes2Angles(f,-1,-1);f->lenbank[1]=.0099;
+ child=filAddBranch(sim,f,0,angle,1,NULL);CHECK(child);CHECK(f->juncts[0]->node==1);
  f->nodemobility[1]=0;
  CHECK(filElongate(sim,f,.0001)==1);CHECK(f->nseg==2);NEAR(filNominalLength(f),.02,1e-15);
  NEAR(f->nodes[2][2],end,1e-15);NEAR(f->nodes[1][2],end/2,1e-15);
- CHECK(f->branchspots[0]==1);NEAR(child->nodes[0][2],f->nodes[2][2],1e-15);
+ CHECK(f->juncts[0]->node==2);NEAR(child->nodes[0][2],f->nodes[2][2],1e-15);
  NEAR(f->nodemobility[2],0,1e-15);NEAR(f->nodemobility[1],1,1e-15);
  expected=.5*EA*(end-.02)*(end-.02)/.02;
  NEAR(filStretchEnergy(f,-1,-1),expected,1e-14);
@@ -77,7 +77,7 @@ static void refinement(void) {
 static void force_energy_consistency(void) {
  simptr sim=scene();filamenttypeptr t=type(sim,"actin",1);filamentptr f=rod(t,1,0);
  double h=1e-8,plus,minus,force;
- f->growbank=.003;f->segments[0]->thk=2;f->nodes[1][2]=.012;filNodes2Angles(f,-1,-1);
+ f->lenbank[1]=.003;f->segments[0]->thk=2;f->nodes[1][2]=.012;filNodes2Angles(f,-1,-1);
  filComputeForces(f,-1,-1);force=f->filwork->forces[1][2];
  NEAR(force+f->filwork->forces[0][2],0,1e-12);
  f->nodes[1][2]+=(h);filNodes2Angles(f,-1,-1);plus=filStretchEnergy(f,-1,-1);
@@ -93,7 +93,7 @@ static double loaded_growth(double load,int growth,int cached,double dt) {
  f->nodemobility[0]=0;t->stericradius=.0035;t->confinesrf=plate->srf;t->confineforce=400;
  t->implicitjacobian=cached;CHECK(!surfsetforceclamp(plate,1,load,1e-9,.005,.9));
  for(i=0;i<(int)ceil(.03/dt);i++) {CHECK(!filDynamics(sim));sim->time+=sim->dt;}
- start=plate->point[0][2];t->elongrate=.06;
+ start=plate->point[0][2];t->endrate[1][FESopen]=.06;
  for(i=0;i<(int)ceil(.4/dt);i++) {CHECK(!filDynamics(sim));sim->time+=sim->dt;}
  NEAR(plate->forceclamp->reaction,load,1e-8);
  accepted=t->elongaccepted;
@@ -112,7 +112,7 @@ static void steric_obstacle(int hybrid) {
  simptr sim=scene();filamenttypeptr t=type(sim,"actin",1),other=type(sim,"obstacle",0);
  filamentptr f=rod(t,2,.0035),bar=filAddFilament(other,NULL);CHECK(bar);
  if(hybrid) {t->klen=-1;t->elongstiffness=10000;t->constrainttol=1e-8;t->constraintiterations=30;}
- t->stericradius=other->stericradius=.0035;f->nodemobility[0]=0;t->elongrate=.06;
+ t->stericradius=other->stericradius=.0035;f->nodemobility[0]=0;t->endrate[1][FESopen]=.06;
  CHECK(!filAddSegment(bar,pos,.04,angle,1,'b'));other->stdlen=.04;
  for(i=0;i<3000;i++) {CHECK(!filDynamics(sim));sim->time+=sim->dt;}
  CHECK(bar->nodes[0][2]>.034+.001);CHECK(bar->nodes[1][2]>.034+.001);
@@ -141,7 +141,7 @@ static void overlap_wall(void) {
   simptr sim=scene();filamenttypeptr t=type(sim,"actin",0);filamentptr f=rod(t,1,.005);
   panelptr wall=ceiling(sim,.02);double before;
   t->elongoverlap=overlap;t->klen=fixed?-1:10000;t->kT=0;
-  t->kypr[0]=t->kypr[1]=t->kypr[2]=.05;t->plusend=front?'f':'b';
+  t->kypr[0]=t->kypr[1]=t->kypr[2]=.05;t->plusend=front?'m':'p';
   t->confinesrf=wall->srf;t->confineforce=400;
   t->constrainttol=1e-8;t->constraintiterations=30;
   CHECK(filElongate(sim,f,.01)==overlap);CHECK(f->nseg==1+overlap);
@@ -152,8 +152,8 @@ static void overlap_wall(void) {
    for(i=0;i<20;i++) {CHECK(!filDynamics(sim));sim->time+=sim->dt;}
    CHECK(front?f->nodes[end][2]>before:f->nodes[end][2]<before);
    if(fixed) for(j=0;j<f->nseg;j++) CHECK(fabs(f->segments[j]->len/t->stdlen-1)<1.01*t->constrainttol);
-   f->capped=1;CHECK(filElongate(sim,f,.01)==0);CHECK(f->nseg==2);
-   f->capped=0;t->elongmaxlen=.015;CHECK(filElongate(sim,f,.01)==0);CHECK(f->nseg==2);
+   f->endstate[front?0:1]=FEScapped;CHECK(filElongate(sim,f,.01)==0);CHECK(f->nseg==2);
+   f->endstate[front?0:1]=FESopen;t->elongmaxlen=.015;CHECK(filElongate(sim,f,.01)==0);CHECK(f->nseg==2);
   }
   simfree(sim);
  }
@@ -194,7 +194,7 @@ static void hybrid_brownian(void) {
  for(mode=0;mode<2;mode++) for(n=1;n<=3;n+=2) {
   simptr sim=scene();filamenttypeptr t=type(sim,"actin",1);filamentptr f=rod(t,n,0);
   t->klen=-1;t->elongstiffness=10000;t->brownian=1;t->implicitjacobian=mode;
-  t->elongrate=.15;t->constrainttol=1e-8;t->constraintiterations=30;
+  t->endrate[1][FESopen]=.15;t->constrainttol=1e-8;t->constraintiterations=30;
   t->implicittol=1e-8;t->implicititerations=40;t->implicitkrylov=100;
   t->kypr[0]=t->kypr[1]=t->kypr[2]=.05;sim->dt=1e-4;
   CHECK(!filGrowthValidate(t));
@@ -214,15 +214,15 @@ static void hybrid_brownian(void) {
 static void hybrid_cap_transitions(void) {
  simptr sim=scene();filamenttypeptr t=type(sim,"actin",1);filamentptr a=rod(t,1,0),b=rod(t,1,.1);
  int i,swap;double length[2];
- t->klen=-1;t->elongstiffness=10000;t->elongrate=.15;t->implicittol=1e-9;
+ t->klen=-1;t->elongstiffness=10000;t->endrate[1][FESopen]=.15;t->implicittol=1e-9;
  t->constraintiterations=30;t->constrainttol=1e-8;
- a->growbank=.003;b->growbank=.002;
+ a->lenbank[1]=.003;b->lenbank[1]=.002;
  for(swap=0;swap<4;swap++) {
-  a->capped=swap%2==0;b->capped=!a->capped;
+  a->endstate[1]=swap%2==0;b->endstate[1]=!a->endstate[1];
   length[0]=filNominalLength(a);length[1]=filNominalLength(b);
-  CHECK(filSegmentIsConstrained(a,0)==a->capped);CHECK(filSegmentIsConstrained(b,0)==b->capped);
+  CHECK(filSegmentIsConstrained(a,0)==a->endstate[1]);CHECK(filSegmentIsConstrained(b,0)==b->endstate[1]);
   for(i=0;i<100;i++) {CHECK(!filDynamics(sim));sim->time+=sim->dt;}
-  if(a->capped) {NEAR(a->segments[0]->len,length[0],1e-9);NEAR(filNominalLength(a),length[0],1e-15);}
+  if(a->endstate[1]) {NEAR(a->segments[0]->len,length[0],1e-9);NEAR(filNominalLength(a),length[0],1e-15);}
   else {NEAR(b->segments[0]->len,length[1],1e-9);NEAR(filNominalLength(b),length[1],1e-15);}
  }
  simfree(sim);puts("PASS capping freezes partial terminal length; uncapping restores compliant growth with unchanged constraint count");
@@ -230,7 +230,7 @@ static void hybrid_cap_transitions(void) {
 static void hybrid_branched(void) {
  simptr sim=scene();filamenttypeptr t=type(sim,"actin",1);filamentptr mother=rod(t,3,0),daughter;
  double angle[3]={1,0,0};int i,f,j;
- t->klen=-1;t->elongstiffness=10000;t->elongrate=.15;t->brownian=1;t->implicitjacobian=1;
+ t->klen=-1;t->elongstiffness=10000;t->endrate[1][FESopen]=.15;t->brownian=1;t->implicitjacobian=1;
  t->implicittol=1e-8;t->implicititerations=40;t->constrainttol=1e-8;t->constraintiterations=30;
  t->kypr[0]=t->kypr[1]=t->kypr[2]=.05;
  daughter=filAddBranch(sim,mother,2,angle,1,NULL);CHECK(daughter);
@@ -241,7 +241,7 @@ static void hybrid_branched(void) {
    for(j=0;j<fil->nseg;j++) if(filSegmentIsConstrained(fil,j))
     CHECK(fabs(fil->segments[j]->len/filSegmentRestLength(fil,j)-1)<1.01*t->constrainttol);
   }
-  for(j=0;j<3;j++) NEAR(daughter->nodes[0][j],mother->nodes[mother->branchspots[0]+1][j],1e-12);
+  for(j=0;j<3;j++) NEAR(daughter->nodes[0][j],mother->nodes[mother->juncts[0]->node][j],1e-12);
  }
  CHECK(t->elongremesh>0);simfree(sim);puts("PASS hybrid shared branch node remains attached through Brownian movement and tip refinement");
 }

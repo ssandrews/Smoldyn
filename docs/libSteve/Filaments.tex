@@ -1,0 +1,198 @@
+ \title{\vspace{-2.0cm}Documentation for Filaments.h and Filaments.c\vspace{-2ex}}
+\author{Steve Andrews}
+\date{\vspace{-2ex}2026}
+
+\documentclass[11pt]{article}
+
+\usepackage{physics,amsmath}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage[margin=1in]{geometry}
+\usepackage{bm}
+\usepackage{upgreek}
+\usepackage{extarrows}
+\usepackage{gensymb}
+\usepackage{chemarr}
+
+\usepackage{listings}
+\usepackage{xcolor}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\lstdefinestyle{mystyle}{
+ backgroundcolor=\color{backcolour},
+ commentstyle=\color{codegreen},
+ keywordstyle=\color{magenta},
+ numberstyle=\tiny\color{codegray},
+ stringstyle=\color{codepurple},
+ basicstyle=\ttfamily\footnotesize,
+ breakatwhitespace=false,
+ breaklines=true,
+ captionpos=b,
+ keepspaces=true,
+ numbers=left,
+ numbersep=5pt,
+ showspaces=false,
+ showstringspaces=false,
+ showtabs=false,
+ tabsize=2
+}
+\lstset{style=mystyle}
+
+\newcommand {\ttt} {\texttt}
+
+\begin{document}
+\maketitle
+
+\section{Header file: Filaments.h}
+
+\begin{lstlisting}[language=C]
+/* Steven Andrews, 11/4/26
+Assorted functions for filaments
+See documentation called Filaments.tex.
+Copyright 2026 by Steven Andrews.  This work is distributed under the terms
+of the Gnu Lesser General Public License (LGPL). */
+
+
+#ifndef __Filaments_h
+#define __Filaments_h
+
+double Fil_Statistics(const char *model,const char *eqn,double value1,double value2,double value3,double value4);
+
+#endif
+\end{lstlisting}
+
+% Description
+\section{Description}
+
+This is a collection of routines for filament calculations that don't depend on any particular simulation software. At present, it computes equilibrium statistics of filaments, such as persistence lengths and end-to-end distances, for several standard polymer models. These functions are used by Smoldyn (e.g. in \ttt{filtypeOutput}, in smolfilament.c), but they don't call any Smoldyn functions.
+
+Filament models are identified with the following strings. See Andrews, 2014 (\textit{Physical Biology} 11:011001, ``Methods for modeling cytoskeletal and DNA filaments'') for descriptions of them.
+
+\begin{description}
+
+\item[Freely jointed chain (FJC)]
+\hfill \\
+A chain of straight segments, each of length $l$, which are joined with completely flexible joints. The segment directions are independent of each other.
+
+\item[Gaussian chain (GC)]
+\hfill \\
+A chain of segments whose lengths are Gaussian distributed, with root-mean-square length $l$, and which are joined with completely flexible joints. Its equilibrium statistics on length scales that are longer than a segment are the same as those of the FJC.
+
+\item[Angle-biased chain (ABC)]
+\hfill \\
+A chain of straight segments, each of length $l$, which are joined at nodes that have bending and twisting energies. This is Smoldyn's filament model. In 3D, the relative orientation of each segment to the prior one is given by its yaw, pitch, and roll angles, $\phi$, $\theta$, and $\psi$, and the bending energy at each node is
+\begin{equation}
+E_{bend} = \frac{1}{2} \left[k_\phi (\phi-\phi\degree)^2 + k_\theta (\theta-\theta\degree)^2 + k_\psi (\psi-\psi\degree)^2 \right]
+\end{equation}
+where the degree symbols represent the standard angles and the $k$ values are the force constants, which have units of energy. In 2D, only the yaw angle is used.
+
+\item[Worm-like chain (WLC)]
+\hfill \\
+A continuous filament with bending and twisting stiffness. This is the continuum limit of the ABC model. Its force constants, $\kappa_\phi$, $\kappa_\theta$, and $\kappa_\psi$, have units of energy times length, and are related to those of the ABC model by $\kappa=k l$.
+
+\end{description}
+
+The ABC results assume that the bending and twisting angles are independent of each other and are Gaussian distributed about their standard angles, with variances $k_BT/k$. This is accurate when the force constants are much larger than $k_BT$. The persistence lengths don't depend on the standard angles; if those angles are non-zero, then the filament has a built-in curvature or twist, and the persistence length describes only the thermal fluctuations about that shape.
+
+
+% Dependencies
+\section{Dependencies}
+None, apart from the C standard library (math.h and string.h).
+
+% History
+\section{History}
+\begin{description}
+
+\item[11/4/26] Started, with \ttt{Fil\_Statistics}. Wrote this documentation.
+
+\end{description}
+
+
+% Math
+\section{Math}
+
+\subsection{Persistence length}
+
+The persistence length, $L_p$, is defined here by the decay of the correlation between segment directions along the filament. For two segment direction unit vectors, $\bm{t}_0$ and $\bm{t}_n$, that are separated by contour length $s$,
+\begin{equation}
+\left< \bm{t}_0 \cdot \bm{t}_n \right> = e^{-s/L_p}
+\end{equation}
+
+For the ABC model in 3D, the direction of a segment relative to the prior one, after yaw by $\phi$ and pitch by $\theta$, has the dot product $\cos \alpha = \cos \phi \cos \theta$ with the prior segment's direction (roll doesn't change the direction). If $\phi$ is Gaussian distributed with mean 0 and variance $\sigma^2$, then $\left<\cos \phi \right> = e^{-\sigma^2/2}$. The equipartition theorem gives $\sigma_\phi^2=k_BT/k_\phi$, and likewise for $\theta$, so
+\begin{equation}
+\left< \cos \alpha \right> = \exp\left[ -\frac{k_BT}{2} \left( \frac{1}{k_\phi} + \frac{1}{k_\theta} \right) \right]
+\end{equation}
+Setting this equal to $e^{-l/L_p}$ gives
+\begin{equation}
+L_p = \frac{2 l k_\phi k_\theta}{k_BT(k_\phi + k_\theta)}
+\label{eq:PersistABC}
+\end{equation}
+If $k_\phi = k_\theta = k$, then this simplifies to $L_p = l k/k_BT$. The WLC result is the same, but with $\kappa$ values in place of $l k$,
+\begin{equation}
+L_p = \frac{2 \kappa_\phi \kappa_\theta}{k_BT(\kappa_\phi + \kappa_\theta)}
+\end{equation}
+which is $\kappa/k_BT$ if both force constants equal $\kappa$.
+
+In 2D, there is only one bending angle, so $\left< \cos \phi \right> = e^{-k_BT/2k_\phi}$, and the persistence length is $L_p = 2 l k_\phi/k_BT$. This is the limit of equation \ref{eq:PersistABC} as $k_\theta \rightarrow \infty$; \ttt{Fil\_Statistics} doesn't compute it directly.
+
+The torsional persistence length, $L_t$, is defined in the same way, from $\left< \cos \Delta \psi \right> = e^{-s/L_t}$, where $\Delta \psi$ is the total twist over contour length $s$. For the ABC model, $\left< \cos \psi \right> = e^{-k_BT/2k_\psi}$, so $L_t = 2 l k_\psi/k_BT$. Note that a common alternative definition, which is often used for DNA, is that the twist variance is $\left< \Delta \psi^2 \right> = s/L_t$, which gives $L_t$ values that are half as large as those here.
+
+\subsection{Kuhn length and end-to-end distance}
+
+The ABC model, for its direction statistics, is a freely rotating chain with $c = \left<\cos \alpha \right> = e^{-l/L_p}$. For a chain of $N$ segments, with contour length $L=Nl$, its mean-square end-to-end distance is (see e.g. Rubinstein and Colby, \textit{Polymer Physics}, section 2.3.2)
+\begin{equation}
+\left< R^2 \right> = N l^2 \frac{1+c}{1-c} - 2l^2 \frac{c(1-c^N)}{(1-c)^2}
+\end{equation}
+Using $(1+c)/(1-c) = \coth(l/2L_p) = \sinh(l/L_p)/[\cosh(l/L_p)-1]$ and $c/(1-c)^2 = 1/(2[\cosh(l/L_p)-1])$, this becomes
+\begin{equation}
+\left< R^2 \right> = \frac{l L \sinh(l/L_p) - l^2 \left(1-e^{-L/L_p}\right)}{\cosh(l/L_p)-1}
+\label{eq:R2ABC}
+\end{equation}
+For long chains, $\left< R^2 \right> \approx bL$, where $b$ is the Kuhn length, which is the segment length of the equivalent FJC. From the first term of equation \ref{eq:R2ABC},
+\begin{equation}
+b = l \coth \left( \frac{l}{2L_p} \right) = \frac{l}{\tanh(l/2L_p)}
+\end{equation}
+In the limit as $l \rightarrow 0$ with $L_p$ fixed, these become the WLC results,
+\begin{align}
+\left< R^2 \right> &= 2 L L_p - 2L_p^2 \left(1-e^{-L/L_p}\right) \\
+b &= 2L_p
+\end{align}
+For the FJC and GC models, $\left< R^2 \right> = N l^2 = lL$ and $b=l$.
+
+
+\section{Code documentation}
+
+\begin{description}
+
+\item[\ttt{double}]
+\ttt{Fil\_Statistics(const char *model, const char *eqn, double value1,}\\ \ttt{double value2, double value3, double value4)}
+\hfill \\
+Computes an equilibrium statistic of a filament. Enter \ttt{model} as the filament model, which can be ``FJC'', ``GC'', ``ABC'', or ``WLC'' (see above), and \ttt{eqn} as the statistic to compute. The \ttt{value} inputs are the parameters, which depend on \ttt{eqn}; parameters that aren't used are ignored, so they can be entered as anything, such as 0. This returns the result, \ttt{NAN} if the statistic isn't defined for the requested model, or 0 if \ttt{eqn} isn't recognized. In the following table, $k_BT$ is the thermal energy, $l$ is the segment length, $L$ is the contour length, $L_p$ is the persistence length, and $L_t$ is the torsional persistence length. The $k$ values are the ABC force constants, in energy units, or the WLC force constants, in energy times length units.
+
+\setlength{\tabcolsep}{5pt}
+\begin{longtable}[c]{lllll}
+\ttt{eqn} & models & inputs & returns & equation \\
+\hline
+\ttt{Persist} & ABC, WLC & $k_BT$, $k_\phi$, $k_\theta$, $l$ & $L_p$ & ABC: $2lk_\phi k_\theta/k_BT(k_\phi+k_\theta)$ \\
+ & & & & WLC: $2k_\phi k_\theta/k_BT(k_\phi+k_\theta)$ \\
+\ttt{TorsionPersist} & ABC, WLC & $k_BT$, $k_\psi$, $l$ & $L_t$ & ABC: $2lk_\psi/k_BT$ \\
+ & & & & WLC: $2k_\psi/k_BT$ \\
+\ttt{kBend\_Persist} & ABC, WLC & $k_BT$, $L_p$, $l$ & bending $k$ & ABC: $k_BT L_p/l$ \\
+ & & & & WLC: $k_BT L_p$ \\
+\ttt{kTwist\_Persist} & ABC, WLC & $k_BT$, $L_t$, $l$ & $k_\psi$ & ABC: $k_BT L_t/2l$ \\
+ & & & & WLC: $k_BT L_t/2$ \\
+\ttt{Kuhn} & all & $l$, $L_p$ & $b$ & FJC, GC: $l$ \\
+ & & & & ABC: $l/\tanh(l/2L_p)$ \\
+ & & & & WLC: $2L_p$ \\
+\ttt{RmsEnd2End} & all & $l$, $L$, $L_p$ & $\left<R^2\right>^{1/2}$ & FJC, GC: $\sqrt{lL}$ \\
+ & & & & ABC: square root of equation \ref{eq:R2ABC} \\
+ & & & & WLC: $\sqrt{2LL_p - 2L_p^2(1-e^{-L/L_p})}$
+\end{longtable}
+
+For the WLC model, the $l$ inputs are ignored. \ttt{kBend\_Persist} is the inverse of \ttt{Persist} for the case where $k_\phi = k_\theta$. \ttt{kTwist\_Persist} is the inverse of \ttt{TorsionPersist}; both use the $\left< \cos \Delta \psi \right> = e^{-s/L_t}$ definition of the torsional persistence length, so a torsional persistence length that was measured with the alternative $\left< \Delta \psi^2 \right> = s/L_t$ definition needs to be doubled before it is entered. \ttt{RmsEnd2End} returns the root-mean-square end-to-end distance, $\sqrt{\left<R^2\right>}$.
+
+\end{description}
+
+\end{document}

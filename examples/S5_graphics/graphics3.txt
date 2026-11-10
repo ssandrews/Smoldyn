@@ -11,10 +11,10 @@ species red green
 boxsize 20
 
 frame_thickness 3
-frame_color 0.6 0.6 0
+frame_color olive
 grid_thickness 1
-grid_color 0 0 0
-background_color 1 0.8 0.9
+grid_color black
+background_color mauve
 
 tiff_name graphics3
 

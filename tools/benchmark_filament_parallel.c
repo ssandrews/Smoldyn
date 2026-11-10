@@ -43,8 +43,8 @@ int main(int argc,char **argv) {
  t->dynamics=FDeuler;t->kT=0.001;t->brownian=0;t->stdlen=0.01;t->klen=10000;
  t->kypr[0]=t->kypr[1]=t->kypr[2]=1;
  t->stericradius=contact?0.0035:0;t->sterick=4000;t->stericskin=0.002;
- t->caprate=0.36;t->uncaprate=0.1;t->elongrate=0.06;
- if(implicit) {t->dynamics=FDimplicitnetwork;t->kT=0;t->kypr[0]=t->kypr[1]=t->kypr[2]=0;t->caprate=t->uncaprate=t->elongrate=0;}
+ t->endtrans[1][FESopen][FEScapped]=0.36;t->endtrans[1][FEScapped][FESopen]=0.1;t->endrate[1][FESopen]=0.06;
+ if(implicit) {t->dynamics=FDimplicitnetwork;t->kT=0;t->kypr[0]=t->kypr[1]=t->kypr[2]=0;t->endtrans[1][FESopen][FEScapped]=t->endtrans[1][FEScapped][FESopen]=t->endrate[1][FESopen]=0;}
  for(f=0;f<count;f++) {
   filamentptr fil=filAddFilament(t,NULL);REQUIRE(fil);
   x[0]=(f%20)*0.008;x[1]=((f/20)%20)*0.004;x[2]=(f/400)*0.004;
@@ -53,8 +53,8 @@ int main(int argc,char **argv) {
    fil->nodes[1][0]+=0.0002;
    for(i=1;i<512;i++) REQUIRE(!filAddSegment(fil,NULL,0.01,angle,1,'b'));
   }
-  fil->capped=contact?0:f%3==0;
-  fil->growbank=(f%10)*0.0009;
+  fil->endstate[1]=contact?0:f%3==0;
+  fil->lenbank[1]=(f%10)*0.0009;
  }
  if(contact) {REQUIRE(!filStericPrepare(sim));for(f=0;f<count;f++) filComputeForces(t->fillist[f],-1,-1);REQUIRE(!filStericForces(sim));}
  start=seconds();
@@ -68,8 +68,8 @@ int main(int argc,char **argv) {
  state=fopen("state.bin","wb");REQUIRE(state);
  for(f=0;f<count;f++) {
   filamentptr fil=t->fillist[f];
-  REQUIRE(fwrite(&fil->nseg,sizeof(int),1,state)==1);REQUIRE(fwrite(&fil->capped,sizeof(int),1,state)==1);
-  REQUIRE(fwrite(&fil->growbank,sizeof(double),1,state)==1);
+  REQUIRE(fwrite(&fil->nseg,sizeof(int),1,state)==1);REQUIRE(fwrite(&fil->endstate[1],sizeof(int),1,state)==1);
+  REQUIRE(fwrite(&fil->lenbank[1],sizeof(double),1,state)==1);
   for(i=0;i<=fil->nseg;i++) for(d=0;d<3;d++) {
    REQUIRE(fwrite(&fil->nodes[i][d],sizeof(double),1,state)==1);
    if(contact) REQUIRE(fwrite(&fil->filwork->forces[i][d],sizeof(double),1,state)==1);

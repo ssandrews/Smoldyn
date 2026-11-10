@@ -1,5 +1,7 @@
 # Coupled implicit filament dynamics
 
+> Updated for upstream integration on 10 November 2026: see [compatibility choices and validation](UPSTREAM_INTEGRATION_2026-11-10.md). Native junction/end-state names and shared box storage supersede older implementation descriptions below. Historical timing tables describe their original revisions, not a new benchmark of the merged engine.
+
 Implemented and tested locally on 2026-10-13. This is an additional method,
 `implicit_network`; the older `implicit` and `implicitold` methods retain their
 existing algorithms. No external numerical library is required.

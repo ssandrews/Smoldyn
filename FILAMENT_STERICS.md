@@ -1,5 +1,7 @@
 # Filament excluded volume
 
+> Updated for upstream integration on 10 November 2026: see [compatibility choices and validation](UPSTREAM_INTEGRATION_2026-11-10.md). Native junction/end-state names and shared box storage supersede older implementation descriptions below. Historical timing tables describe their original revisions, not a new benchmark of the merged engine.
+
 This implementation gives straight filament segments finite capsule volume
 (a cylinder with hemispherical ends). It adds overdamped contact forces to the
 existing filament mechanics. It is an initial mechanical model, not a calibrated

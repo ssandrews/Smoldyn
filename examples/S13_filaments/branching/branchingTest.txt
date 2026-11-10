@@ -1,0 +1,56 @@
+# Branching with filament mechanics switched on.
+#
+# The other branching examples use dynamics none, so the branch constraint is never
+# exercised against a moving mother. Here dynamics RK4 is on: filPinBranches runs
+# after each mechanical step and translates every daughter so its front node tracks
+# the mother's branch point.
+#
+# The pin holds the branch point, not the branch angle, so junction angles decorrelate
+# as the network flexes. That is the known limit of a position-only constraint.
+#
+# smoldyn branchingDynamics2D.txt -t
+
+graphics opengl_good
+
+dim 2
+boundaries x -5 5 r
+boundaries y -5 5 r
+
+time_start 0
+time_stop 3
+time_step 0.0005
+random_seed 1
+
+frame_thickness 0
+
+#output_files branchingDynamicsOut.txt
+
+start_filament_type actin
+color red
+thickness 2
+polygon ve
+dynamics RK4
+kT 0.01
+standard_length 0.5
+standard_angle 0
+force_length 5
+force_angle 0.5
+mobility 1
+elongation_rate plus open 5
+elongation_rate plus capped 0
+elongation_rate plus shrink -4
+end_transition plus open capped 1
+end_transition plus capped shrink 2
+end_transition plus capped open 1
+end_transition plus shrink capped 1
+branch_rate 1
+branch_angle 1.22
+branch_spread 0.09
+end_filament_type
+
+random_filament actin:seed0 1  -3 0  0
+
+#cmd @ 0.5 printFilaments branchingDynamicsOut.txt
+#cmd @ 0.5 printFilaments stdout
+
+end_file

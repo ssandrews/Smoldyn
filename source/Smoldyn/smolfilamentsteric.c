@@ -117,32 +117,37 @@ int filStericExcluded(segmentptr a,segmentptr b) {
 /* Direct bonded pairs share volume only near their junction. Trim a bounded
    daughter contour region only when the mother's segment is local in contour
    distance; remote mother segments still contact the daughter's base. */
+void filStericTrimBounds(segmentptr daughter,segmentptr mother,double *lo,double *hi) {
+ filamentptr mf=mother->fil,df=daughter->fil;double reach=2*(df->filtype->stericradius+mf->filtype->stericradius);
+ *lo=0;*hi=1;
+ for(int end=0;end<2;end++) {
+  filjunctionptr joint=df->endjunct[end];double md=0,dd=0,cut;int i,node;
+  if(!joint || joint->target!=mf) continue;
+  node=joint->node;
+  if(mother->index<node) for(i=mother->index+1;i<node && md<=reach;i++) md+=mf->segments[i]->len;
+  else for(i=node;i<mother->index && md<=reach;i++) md+=mf->segments[i]->len;
+  if(md>reach) continue;
+  if(!end) for(i=0;i<daughter->index && dd<reach;i++) dd+=df->segments[i]->len;
+  else for(i=df->nseg-1;i>daughter->index && dd<reach;i--) dd+=df->segments[i]->len;
+  if(dd>=reach) continue;
+  cut=daughter->len>0?fmin(1,(reach-dd)/daughter->len):1;
+  if(end) *hi=fmin(*hi,1-cut);else *lo=fmax(*lo,cut);
+ }
+}
 double filStericTrim(segmentptr daughter,segmentptr mother) {
- filamentptr mf=mother->fil,df=daughter->fil;
- int br,spot=-1,i;double reach,md=0,dd=0;
- if(df->frontend!=mf) return 0;
- for(br=0;br<mf->nbranch;br++) if(mf->branches[br]==df) {spot=mf->branchspots[br];break;}
- if(spot<0) return 0;
- reach=2*(df->filtype->stericradius+mf->filtype->stericradius);
- if(mother->index>spot) for(i=spot+1;i<mother->index && md<=reach;i++) md+=mf->segments[i]->len;
- else for(i=mother->index+1;i<=spot && md<=reach;i++) md+=mf->segments[i]->len;
- if(md>reach) return 0;
- for(i=0;i<daughter->index && dd<reach;i++) dd+=df->segments[i]->len;
- if(dd>=reach) return 0;
- return daughter->len>0?fmin(1,(reach-dd)/daughter->len):1;
+ double lo,hi;filStericTrimBounds(daughter,mother,&lo,&hi);return lo>0?lo:hi-1;
 }
 
 double filStericGeometry(segmentptr a,segmentptr b,double *s,double *t,double *normal) {
- double trimA=filStericTrim(a,b),trimB=filStericTrim(b,a),a0[3],b0[3],dist;
- int d,dim=a->fil->filtype->filss->sim->dim;
- if(trimA>=1 || trimB>=1) return DBL_MAX;
+ double la,ha,lb,hb,a0[3],a1[3],b0[3],b1[3],dist;int d;
+ filStericTrimBounds(a,b,&la,&ha);filStericTrimBounds(b,a,&lb,&hb);
+ if(la>=ha || lb>=hb) return DBL_MAX;
  for(d=0;d<3;d++) {
-  a0[d]=a->xyzfront[d]+trimA*(a->xyzback[d]-a->xyzfront[d]);
-  b0[d]=b->xyzfront[d]+trimB*(b->xyzback[d]-b->xyzfront[d]);
+  a0[d]=a->xyzminus[d]+la*(a->xyzplus[d]-a->xyzminus[d]);a1[d]=a->xyzminus[d]+ha*(a->xyzplus[d]-a->xyzminus[d]);
+  b0[d]=b->xyzminus[d]+lb*(b->xyzplus[d]-b->xyzminus[d]);b1[d]=b->xyzminus[d]+hb*(b->xyzplus[d]-b->xyzminus[d]);
  }
- dist=Geo_ClosestSeg2Seg(a0,a->xyzback,b0,b->xyzback,dim,s,t,normal);
- *s=trimA+(1-trimA)*(*s);*t=trimB+(1-trimB)*(*t);
- return dist;
+ dist=Geo_ClosestSeg2Seg(a0,a1,b0,b1,a->fil->filtype->filss->sim->dim,s,t,normal);
+ *s=la+(ha-la)*(*s);*t=lb+(hb-lb)*(*t);return dist;
 }
 
 int filStericPrepare(simptr sim) {
@@ -182,7 +187,7 @@ int filStericPrepare(simptr sim) {
     if(!rebuild && (r->fil!=fil || r->segment!=seg || r->index!=i || r->radius!=type->stericradius || r->stiffness!=type->sterick)) rebuild=1;
     if(!rebuild) {
      double front=0,back=0;
-     for(d=0;d<sim->dim;d++) {move=seg->xyzfront[d]-r->reference[d];front+=move*move;move=seg->xyzback[d]-r->reference[d+3];back+=move*move;}
+     for(d=0;d<sim->dim;d++) {move=seg->xyzminus[d]-r->reference[d];front+=move*move;move=seg->xyzplus[d]-r->reference[d+3];back+=move*move;}
      if(fmax(front,back)>=skin*skin/4) rebuild=1;
     }
     r->fil=fil;r->segment=seg;r->index=i;r->radius=type->stericradius;r->stiffness=type->sterick;
@@ -194,8 +199,8 @@ int filStericPrepare(simptr sim) {
   SMOL_PROFILE_RUN(SP_INDEX_REBUILD,er=filBoxesBuild(sim,w));
   if(er) return 1;
   for(j=0;j<n;j++) for(d=0;d<3;d++) {
-   w->segments[j].reference[d]=w->segments[j].segment->xyzfront[d];
-   w->segments[j].reference[d+3]=w->segments[j].segment->xyzback[d];
+   w->segments[j].reference[d]=w->segments[j].segment->xyzminus[d];
+   w->segments[j].reference[d+3]=w->segments[j].segment->xyzplus[d];
   }
   w->rebuilds++;
  }
@@ -227,6 +232,7 @@ int filStericForces(simptr sim) {
 #endif
   for(p=0;p<w->npair;p++) filContactEvaluate(w,p,&w->contact[p]);
  }
+ if(!filContactOn(sim->filss)) for(int ft=0;ft<sim->filss->ntype;ft++) for(int f=0;f<sim->filss->filtypes[ft]->nfil;f++) memset(sim->filss->filtypes[ft]->fillist[f]->endcontact,0,6*sizeof(double));
  w->contacts=0;w->maxpenetration=w->energy=w->contactbound=0;
  for(p=0;p<w->nsegment;p++) w->segments[p].contactrow[0]=w->segments[p].contactrow[1]=0;
  for(p=0;p<w->npair;p++) {
@@ -239,6 +245,10 @@ int filStericForces(simptr sim) {
   w->contacts++;w->maxpenetration=fmax(w->maxpenetration,delta);w->energy+=0.5*k*delta*delta;
   for(d=0;d<sim->dim;d++) {
    fa=k*delta*c->normal[d];fb=-fa;
+   if(a->index==0) a->fil->endcontact[0][d]+=(1-s)*fa;
+   if(a->index==a->fil->nseg-1) a->fil->endcontact[1][d]+=s*fa;
+   if(b->index==0) b->fil->endcontact[0][d]+=(1-t)*fb;
+   if(b->index==b->fil->nseg-1) b->fil->endcontact[1][d]+=t*fb;
    if(a->fil->filtype->dynamics!=FDnone) {
     a->fil->filwork->forces[a->index][d]+=(1-s)*fa;a->fil->filwork->forces[a->index+1][d]+=s*fa;
    }
@@ -281,7 +291,7 @@ static int filStericTrialContact(simptr sim,segmentptr trial,segmentptr other) {
  if(other->index<0 || other->index>=f->nseg || f->segments[other->index]!=other || filStericExcluded(trial,other)) return 0;
  extent=trial->fil->filtype->stericradius+f->filtype->stericradius;
  for(d=0;d<sim->dim;d++)
-  if(fmin(trial->xyzfront[d],trial->xyzback[d])>fmax(other->xyzfront[d],other->xyzback[d])+extent || fmin(other->xyzfront[d],other->xyzback[d])>fmax(trial->xyzfront[d],trial->xyzback[d])+extent) return 0;
+  if(fmin(trial->xyzminus[d],trial->xyzplus[d])>fmax(other->xyzminus[d],other->xyzplus[d])+extent || fmin(other->xyzminus[d],other->xyzplus[d])>fmax(trial->xyzminus[d],trial->xyzplus[d])+extent) return 0;
  return filStericGeometry(trial,other,&s,&t,n)+1e-12<extent;
 }
 
@@ -292,23 +302,22 @@ static int filStericSegmentBlockedImpl(simptr sim,segmentptr trial) {
 #else
 int filStericSegmentBlocked(simptr sim,segmentptr trial) {
 #endif
- struct filamentstericstruct *w;int lo[3],hi[3],cell[3],d,i;
+ struct filamentstericstruct *w;int lo[3],hi[3],cell[3],i;
  BoxGridCell found;
  double radius=trial->fil->filtype->stericradius;
  if(radius<=0) return 0;
  w=sim->filss->steric;
  if(!w || !w->inchemistry) {if(filStericPrepare(sim)) return 1;w=sim->filss->steric;}
  if(sim->boxs->grid.width[0]>0) {
-  if(boxGridBounds(&sim->boxs->grid,trial->xyzfront,trial->xyzback,radius,lo,hi)) {w->queryerror=1;return 1;}
+  if(boxGridBounds(&sim->boxs->grid,trial->xyzminus,trial->xyzplus,radius+w->maxradius+w->skin,lo,hi)) {w->queryerror=1;return 1;}
   for(cell[0]=lo[0];cell[0]<=hi[0];cell[0]++) for(cell[1]=lo[1];cell[1]<=hi[1];cell[1]++) for(cell[2]=lo[2];cell[2]<=hi[2];cell[2]++) {
    if(!boxGridFindCell(&sim->boxs->grid,cell,&found)) continue;
-   for(i=0;i<found.box->nsegment;i++) {
-    segmentptr other=found.box->segment[i];FilStericSegment *s;
+   for(i=0;i<found.box->nfilseg;i++) {
+    segmentptr other=found.box->filseg[i];FilStericSegment *s;
     if(other->fil->filtype->stericradius<=0) continue;
     if(other->stericindex<0 || other->stericindex>=w->nsegment) continue;
     s=&w->segments[other->stericindex];
-    for(d=0;d<3;d++) if(cell[d]!=(lo[d]>s->boxlo[d]?lo[d]:s->boxlo[d])) break;
-    if(d==3 && filStericTrialContact(sim,trial,s->segment)) return 1;
+    if(filStericTrialContact(sim,trial,s->segment)) return 1;
    }
   }
  }
@@ -352,12 +361,12 @@ static void filQueryCandidate(simptr sim,const double *a,const double *b,double 
  extent=radius+f->filtype->stericradius;
  for(d=0;d<sim->dim;d++) {
   double al=fmin(a[d],b[d]),ah=fmax(a[d],b[d]);
-  double bl=fmin(other->xyzfront[d],other->xyzback[d]),bh=fmax(other->xyzfront[d],other->xyzback[d]);
+  double bl=fmin(other->xyzminus[d],other->xyzplus[d]),bh=fmax(other->xyzminus[d],other->xyzplus[d]);
   double gap=fmax(0,fmax(al-bh,bl-ah));bound2+=gap*gap;
  }
  if(*closest && sqrt(bound2)-extent>=*best) return;
  clearance=(trial?filStericGeometry(trial,other,&s,&t,n):
-  Geo_ClosestSeg2Seg(a,b,other->xyzfront,other->xyzback,sim->dim,&s,&t,n))-extent;
+  Geo_ClosestSeg2Seg(a,b,other->xyzminus,other->xyzplus,sim->dim,&s,&t,n))-extent;
  if(clearance<*best) {*best=clearance;*closest=other;}
 }
 
@@ -374,20 +383,19 @@ segmentptr filStericQuery(simptr sim,const double *a,const double *b,double radi
  /* A chemistry snapshot includes a separate list of accepted new segments. */
  if(!w || !w->inchemistry) {if(filStericPrepare(sim)) goto invalid;w=sim->filss->steric;}
  if(sim->boxs->grid.width[0]>0) {
-  if(boxGridBounds(&sim->boxs->grid,a,b,radius,lo,hi)) goto invalid;
+  if(boxGridBounds(&sim->boxs->grid,a,b,radius+w->maxradius+w->skin,lo,hi)) goto invalid;
   for(d=0;d<3;d++) cells*=1.0+(double)hi[d]-lo[d];
   /* Large diagonal lines must not enumerate an enormous mostly empty AABB.
      Global nearest queries also use a linear bounds pass with exact pruning. */
   if(!global && cells<=4.0*fmax(1,w->nsegment)) {
    for(cell[0]=lo[0];cell[0]<=hi[0];cell[0]++) for(cell[1]=lo[1];cell[1]<=hi[1];cell[1]++) for(cell[2]=lo[2];cell[2]<=hi[2];cell[2]++) {
     if(!boxGridFindCell(&sim->boxs->grid,cell,&found)) continue;
-    for(i=0;i<found.box->nsegment;i++) {
-     segmentptr other=found.box->segment[i];FilStericSegment *s;
+    for(i=0;i<found.box->nfilseg;i++) {
+     segmentptr other=found.box->filseg[i];FilStericSegment *s;
      if(other->fil->filtype->stericradius<=0) continue;
      if(other->stericindex<0 || other->stericindex>=w->nsegment) continue;
      s=&w->segments[other->stericindex];
-     for(d=0;d<3;d++) if(cell[d]!=(lo[d]>s->boxlo[d]?lo[d]:s->boxlo[d])) break;
-     if(d==3) filQueryCandidate(sim,a,b,radius,trial,s->segment,&best,&closest);
+     filQueryCandidate(sim,a,b,radius,trial,s->segment,&best,&closest);
      if(closest && best<=0) return closest;
     }
    }
@@ -427,21 +435,21 @@ int filStericPrepareMovement(simptr sim) {
  for(ft=0;ft<sim->filss->ntype;ft++) for(f=0;f<sim->filss->filtypes[ft]->nfil;f++,nf++) {
   filamentptr fil=sim->filss->filtypes[ft]->fillist[f];
   if(fil->nseg && n>INT_MAX-fil->nseg-1) return 1;
-  if(nb>INT_MAX-fil->nbranch) return 1;
+  if(nb>INT_MAX-fil->njunct) return 1;
   if(fil->nseg) n+=fil->nseg+1;
   if(!rebuild) {
    FilStericFilament *old;
    if(nf>=w->nfilament) rebuild=1;
    else {
     old=&w->filaments[nf];
-    if(old->fil!=fil || old->nseg!=fil->nseg || old->nbranch!=fil->nbranch || old->frontend!=fil->frontend) rebuild=1;
-    else for(br=0;br<fil->nbranch;br++) {
+    if(old->fil!=fil || old->nseg!=fil->nseg || old->nbranch!=fil->njunct || 0) rebuild=1;
+    else for(br=0;br<fil->njunct;br++) {
      FilStericBranch *bond=&w->branches[old->branchstart+br];
-     if(bond->daughter!=fil->branches[br] || bond->spot!=fil->branchspots[br]) {rebuild=1;break;}
+     if(bond->daughter!=fil->juncts[br]->fil || bond->spot!=fil->juncts[br]->node-1 || bond->end!=fil->juncts[br]->end || bond->rigid!=fil->juncts[br]->rigid || bond->bend!=fil->juncts[br]->bend) {rebuild=1;break;}
     }
    }
   }
-  nb+=fil->nbranch;
+  nb+=fil->njunct;
  }
  if(nf!=w->nfilament || n!=w->nnode || nb!=w->nbranch) rebuild=1;
  if(rebuild) {
@@ -461,20 +469,21 @@ int filStericPrepareMovement(simptr sim) {
   w->nfilament=nf;w->nnode=n;w->nbranch=nb;
   for(ft=0,nf=0,nb=0;ft<sim->filss->ntype;ft++) for(f=0;f<sim->filss->filtypes[ft]->nfil;f++,nf++) {
    filamentptr fil=sim->filss->filtypes[ft]->fillist[f];FilStericFilament *record=&w->filaments[nf];
-   record->fil=fil;record->frontend=fil->frontend;record->nseg=fil->nseg;record->nbranch=fil->nbranch;record->branchstart=nb;
+   record->fil=fil;record->nseg=fil->nseg;record->nbranch=fil->njunct;record->branchstart=nb;
    record->nodeoffset=fil->nseg?i:-1;fil->stericnodeoffset=record->nodeoffset;
-   for(br=0;br<fil->nbranch;br++,nb++) {w->branches[nb].daughter=fil->branches[br];w->branches[nb].spot=fil->branchspots[br];}
+   for(br=0;br<fil->njunct;br++,nb++) {w->branches[nb].daughter=fil->juncts[br]->fil;w->branches[nb].spot=fil->juncts[br]->node-1;w->branches[nb].end=fil->juncts[br]->end;w->branches[nb].rigid=fil->juncts[br]->rigid;w->branches[nb].bend=fil->juncts[br]->bend;}
    if(!fil->nseg) continue;
    for(j=0;j<=fil->nseg;j++,i++) {memset(&w->nodes[i],0,sizeof(w->nodes[i]));w->nodes[i].fil=fil;w->nodes[i].node=j;w->nodes[i].parent=i;}
   }
   for(f=0;f<w->nfilament;f++) {
    FilStericFilament *record=&w->filaments[f];filamentptr mother=record->fil;
    if(record->nodeoffset<0) continue;
-   for(br=0;br<mother->nbranch;br++) {
-    filamentptr daughter=mother->branches[br];int spot=mother->branchspots[br];
-    if(!daughter || daughter->frontend!=mother || spot<0 || spot>=mother->nseg) continue;
+   for(br=0;br<mother->njunct;br++) {
+    filjunctionptr joint=mother->juncts[br];filamentptr daughter=joint->fil;int node=joint->node;
+    if(!joint->rigid || !daughter || node<0 || node>mother->nseg) continue;
     other=filNodeOffset(w,daughter);if(other<0 || !daughter->nseg) continue;
-    root=filNodeRoot(w->nodes,record->nodeoffset+spot+1);
+    root=filNodeRoot(w->nodes,record->nodeoffset+node);
+    if(joint->end=='p') other+=daughter->nseg;
     w->nodes[filNodeRoot(w->nodes,other)].parent=root;
    }
   }
@@ -497,7 +506,7 @@ int filStericPrepareMovement(simptr sim) {
  for(i=0;i<n;i++) {w->nodes[i].drag=0;w->nodes[i].fixed=0;}
  for(i=0;i<n;i++) {
   FilStericNode *node=&w->nodes[i];filamentptr fil=node->fil;
-  double mu=fil->filtype->dynamics==FDnone?0:fil->filtype->mobility*fil->nodemobility[node->node];
+  double mu=fil->filtype->dynamics==FDnone?0:fil->filtype->mobility*filNodeMobility(fil,node->node);
   root=node->parent;
   if(node->fil->filtype->kT!=w->nodes[root].fil->filtype->kT ||
       (filImplicitEnabled(sim) && node->fil->filtype->brownian!=w->nodes[root].fil->filtype->brownian)) {
@@ -631,7 +640,7 @@ static int filStericMove(simptr sim,int workers) {
   for(i=0;i<w->nnode;i++) if(w->nodes[i].parent==i) for(d=0;d<sim->dim;d++) w->nodes[i].force[d]=0;
   for(i=0;i<w->nnode;i++) {
    FilStericNode *node=&w->nodes[i];root=node->parent;
-   if(node->fil->filtype->dynamics!=FDnone && node->fil->filtype->mobility*node->fil->nodemobility[node->node]>0)
+   if(node->fil->filtype->dynamics!=FDnone && node->fil->filtype->mobility*filNodeMobility(node->fil,node->node)>0)
     for(d=0;d<sim->dim;d++) w->nodes[root].force[d]+=node->fil->filwork->forces[node->node][d];
   }
  }
@@ -667,6 +676,7 @@ int filStericDynamics(simptr sim) {
  sim->dt=dt/steps;
  for(step=0;step<steps;step++) {
   if(filImplicitEnabled(sim)) {er=filImplicitStep(sim,workers);if(er) break;continue;}
+  if(filContactOn(sim->filss)) {er=filContactForces(sim);if(er) break;}
   SMOL_PROFILE_RUN(SP_FORCES,filStericOrdinaryForces(sim,workers,1));
   SMOL_PROFILE_RUN(SP_STERIC,er=filAddFilamentForce(sim));
   if(er) break;

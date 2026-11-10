@@ -901,8 +901,8 @@ latticeptr latticereadstring(simptr sim,ParseFilePtr pfp,latticeptr lattice,cons
 			else {
 				itct=sscanf(line2,"%lg-%lg",&flt1,&flt2);
 				if(itct==2) {
-					poslo[d]=flt1;
-					poshi[d]=flt2; }
+					poslo[d]=strunits(NULL,"L",flt1,NULL,"convert");		// convert range from default to working units
+					poshi[d]=strunits(NULL,"L",flt2,NULL,"convert"); }
 				else {
 					itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);
 					CHECKM(itct==1,"cannot read position value for mol. ");

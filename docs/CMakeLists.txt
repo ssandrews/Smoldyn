@@ -21,7 +21,9 @@ foreach(_tex_file ${DOC_TEX_FILES})
     set(_tgt ${_name_file})
     set(_output_rst_file "${_dir_file}/${_name_file}.rst")
     add_custom_target(${_tgt} 
-        COMMAND pandoc -f latex --standalone ${_tex_file} -o ${_output_rst_file}
+        COMMAND pandoc -f latex --standalone
+            --lua-filter=${CMAKE_CURRENT_SOURCE_DIR}/pandoc_rst_fixes.lua
+            ${_tex_file} -o ${_output_rst_file}
         BYPRODUCTS ${_output_rst_file}
         MAIN_DEPENDENCY ${_tex_file}
         COMMENT " [doc] converting ${_tex_file} to ${_output_rst_file}"

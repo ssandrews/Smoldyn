@@ -1219,15 +1219,13 @@ void comparttranslate(simptr sim,compartptr cmpt,int code,double *translate) {
 	surfaceptr srf;
 	moleculeptr mptr;
 	molssptr mols;
-	double newpos[DIMMAX],crsspt[DIMMAX],cross,epsilon;
+	double newpos[DIMMAX],crsspt[DIMMAX],cross;
 	enum PanelShape ps;
 	panelptr pnl;
 	enum PanelFace face1,face2;
-	enum MolecState ms;
 
 	dim=sim->dim;
 	mols=sim->mols;
-	epsilon=sim->srfss->epsilon;
 
 	if(code&1) {	// translate surfaces and interior-defining points
 		for(s=0;s<cmpt->nsrf;s++) {
@@ -1238,20 +1236,9 @@ void comparttranslate(simptr sim,compartptr cmpt,int code,double *translate) {
 			for(d=0;d<dim;d++)
 				cmpt->points[pt][d]+=translate[d]; }
 
-	if(code&2) {	// translate surface-bound molecules
-		for(s=0;s<cmpt->nsrf;s++) {
-			srf=cmpt->surflist[s];
-			for(ll=0;ll<srf->nmollist;ll++) {
-				for(m=0;m<srf->nmol[ll];m++) {
-					mptr=srf->mol[ll][m];
-					if(mptr->ident) {
-						for(d=0;d<dim;d++)
-							mptr->pos[d]+=translate[d];
-						ms=mptr->mstate;
-						if(ms==MSfront) face1=PFfront;
-						else if(ms==MSback) face1=PFback;
-						else face1=PFnone;
-						fixpt2panel(mptr->pos,mptr->pnl,dim,face1,epsilon); }}}}}
+	if(code&2)	// translate surface-bound molecules
+		for(s=0;s<cmpt->nsrf;s++)
+			surftranslatebound(sim,cmpt->surflist[s],translate);
 
 	if(code&4 || code&8) {	// translate molecules
 		for(ll=0;ll<mols->nlist;ll++)

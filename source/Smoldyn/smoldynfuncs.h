@@ -261,6 +261,8 @@ int surfsetedgepts(surfaceptr srf,double value);
 int surfsetstipple(surfaceptr srf,int factor,int pattern);
 int surfsetdrawmode(surfaceptr srf,enum PanelFace face,enum DrawMode dm);
 int surfsetshiny(surfaceptr srf,enum PanelFace face,double shiny);
+int surfsetmobility(surfaceptr srf,double mobility);
+void surfapplyforce(surfaceptr srf,const double *force,int dim);
 int surfsetaction(surfaceptr srf,int i,const int *index,enum MolecState ms,enum PanelFace face,enum SrfAction act,int newident);
 int surfsetrate(surfaceptr srf,int ident,const int *index,enum MolecState ms,enum MolecState ms1,enum MolecState ms2,int newident,double value,int which);
 int surfaddpanel(surfaceptr srf,int dim,enum PanelShape ps,const char *string,double *params,const char *name);
@@ -276,7 +278,10 @@ int surfforceclampend(simptr sim,int commit);
 void surfforceclampreaction(simptr sim,panelptr pnl,double position,double *force,double *stiffness,double *extent,double *maxk);
 void surfupdateoldpos(surfaceptr srf,int dim);
 void surftranslatesurf(surfaceptr srf,int dim,double *translate);
+void surftranslatebound(simptr sim,surfaceptr srf,double *translate);
+void panelboundingbox(panelptr pnl,int dim,double *lo,double *hi);
 int surfsetjumppanel(surfaceptr srf,panelptr pnl1,enum PanelFace face1,int bidirect,panelptr pnl2,enum PanelFace face2);
+int surfsetneighhop(surfaceptr srf,int neighhop);
 int surfsetneighbors(panelptr pnl,panelptr *neighlist,int nneigh,int add);
 int surfaddemitter(surfaceptr srf,enum PanelFace face,int i,double amount,double *pos,int dim);
 surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char *word,char *line2);
@@ -289,16 +294,21 @@ void surfremovemol(moleculeptr mptr,int ll);
 enum PanelFace panelside(double* pt,panelptr pnl,int dim,double *distptr,int strict,int useoldpos);
 int lineXpanel(double *pt1,double *pt2,panelptr pnl,int dim,double *crsspt,enum PanelFace *face1ptr,enum PanelFace *face2ptr,double *crossptr,double *cross2ptr,int *veryclose,int useoldpos);
 int ptinpanel(double *pt,panelptr pnl,int dim);
+void getpanelnormal(double *pt,panelptr pnl,int dim,double *norm);
 enum SrfAction surfaction(surfaceptr srf,enum PanelFace face,int ident,enum MolecState ms,int *i2ptr,enum MolecState *ms2ptr);
 int rxnXsurface(simptr sim,moleculeptr mptr1,moleculeptr mptr2);
 void fixpt2panel(double *pt,panelptr pnl,int dim,enum PanelFace face,double epsilon);
 int fixpt2panelnocross(simptr sim,double *pt,panelptr pnl,int dim,enum PanelFace face,double epsilon);
 int closestpanelpt(panelptr pnl,int dim,double *testpt,double *pnlpt,double neighdist);
 double closestsurfacept(surfaceptr srf,int dim,double *testpt,double *pnlpt,panelptr *pnlptr,boxptr bptr);
+void movept2closepanel(simptr sim,double *pos,const double *posx,panelptr pnlx,enum PanelFace face,double *via,panelptr *pnlptr);
 void movemol2closepanel(simptr sim,moleculeptr mptr);
 int checksurfaces1mol(simptr sim,moleculeptr mptr,double crossminimum);
 int checksurfaces(simptr sim,int ll,int reborn);
 int checksurfacebound(simptr sim,int ll);
+int surfmovebyforces(simptr sim);
+int surfaddfilament(surfaceptr srf,filamentptr fil);
+void surfremovefilament(surfaceptr srf,filamentptr fil);
 
 /*********************************** Boxes **********************************/
 
@@ -318,6 +328,8 @@ boxptr pos2box(simptr sim,const double *pos);
 void boxrandpos(simptr sim,double *pos,boxptr bptr);
 int boxaddmol(moleculeptr mptr,int ll);
 void boxremovemol(moleculeptr mptr,int ll);
+int boxaddfilseg(boxptr bptr,segmentptr segment);
+int boxaddfilend(boxptr bptr,filamentptr fil,char endchar);
 boxptr boxscansphere(simptr sim,const double *pos,double radius,boxptr bptr,int *wrap);
 int boxdebug(simptr sim);
 
@@ -333,6 +345,7 @@ int checkboxparams(simptr sim,int *warnptr);
 void boxsetcondition(boxssptr boxs,enum StructCond cond,int upgrade);
 int boxsetsize(simptr sim,const char *info,double val);
 int boxesupdate(simptr sim);
+int boxesupdatesurface(simptr sim,surfaceptr srf);
 
 // core simulation functions
 boxptr line2nextbox(simptr sim,double *pt1,double *pt2,boxptr bptr);
@@ -411,6 +424,7 @@ int latticeenablelattices(simptr sim);
 int latticeaddlattice(simptr sim,latticeptr *latptr,const char *latticename,const double *min,const double *max,const double *dx,const char *btype,enum LatticeType type);
 int latticeaddrxn(latticeptr lattice,rxnptr reaction,int move);
 int latticeaddsurface(latticeptr lattice, surfaceptr surface);
+int latticeaddconvert(latticeptr lattice,int ident,int *index,enum PanelFace face,int convert);
 
 int latticeaddmols(latticeptr lattice,int nmol,int i,double *poslo,double *poshi,int dim);
 void latticeaddport(latticeptr lattice,portptr port);
@@ -422,6 +436,8 @@ int latticeruntimestep(simptr sim);
 /******************************** Filaments *******************************/
 
 // enumerated types
+char *filFES2string(enum FilEndState fes,char *string);
+enum FilEndState filstring2FES(const char *string);
 
 // low level utilities
 int filReadFilName(simptr sim,const char *str,filamenttypeptr *filtypeptr,filamentptr *filptr,char *filname);
@@ -439,6 +455,7 @@ int filCheckParams(simptr sim,int *warnptr);
 // filament manipulation
 int filGetFilIndex(simptr sim,const char *name,int *ftptr);
 filamentptr filAddFilament(filamenttypeptr filtype,const char *filname);
+int filRemoveFilament(filamentptr fil);
 int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,const char *thtstr, const char* phistr,const char* chistr,double thickness);
 
 // structure set up
@@ -452,6 +469,8 @@ int filUpdate(simptr sim);
 // core simulation functions
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
 int filDynamics(simptr sim);
+int filStericEnabled(const simptr sim);
+int filImplicitEnabled(const simptr sim);
 double filSegmentRestLength(const filamentptr fil,int seg);
 double filSegmentStiffness(const filamentptr fil,int seg);
 int filSegmentIsConstrained(const filamentptr fil,int seg);
@@ -469,6 +488,8 @@ int filAddFilamentForce(simptr sim);
 segmentptr filPointInFilament(simptr sim,const double *point,double *distance,segmentptr *nearest);
 segmentptr filLineXFilament(simptr sim,const double *a,const double *b,double radius,double *distance,segmentptr *nearest);
 int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr);
+int filSurfMove(simptr sim,surfaceptr srf,const double *translate);
+int filSurfMoveDone(simptr sim);
 
 /********************************* BioNetGen ********************************/
 
@@ -479,6 +500,16 @@ int checkbngparams(simptr sim,int *warnptr);
 // structure setup
 int loadbng(simptr sim,ParseFilePtr *pfpptr,char* line2);
 int bngupdate(simptr sim);
+bngptr bngaddbng(simptr sim,const char *bngname);
+int bngsetparam(bngptr bng,char *parameter,double amount);
+int bngsetBNG2path(bngptr bng,char *path);
+int bngaddmonomer(bngptr bng,const char *name,enum MolecState ms);
+int bngsetmonomerdifc(bngptr bng,char *name,double difc);
+int bngsetmonomerdisplaysize(bngptr bng,char *name,double displaysize);
+int bngsetmonomercolor(bngptr bng,char *name,double *color);
+int bngsetmonomerstate(bngptr bng,char *name,enum MolecState ms);
+int bngrunBNGL2(bngptr bng,char *filename,char *outname);
+bngptr bngreadstring(simptr sim,ParseFilePtr pfp,bngptr bng,const char *word,char *line2);
 
 
 /********************************* Graphics *********************************/
@@ -488,6 +519,7 @@ enum LightParam graphicsstring2lp(char *string);
 
 // low level utilities
 int graphicsreadcolor(char **stringptr,double *rgba);
+char *graphicscolor2string(const double *rgba,char *string);
 
 // memory management
 void graphssfree(graphicsssptr graphss);

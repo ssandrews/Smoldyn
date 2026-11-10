@@ -1,5 +1,7 @@
 # Optional banded preconditioning for implicit_network
 
+> Updated for upstream integration on 10 November 2026: see [compatibility choices and validation](UPSTREAM_INTEGRATION_2026-11-10.md). Native junction/end-state names and shared box storage supersede older implementation descriptions below. Historical timing tables describe their original revisions, not a new benchmark of the merged engine.
+
 Implemented locally on 2026-10-29. This changes the Newton linear-solve
 preconditioner, not the physical forces or backward Euler acceptance criterion.
 The existing diagonal path remains the default and is retained as a fallback.

@@ -8,13 +8,13 @@
 #include "smoldyn.h"
 #include "smoldynfuncs.h"
 #include "smolfilamentsteric.h"
+#include "filament_test_compat.h"
 #include "Sphere.h"
 #undef CHECK
 #define CHECK(c) do {if(!(c)) {fprintf(stderr,"FAIL operator line %d: %s\n",__LINE__,#c);exit(1);}} while(0)
 filamenttypeptr filAddFilamentType(simptr sim,const char *name);
 filamentworkptr filWorkAlloc(filamentptr fil,int n);
 int filAddSegment(filamentptr fil,const double *x,double len,const double *angle,double thickness,char end);
-filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thickness,const char *name);
 void filNodes2Angles(filamentptr fil,int lo,int hi);
 filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr type,const char *word,char *line);
 static uint64_t physical_hash(simptr sim) {

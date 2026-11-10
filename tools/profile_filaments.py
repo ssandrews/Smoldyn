@@ -33,7 +33,21 @@ def read_snapshots():
     nearest = {}
     history = {}
     with FRAMES.open(encoding="utf-8") as source:
-        rows = (line.split() for line in source if line.startswith("FIL "))
+        def compatible_rows():
+            for line in source:
+                if not line.startswith("FIL "):
+                    continue
+                row = line.split()
+                if len(row) >= 8 and row[6] in {"open", "capped", "shrink", "barbed"}:
+                    # The timing driver's snapshot format intentionally stays
+                    # simple. General loops/two-ended dynamics need native
+                    # input, not a reconstructed one-parent geometry snapshot.
+                    if row[5] != "-" or row[6] != "open" or row[7] not in {"open", "capped"}:
+                        raise ValueError("Profiling snapshots require a minus-attached branching tree with open/capped plus ends")
+                    parent = row[4].rsplit(":", 1)[0].partition(":")[2] if row[4] != "-" else "-"
+                    row = row[:4] + [parent, str(int(row[7] == "capped"))] + row[8:]
+                yield row
+        rows = compatible_rows()
         for t, frame in itertools.groupby(rows, key=lambda row: float(row[1])):
             frame = list(frame)
             if any(len(row) != 6 + 3 * (int(row[3]) + 1) for row in frame):

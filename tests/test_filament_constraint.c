@@ -6,6 +6,7 @@
 #include "smoldyn.h"
 #include "smoldynfuncs.h"
 #include "smolfilamentsteric.h"
+#include "filament_test_compat.h"
 #include "random2.h"
 #undef CHECK
 #define CHECK(c) do {if(!(c)) {fprintf(stderr,"FAIL fixed length line %d: %s\n",__LINE__,#c);exit(1);}} while(0)
@@ -15,7 +16,6 @@ static int cached=0;
 filamenttypeptr filAddFilamentType(simptr sim,const char *name);
 filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr type,const char *word,char *line);
 int filAddSegment(filamentptr fil,const double *x,double length,const double *angle,double thickness,char end);
-filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thickness,const char *name);
 void filNodes2Angles(filamentptr fil,int lo,int hi);
 double filRandomLength(const filamenttypeptr type,double thickness,double sigma);
 int filElongate(simptr sim,filamentptr fil,double length);
@@ -148,7 +148,7 @@ static void growth_and_brownian(void) {
   for(i=0;i<3;i++) {CHECK(!filDynamics(sim));lengths(sim,2e-10);for(d=0;d<dim;d++) CHECK(daughter->nodes[0][d]==fil->nodes[3][d]);sim->time+=sim->dt;}
   CHECK(filElongate(sim,daughter,0.02)==2);CHECK(!filDynamics(sim));lengths(sim,2e-10);
   CHECK(!filRemoveSegment(daughter,'b'));CHECK(!filDynamics(sim));lengths(sim,2e-10);
-  daughter->capped=1;CHECK(!filElongate(sim,daughter,0.02));simfree(sim);
+  daughter->endstate[1]=1;CHECK(!filElongate(sim,daughter,0.02));simfree(sim);
  }
  for(dim=2;dim<=3;dim++) {
   simptr sim=scene(dim);filamenttypeptr t=type(sim);filamentptr fil=chain(t,1);double before[3];
@@ -186,7 +186,7 @@ static void failure_and_parser(void) {
  strcpy(value,"1e-9");CHECK(filtypeReadString(sim,NULL,t,"constraint_tolerance",value));NEAR(t->constrainttol,1e-9,1e-20);
  strcpy(value,"0");CHECK(!filtypeReadString(sim,NULL,t,"constraint_tolerance",value));NEAR(t->constrainttol,1e-9,1e-20);
  strcpy(value,"25");CHECK(filtypeReadString(sim,NULL,t,"constraint_iterations",value));CHECK(t->constraintiterations==25);
- t->dynamics=FDeuler;CHECK(filStericValidate(sim));simfree(sim);
+ t->dynamics=FDeuler;CHECK((filStericValidate(sim)!=0)==(t->implicitmethod!=0 || t->implicitjacobian!=0));simfree(sim);
  puts("PASS infeasible fixed-anchor failure restores mechanics; constraint parsing and unsupported-method rejection");
 }
 static void workers(void) {
@@ -245,7 +245,7 @@ static void projected_checks(void) {
   strcpy(value,"nan");CHECK(!filtypeReadString(sim,NULL,t,"projected_tolerance",value));
   strcpy(value,"invalid");CHECK(!filtypeReadString(sim,NULL,t,"implicit_method",value));
   t->klen=10000;CHECK(filStericValidate(sim));
-  t->dynamics=FDeuler;CHECK(filStericValidate(sim));
+  t->dynamics=FDeuler;CHECK((filStericValidate(sim)!=0)==(t->implicitmethod!=0 || t->implicitjacobian!=0));
   t->implicitmethod=0;t->implicitjacobian=0;CHECK(!filStericValidate(sim));simfree(sim);
  }
  puts("PASS projected timestep convergence, same-noise Newton fallback and parser/model validation");

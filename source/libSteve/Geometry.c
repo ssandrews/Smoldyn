@@ -1035,26 +1035,14 @@ double Geo_NearestLine2LineDist(double *ptA1,double *ptA2,double *ptB1,double *p
    geometry in micrometre units. Handles point segments and parallel segments. */
 double Geo_ClosestSeg2Seg(const double *a0,const double *a1,const double *b0,const double *b1,int dim,double *s,double *t,double *normal) {
  double u[3]={0,0,0},v[3]={0,0,0},w[3]={0,0,0};
- double aa=0,bb=0,cc=0,dd=0,ee=0,den,x=0,y=0,d2=0;
+ double aa=0,den,x=0,y=0,d2=0;
  int d;
- for(d=0;d<dim;d++) {u[d]=a1[d]-a0[d];v[d]=b1[d]-b0[d];w[d]=a0[d]-b0[d];aa+=u[d]*u[d];bb+=u[d]*v[d];cc+=v[d]*v[d];dd+=u[d]*w[d];ee+=v[d]*w[d];}
- if(aa==0 && cc==0) x=y=0;
- else if(aa==0) {x=0;y=ee/cc;y=fmax(0,fmin(1,y));}
- else if(cc==0) {y=0;x=-dd/aa;x=fmax(0,fmin(1,x));}
- else {
-  den=aa*cc-bb*bb;
-  if(den>1e-12*aa*cc) x=fmax(0,fmin(1,(bb*ee-cc*dd)/den));
-  /* For parallel overlapping rods choose the middle of the overlapping
-     projection, rather than an arbitrary endpoint (reduces artificial torque). */
-  else {
-   double lo=fmax(0,fmin(-dd/aa,(bb-dd)/aa));
-   double hi=fmin(1,fmax(-dd/aa,(bb-dd)/aa));
-   x=hi>=lo?0.5*(lo+hi):fmax(0,fmin(1,-dd/aa));
-  }
-  y=(bb*x+ee)/cc;
-  if(y<0) {y=0;x=fmax(0,fmin(1,-dd/aa));}
-  else if(y>1) {y=1;x=fmax(0,fmin(1,(bb-dd)/aa));}
- }
+ for(d=0;d<dim;d++) {u[d]=a1[d]-a0[d];v[d]=b1[d]-b0[d];w[d]=a0[d]-b0[d];aa+=u[d]*u[d];}
+ if(dim==2) {
+  double aa0[3]={a0[0],a0[1],0},aa1[3]={a1[0],a1[1],0};
+  double bb0[3]={b0[0],b0[1],0},bb1[3]={b1[0],b1[1],0};
+  Geo_NearestSeg2SegPts(aa0,aa1,bb0,bb1,&x,&y);
+ } else Geo_NearestSeg2SegPts(a0,a1,b0,b1,&x,&y);
  for(d=0;d<3;d++) {normal[d]=w[d]+x*u[d]-y*v[d];d2+=normal[d]*normal[d];}
  *s=x;*t=y;
  if(d2>0) for(d=0;d<3;d++) normal[d]/=sqrt(d2);
@@ -1075,6 +1063,66 @@ double Geo_ClosestSeg2Seg(const double *a0,const double *a1,const double *b0,con
  }
  return sqrt(d2);
 }
+/* Geo_NearestSeg2SegPts */
+// Finds the closest points of the 3D line segments from ptA1 to ptA2 and from ptB1 to
+// ptB2, and returns the distance between them. The closest points are at fractions
+// *sptr along segment A and *tptr along segment B, each from 0 to 1. For parallel
+// segments, which have many closest pairs of points, this uses the middle of their
+// overlap, or the nearest ends if they don't overlap.
+double Geo_NearestSeg2SegPts(const double *ptA1,const double *ptA2,const double *ptB1,const double *ptB2,double *sptr,double *tptr) {
+	double a,b,c,d,e,denom,s,t,lo,hi,vect[3];
+	int i;
+
+	a=b=c=d=e=0;
+	for(i=0;i<3;i++) {
+		a+=(ptA2[i]-ptA1[i])*(ptA2[i]-ptA1[i]);
+		b+=(ptA2[i]-ptA1[i])*(ptB2[i]-ptB1[i]);
+		c+=(ptB2[i]-ptB1[i])*(ptB2[i]-ptB1[i]);
+		d+=(ptA2[i]-ptA1[i])*(ptA1[i]-ptB1[i]);
+		e+=(ptB2[i]-ptB1[i])*(ptA1[i]-ptB1[i]); }
+	denom=a*c-b*b;
+
+	if(a<=0 && c<=0) s=t=0;
+	else if(a<=0) {
+		s=0;
+		t=e/c;
+		t=t<0?0:(t>1?1:t); }
+	else if(c<=0) {
+		t=0;
+		s=-d/a;
+		s=s<0?0:(s>1?1:s); }
+	else {
+		if(denom>1e-12*a*c) {													// not parallel
+			s=(b*e-c*d)/denom;
+			s=s<0?0:(s>1?1:s);
+			t=(b*s+e)/c; }
+		else {																				// parallel: t values of the ends of A, on B
+			lo=e/c;
+			hi=(e+b)/c;
+			if(lo>hi) {
+				t=lo;
+				lo=hi;
+				hi=t; }
+			lo=lo<0?0:lo;
+			hi=hi>1?1:hi;
+			t=(lo<=hi)?(lo+hi)/2:(hi<0?0:1);
+			s=(b*t-d)/a;
+			s=s<0?0:(s>1?1:s); }
+		if(t<0) {
+			t=0;
+			s=-d/a;
+			s=s<0?0:(s>1?1:s); }
+		else if(t>1) {
+			t=1;
+			s=(b-d)/a;
+			s=s<0?0:(s>1?1:s); }}
+
+	for(i=0;i<3;i++)
+		vect[i]=ptA1[i]+s*(ptA2[i]-ptA1[i])-ptB1[i]-t*(ptB2[i]-ptB1[i]);
+	*sptr=s;
+	*tptr=t;
+	return sqrt(vect[0]*vect[0]+vect[1]*vect[1]+vect[2]*vect[2]); }
+
 
 double Geo_NearestSeg2SegDist(double *ptA1,double *ptA2,double *ptB1,double *ptB2) {
 	double a,b,c,d,e,denom,sc,tc,dist,vect[3];
@@ -1279,7 +1327,7 @@ double Geo_LineXCyl2s(double *pt1,double *pt2,double *cp1,double *cp2,double *no
 	edge1[1]=cp2[1]-norm[1]*rad;
 	crossl=Geo_LineXLine(pt1,pt2,edge0,edge1,NULL);
 	nrpos=Geo_LineXLine(pt1,pt2,cp1,cp2,NULL);
-	if(!(nrpos>=0 || nrpos<0)) Geo_LineNormPos(cp1,cp2,pt1,2,&nrdist);
+	if(isnan(nrpos)) Geo_LineNormPos(cp1,cp2,pt1,2,&nrdist);
 	else nrdist=0;
 	if(nrdistptr) *nrdistptr=nrdist;
 	if(nrposptr) *nrposptr=nrpos;

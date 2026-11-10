@@ -11,7 +11,7 @@ species red green
 boxsize 10
 
 frame_thickness 3
-frame_color 0.8 0.9 0
+frame_color yellow
 grid_thickness 1
 grid_color white
 background_color black

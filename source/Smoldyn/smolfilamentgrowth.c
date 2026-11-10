@@ -12,42 +12,53 @@ int filAddSegment(filamentptr fil,const double *pos,double length,const double *
 void filNodes2Angles(filamentptr fil,int lo,int hi);
 
 double filSegmentRestLength(const filamentptr fil,int seg) {
- return fil->filtype->stdlen+(fil->filtype->elongmodel && seg==fil->nseg-1?fil->growbank:0);
+ return fil->filtype->stdlen+(fil->filtype->elongmodel && seg==fil->nseg-1?fil->lenbank[1]:0);
 }
 
 double filSegmentStiffness(const filamentptr fil,int seg) {
  filamenttypeptr t=fil->filtype;
- /* Preserve the original force convention exactly in legacy mode. In growth
-    mode EA=klen*stdlen*thickness is fixed, so two half-elements in series have
+ /* Legacy/overlap mode follows upstream's thickness-scaled axial stiffness.
+    In growth mode EA=klen*stdlen*thickness is fixed, so half-elements in series have
     the same compliance and axial energy as the unsplit growing element. */
- if(!t->elongmodel) return t->klen;
+ if(!t->elongmodel) return t->klen*fil->segments[seg]->thk;
  if(filSegmentIsConstrained(fil,seg)) return 0;
  return (t->klen>0?t->klen:t->elongstiffness)*t->stdlen*fil->segments[seg]->thk/filSegmentRestLength(fil,seg);
 }
 
 int filSegmentIsConstrained(const filamentptr fil,int seg) {
- return fil->filtype->klen<0 && !(fil->filtype->elongmodel && !fil->capped && seg==fil->nseg-1);
+ return fil->filtype->klen<0 && !(fil->filtype->elongmodel && (fil->endstate[1]!=FEScapped) && seg==fil->nseg-1);
 }
 
 double filNominalLength(const filamentptr fil) {
- return fil->nseg*fil->filtype->stdlen+(fil->filtype->elongmodel?fil->growbank:0);
+ return fil->nseg*fil->filtype->stdlen+(fil->filtype->elongmodel?fil->lenbank[1]:0);
 }
 
 int filGrowthValidate(const filamenttypeptr t) {
  int f;
  if(!t->elongmodel) return 0;
+ for(int state=0;state<FESMAX;state++) {
+  if(t->endrate[0][state]!=0 || t->endrate[1][state]<0 ||
+     t->endrate[1][state]*t->filss->sim->dt>0.25*t->stdlen ||
+     (state==FEScapped && t->endrate[1][state]>0)) {
+   simLog(t->filss->sim,9,"ERROR: mechanochemical growth requires nonnegative plus-end-only growth, no capped-state growth, and elongation_rate*time_step <= standard_length/4\n");return 1;
+  }
+ }
+ if(t->endrate[1][FESbarbed]>0 && (t->barbedparameters[1][0]>0 || t->barbedparameters[1][1]>0)) {
+  simLog(t->filss->sim,9,"ERROR: choose native barbed-end kinetics or mechanochemical growth; their two force-rate laws cannot be combined\n");return 1;
+ }
+
  if(t->elongmodel!=1 || t->dynamics!=FDimplicitnetwork || !(t->stdlen>0) ||
     !(t->klen>0 || (t->klen<0 && t->elongstiffness>0 && isfinite(t->elongstiffness))) ||
     !(t->kT>0) || !(t->elongstep>0) || !(t->elongenergy>0) ||
     !isfinite(t->stdlen+t->klen+t->kT+t->elongstep+t->elongenergy) ||
     !isfinite(t->elongenergy/t->elongstep) || !isfinite(t->elongenergy/t->kT) ||
     !(t->elongenergy/t->kT>0) || !isfinite((t->klen>0?t->klen:t->elongstiffness)*t->stdlen) ||
-    t->plusend!='b' || t->treadrate!=0 || t->stdypr[0]!=0 || t->stdypr[1]!=0 || t->stdypr[2]!=0) {
+    t->plusend!='p' || t->treadrate!=0 || t->stdypr[0]!=0 || t->stdypr[1]!=0 || t->stdypr[2]!=0) {
   simLog(t->filss->sim,9,"ERROR: mechanochemical growth requires implicit_network, positive standard_length/kT/elongation_step/elongation_energy, positive force_length or negative force_length with positive elongation_stiffness, plus_end back, zero standard_angle and no treadmilling\n");return 1;
  }
  for(f=0;f<t->nfil;f++) {
   filamentptr fil=t->fillist[f];
-  if(fil->backend || !isfinite(fil->growbank) || fil->growbank<0 || fil->growbank>=t->stdlen) {
+  if(fil->endjunct[1] || !isfinite(fil->lenbank[1]) || fil->lenbank[1]<0 || fil->lenbank[1]>=t->stdlen) {
    simLog(t->filss->sim,9,"ERROR: mechanochemical elongation needs an unattached back end and incorporated growth bank in [0,standard_length); do not switch an active legacy bank\n");return 1;
   }
  }
@@ -59,13 +70,15 @@ int filGrowthValidate(const filamenttypeptr t) {
    A new midpoint has no angle or twist. The old tip retains its mobility. */
 static int filGrowthRefine(simptr sim,filamentptr fil) {
  int last=fil->nseg-1,d,br;double endpoint[3],midpoint[3],angle[3]={0,0,0};
- double len=fil->segments[last]->len,thk=fil->segments[last]->thk,mob=fil->nodemobility[last+1];
+ double len=fil->segments[last]->len,thk=fil->segments[last]->thk,mob=fil->nodemobility[last+1],srfmob=fil->nodesrfmob[last+1];
+ panelptr panel=fil->nodepnl[last+1];enum PanelFace face=fil->nodeface[last+1];
  for(d=0;d<3;d++) {endpoint[d]=fil->nodes[last+1][d];midpoint[d]=0.5*(fil->nodes[last][d]+endpoint[d]);}
- if(filAddSegment(fil,NULL,0.5*len,angle,thk,'b')) return 1;
+ if(filAddSegment(fil,NULL,0.5*len,angle,thk,'p')) return 1;
  for(d=0;d<3;d++) {fil->nodes[last+1][d]=midpoint[d];fil->nodes[last+2][d]=endpoint[d];}
  fil->nodemobility[last+1]=1;fil->nodemobility[last+2]=mob;
- for(br=0;br<fil->nbranch;br++) if(fil->branchspots[br]==last) fil->branchspots[br]++;
- fil->growbank=0;
+ fil->nodepnl[last+1]=NULL;fil->nodesrfmob[last+1]=1;fil->nodepnl[last+2]=panel;fil->nodeface[last+2]=face;fil->nodesrfmob[last+2]=srfmob;
+ for(br=0;br<fil->njunct;br++) if(fil->juncts[br]->node==last+1) fil->juncts[br]->node++;
+ fil->lenbank[1]=0;
  filNodes2Angles(fil,-1,-1);
  /* The old indexed capsule now covers the first half. Register the other half
     immediately for later chemistry queries; mechanics rebuilds normal boxes. */
@@ -77,8 +90,8 @@ static int filGrowthRefine(simptr sim,filamentptr fil) {
 int filMechanochemicalElongate(simptr sim,filamentptr fil,double length) {
  filamenttypeptr t=fil->filtype;int last=fil->nseg-1,added=0;
  double rest,len,EA,g,drive,factor,increment,limit,oldenergy,newenergy,stall;
- if(last<0 || fil->capped || length<=0) return 0;
- if(!isfinite(length) || fil->backend || t->plusend!='b' ||
+ if(last<0 || fil->endstate[1]==FEScapped || length<=0) return 0;
+ if(!isfinite(length) || fil->endjunct[1] || t->plusend!='p' ||
     !(t->klen>0 || (t->klen<0 && t->elongstiffness>0)) || t->kT<=0 ||
     t->elongstep<=0 || t->elongenergy<=0) return -1;
  t->elongattempted+=length;
@@ -110,10 +123,10 @@ int filMechanochemicalElongate(simptr sim,filamentptr fil,double length) {
  }
  increment=fmin(increment,2*t->stdlen-rest);
  oldenergy=0.5*EA*(len-rest)*(len-rest)/rest;
- fil->growbank+=increment;
+ fil->lenbank[1]+=increment;
  newenergy=0.5*EA*(len-rest-increment)*(len-rest-increment)/(rest+increment);
  t->elongaccepted+=increment;t->elongwork+=newenergy-oldenergy;
- if(fil->growbank>=t->stdlen*(1-8*DBL_EPSILON)) {
+ if(fil->lenbank[1]>=t->stdlen*(1-8*DBL_EPSILON)) {
   if(filGrowthRefine(sim,fil)) return -1;
   added=1;
  }

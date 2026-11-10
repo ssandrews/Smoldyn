@@ -6,6 +6,7 @@
 #include "smoldyn.h"
 #include "smoldynfuncs.h"
 #include "smolfilamentsteric.h"
+#include "filament_test_compat.h"
 #include "random2.h"
 #undef CHECK
 #define CHECK(c) do {if(!(c)) {fprintf(stderr,"FAIL force clamp line %d: %s\n",__LINE__,#c);exit(1);}} while(0)
@@ -130,9 +131,9 @@ static void parallel_and_resize(void) {
 #endif
   for(i=0;i<600;i++) rod(t,2,0.2,-0.3+0.001*i);
   CHECK(!boxsetsize(sim[run],"boxsize",0.25));CHECK(!boxesupdate(sim[run]));
-  for(i=0;i<sim[run]->boxs->nbox;i++) if(sim[run]->boxs->blist[i]->nsegment) {
-   boxptr box=sim[run]->boxs->blist[i];segmentptr *saved=box->segment;segmentptr first=saved[0];
-   CHECK(!expandboxpanels(box,5));CHECK(box->segment==saved && box->segment[0]==first);break;
+  for(i=0;i<sim[run]->boxs->nbox;i++) if(sim[run]->boxs->blist[i]->nfilseg) {
+   boxptr box=sim[run]->boxs->blist[i];segmentptr *saved=box->filseg;segmentptr first=saved[0];
+   CHECK(!expandboxpanels(box,5));CHECK(box->filseg==saved && box->filseg[0]==first);break;
   }
   CHECK(i<sim[run]->boxs->nbox);CHECK(!surfsetforceclamp(pnl,1,2400,1e-7,-0.9,0.9));CHECK(!filDynamics(sim[run]));membership(sim[run]);
 #ifdef _OPENMP

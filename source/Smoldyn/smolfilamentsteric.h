@@ -5,10 +5,8 @@
 typedef struct filstericsegment {
   filamentptr fil;
   segmentptr segment;
-  int index;
+  int index,mark;
   double reference[6];
-  double bounds[6]; /* centerline AABB, computed only during neighbor rebuilds */
-  int boxlo[3];
   double radius, stiffness;
   double contactrow[2];
 } FilStericSegment;
@@ -25,10 +23,10 @@ typedef struct filstericnode {
 
 /* Borrowed topology snapshots; positions, forces and mobilities remain live. */
 typedef struct filstericfilament {
-  filamentptr fil,frontend;
+  filamentptr fil;
   int nseg,nbranch,branchstart,nodeoffset,worknext;
 } FilStericFilament;
-typedef struct filstericbranch {filamentptr daughter;int spot;} FilStericBranch;
+typedef struct filstericbranch {filamentptr daughter;int spot,rigid,bend;char end;} FilStericBranch;
 
 struct filamentstericstruct {
   FilStericSegment *segments;
@@ -41,7 +39,7 @@ struct filamentstericstruct {
   struct filamentimplicitstruct *implicit; /* owned nonlinear solver workspace */
   int npending,maxpending,inchemistry,queryerror;
   int nsegment,maxsegment,npair,maxpair,nnode,maxnode;
-  double skin,maxpenetration,energy,contactbound;
+  double skin,maxradius,maxpenetration,energy,contactbound;
   unsigned long long rebuilds,evaluations,contacts,blockedgrowth,blockedbranches;
   unsigned long long boxgeneration;
   unsigned long long movementrebuilds;
@@ -52,7 +50,20 @@ struct filamentstericstruct {
   int *memberfirst,*membernext,maxmember;
 };
 
+double filNodeMobility(const filamentptr fil,int node);
+double filContourLength(const filamentptr fil);
+int filEndLengthChange(simptr sim,filamentptr fil,int end,double length);
+int filParallelEndTransitions(simptr sim,filamenttypeptr type);
+int filParallelEndDynamics(simptr sim,filamenttypeptr type);
+double filSegRollMobility(const filamentptr fil,int seg);
+int filJunctionGeometry(const filjunctionptr joint,int dim,double *tm,double *td,double *lm,double *ld,double *c,double *s,int *ma,int *mb);
+int filBranchDazim(const filjunctionptr joint,double *phi);
+void filJunctionParams(const filjunctionptr joint,int dim,double *kappa,double *theta,double *kaz,double *kj);
+int filContactOn(const filamentssptr filss);
+int filContactForces(simptr sim);
+
 /* Segment pointers live in the original Smoldyn boxes; only contact pairs are cached. */
+int filSetBoxLists(simptr sim,int on);
 int filBoxesBuild(simptr sim,struct filamentstericstruct *work);
 int filImplicitEnabled(const simptr sim);
 int filImplicitSave(simptr sim,int restore);
@@ -96,7 +107,7 @@ static inline void filStericNodeForce(simptr sim,int i,int implicit) {
  if(root->parent!=i) return;
  for(j=w->memberfirst[i];j>=0;j=w->membernext[j]) {
   FilStericNode *node=&w->nodes[j];filamentptr fil=node->fil;
-  if(fil->filtype->dynamics!=FDnone && (implicit || fil->filtype->mobility*fil->nodemobility[node->node]>0))
+  if(fil->filtype->dynamics!=FDnone && (implicit || fil->filtype->mobility*filNodeMobility(fil,node->node)>0))
    for(d=0;d<sim->dim;d++) root->force[d]+=fil->filwork->forces[node->node][d];
  }
 }
@@ -113,6 +124,7 @@ segmentptr filStericQuery(simptr sim,const double *a,const double *b,double radi
 int filStericChemistry(simptr sim,int begin);
 void filStericReport(simptr sim);
 double filStericGeometry(segmentptr a,segmentptr b,double *s,double *t,double *normal);
+void filStericTrimBounds(segmentptr daughter,segmentptr mother,double *lo,double *hi);
 double filStericTrim(segmentptr daughter,segmentptr mother);
 int filStericExcluded(segmentptr a,segmentptr b);
 

@@ -39,9 +39,9 @@ int filLengthEnabled(const simptr sim) {
  int ft,f;if(!sim || !sim->filss) return 0;
  for(ft=0;ft<sim->filss->ntype;ft++) {
   filamenttypeptr t=sim->filss->filtypes[ft];
-  if(t->klen<0 && t->dynamics!=FDnone) {
+  if(t->klen<0 && t->dynamics==FDimplicitnetwork) {
    if(!t->elongmodel) return 1;
-   for(f=0;f<t->nfil;f++) if(t->fillist[f]->nseg>1 || (t->fillist[f]->nseg && t->fillist[f]->capped)) return 1;
+   for(f=0;f<t->nfil;f++) if(t->fillist[f]->nseg>1 || (t->fillist[f]->nseg && t->fillist[f]->endstate[1]==FEScapped)) return 1;
   }
  }
  return 0;
@@ -83,7 +83,7 @@ int filLengthPrepare(simptr sim,struct filamentconstraintstruct **work) {
  int ft,f,j,i,d,n=0,rebuild=0,hybrid=0;double len;void *buffer;
  for(f=0;f<w->nfilament;f++) if(w->filaments[f].fil->filtype->klen<0 && w->filaments[f].fil->filtype->dynamics!=FDnone) {
   if(w->filaments[f].fil->nseg>INT_MAX-n) return 1;
-  n+=w->filaments[f].fil->nseg-(w->filaments[f].fil->filtype->elongmodel && !w->filaments[f].fil->capped && w->filaments[f].fil->nseg>0?1:0);
+  n+=w->filaments[f].fil->nseg-(w->filaments[f].fil->filtype->elongmodel && (w->filaments[f].fil->endstate[1]!=FEScapped) && w->filaments[f].fil->nseg>0?1:0);
  }
  if(!n) {if(p) p->n=0;return 0;}
  if(!p) {p=(struct filamentconstraintstruct*)calloc(1,sizeof(*p));if(!p) return 1;*work=p;rebuild=1;}

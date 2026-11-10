@@ -5,8 +5,8 @@
  Copyright 2003-2016 by Steven Andrews.  This work is distributed under the terms
  of the Gnu Lesser General Public License (LGPL). */
 
-#include <stdio.h>
 #include <float.h>
+#include <stdio.h>
 #include <math.h>
 #include <string.h>
 #include "Geometry.h"
@@ -14,6 +14,7 @@
 #include "random2.h"
 #include "Rn.h"
 #include "Sphere.h"
+#include "Filaments.h"
 #include "string2.h"
 #include "RnSparse.h"
 
@@ -21,10 +22,16 @@
 #include "smoldynfuncs.h"
 #include "smolfilamentsteric.h"
 #include "smolprofile.h"
+#include <float.h>
 
 
 #define FILMAXTRIES 100
 #define FILMAXGROW 1000					// max segments one filament may gain in a single elongation step
+#define FILREMOVED -2000				// filEndLengthChange return value: the filament shrank away and should be removed
+#define FILJUNCTMINNODE 0				// lowest target node a junction may attach to
+#define FILCOSPMIN 0.05					// smallest cos(pitch) for bending torques and their Jacobian, which diverge at gimbal lock
+#define FILCONSTRAINTITER 20			// maximum Newton iterations for projecting onto constraints
+#define FILCONSTRAINTTOL 1e-10			// constraint tolerance, relative to standard_length for lengths, and in radians for angles
 
 
 /******************************************************************************/
@@ -39,6 +46,12 @@
 // Enumerated types
 char *filFD2string(enum FilamentDynamics fd,char *string);
 enum FilamentDynamics filstring2FD(const char *string);
+int filstring2end(const char *string);
+char filend2char(int end);
+char *filFSA2string(enum FilSurfAction fsa,char *string);
+enum FilSurfAction filstring2FSA(const char *string);
+int filstring2parts(const char *string,int *filpart);
+char *filparts2string(const int *filpart,char *string);
 
 // Low level utilities
 int filReadFilName(const simptr sim,const char *str,filamenttypeptr *filtypeptr,filamentptr *filptr,char *filname);
@@ -49,15 +62,18 @@ segmentptr filSegmentAlloc();
 void filSegmentFree(segmentptr segment);
 filamentworkptr filWorkAlloc(filamentptr fil,int maxseg);
 void filWorkFree(filamentworkptr filwork,int maxseg);
-filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence);
+filamentptr filAlloc(filamentptr fil,int maxseg,int maxjunct,int maxsequence);
 void filFree(filamentptr fil);
 filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface);
 void filamentTypeFree(filamenttypeptr filtype);
+filsurfinteractptr filSurfInteractAlloc(filamenttypeptr filtype);
+void filSurfInteractFree(filsurfinteractptr fsi);
 filamentssptr filssAlloc(filamentssptr filss,int maxtype);
 void filssFree(filamentssptr filss);
 
 // data structure output
 void filOutput(const filamentptr fil);
+char *filAngleStdDevString(double k,double kT,char *string);
 void filtypeOutput(const filamenttypeptr filtype);
 void filssOutput(const simptr sim);
 void filWrite(const simptr sim,FILE *fptr);
@@ -65,8 +81,16 @@ int filCheckParams(const simptr sim,int *warnptr);
 
 // filaments
 int filSetNodeMobility(filamentptr fil,int node,double value);
+void filNodeStateClear(filamentptr fil,int node);
+void filNodeStateCopy(filamentptr fil,int to,int from);
+int filNodeAdsorb(filamentptr fil,int node,surfaceptr srf,enum PanelFace face,double mobility);
+void filNodeDesorb(filamentptr fil,int node);
+int filNodesAdsorbed(const filamentptr fil);
 
 // filament type
+void filtypeApplyPersistence(filamenttypeptr filtype);
+double filViscousMobility(double visc,double len,double radius,char code);
+void filtypeApplyViscosity(filamenttypeptr filtype);
 int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double value);
 int filtypeSetColor(filamenttypeptr filtype,const double *rgba);
 int filtypeSetEdgePts(filamenttypeptr filtype,double value);
@@ -75,8 +99,10 @@ int filtypeSetDrawmode(filamenttypeptr filtype,enum DrawMode dm);
 int filtypeSetDrawForceArrows(filamenttypeptr filtype,double scale,const double *rgba);
 int filtypeSetShiny(filamenttypeptr filtype,double shiny);
 int filtypeSetDynamics(filamenttypeptr filtype,enum FilamentDynamics fd);
-int filtypeSetPlusEnd(filamenttypeptr filtype,char endchar);
 int filtypeAddFace(filamenttypeptr filtype,const char* facename);
+filsurfinteractptr filtypeAddSurfInteract(filamenttypeptr filtype,surfaceptr srf,enum PanelFace face,const int *filpart,enum FilEndState endstate,enum FilSurfAction action,double kforce,double repeldist);
+int filSurfInteractApplies(const filsurfinteractptr fsi,const filamentptr fil,int part);
+filfilinteractptr filtypeAddFilInteract(filamenttypeptr filtype,filamenttypeptr other,enum FilFilAction action,double kforce);
 filamenttypeptr filAddFilamentType(simptr sim,const char *ftname);
 
 // filament superstructure
@@ -108,12 +134,15 @@ void filBendTorque(const filamentptr fil,int seg,double *torque);
 // Filament updating
 void filNodes2Angles(filamentptr fil,int nodemin,int nodemax);
 void filCopyWorkingNodes(filamentptr fil,int from,int to);
+void filTransportFrames(filamentptr fil,double **nodesold,const double *qold,const double *segnew,const double *dphi,int dphistride,double *qnew,double *seg0upnew,double *rollnew);
+void filWorkFramesFromSegments(filamentptr fil);
 void filFlattenNodes(filamentptr fil,int from,int to);
 void filUnflattenNodes(filamentptr fil,int from,int to);
 void filFlattenForces(filamentptr fil,int to,int nodemin,int nodemax);
 
 // Filament manipulation
 void filArrayShift(filamentptr fil,int shift);
+void filShiftJunctionNodes(filamentptr fil,int shift,int nseg);
 int filAddSegment(filamentptr fil,const double *x,double length,const double *angle,double thickness,char endchar);
 int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,const char *phistr, const char* thtstr,const char* psistr,double thickness);
 int filAddOneRandomSegment(simptr sim,filamentptr fil,const double *x,double thickness,char endchar,int constraints);
@@ -125,49 +154,119 @@ int filLengthenSegment(filamentptr fil,int seg,double length,char endchar,char f
 int filChangeThickness(filamentptr fil,int seg,double thick,char func);
 void filRotateVertex(filamentptr fil,int seg,const double *angle,char endchar,char func);
 int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamenttypeptr filtype);
+void filReset(filamentptr fil);
 filamentptr filAddFilament(filamenttypeptr filtype,const char *filname);
-double filBranchAzimuth(const filamentptr mother,int spot,const filamentptr daughter);
-int filBranchDazim(const filamentptr mother,int br,double *dphiptr);
-filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thickness,const char *daughtername);
+int filRemoveFilament(filamentptr fil);
+
+// Branching and crosslinking
+void filBranchJunctionNodes(const filamentptr daughter,char end,int *nearptr,int *farptr);
+filjunctionptr filRigidParent(const filamentptr fil);
+filamentptr filTreeRoot(filamentptr fil);
+int filInSubtree(filamentptr fil,const filamentptr top);
+void filClassifyJunctions(filamentssptr filss);
+filjunctionptr filAddJunction(filamentptr fil,char end,filamentptr target,int node,int bend);
+void filRemoveJunction(filjunctionptr junct);
+void filRemoveFilJunctions(filamentptr fil);
+int filAttachEnd(filamentptr fil,char end,filamentptr target,int node);
+double filBranchAzimuth(const filjunctionptr junct);
+int filBranchDazim(const filjunctionptr junct,double *dphiptr);
+filamentptr filAddBranch(simptr sim,filamentptr mother,int node,char end,double length0,const double *angle,double thickness,const char *daughtername);
 int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos);
+int filBranchNodeSpaced(const filamentptr mother,int node,double spacing,const filjunctionptr skip);
+filamentptr filBranchAtNode(simptr sim,filamentptr fil,int node);
 void filBranchDynamics(simptr sim,filamenttypeptr filtype);
-void filPinBranches(filamentptr fil);
+void filPinJunction(filjunctionptr junct);
+void filPinTree(filamentptr fil);
+void filPinJunctions(filamentssptr filss);
 
 // Filament elongation and capping
-int filEndIsCapped(const filamentptr fil,char endchar);
 double filContourLength(const filamentptr fil);
-int filElongate(simptr sim,filamentptr fil,double dlength);
-void filElongationDynamics(simptr sim,filamenttypeptr filtype);
-void filCappingDynamics(simptr sim,filamenttypeptr filtype);
+int filEndLengthChange(simptr sim,filamentptr fil,int end,double dlength);
+void filEndTransitions(simptr sim,filamenttypeptr filtype);
+double filEndPushForce(const filamentptr fil,int end);
+double filEndVelocity(const filamentptr fil,int end);
+void filEndDynamics(simptr sim,filamenttypeptr filtype);
+
+// Filaments in boxes
+int filSetBoxLists(simptr sim,int on);
+int filBoxesUpdate(simptr sim);
+int filBoxesCheck(simptr sim);
 
 // Filament interactions
-int filSegmentXSurface(const simptr sim,const segmentptr segment,panelptr *pnlptr);
+int filSurfBlocksSegment(const filamentptr fil,const segmentptr segment,char endchar);
+int filSurfReflectOn(const filamenttypeptr filtype);
+void filSaveStartNodes(filamentptr fil);
+panelptr filSurfReflectCrossing(const filamentptr fil,int part,double *pt1,double *pt2,const panelptr exclude,double *crsspt);
+int filSurfReflectNodes(filamentptr fil);
+int filSurfBlocksBranch(const filamentptr daughter,char end);
+int filSurfAdsorbedNodes(filamentptr fil);
+int filSurfAdsorbOn(const filamenttypeptr filtype);
+int filSurfAdsorbDesorb(simptr sim,filamenttypeptr filtype);
+int filSurfBranchOn(const filamenttypeptr filtype);
+int filSurfBranchDynamics(simptr sim,filamenttypeptr filtype);
+int filSurfMove(simptr sim,surfaceptr srf,const double *translate);
+int filSurfMoveDone(simptr sim);
+int filSurfForceOn(const filamenttypeptr filtype);
+double filContactKforce(const filamenttypeptr type1,const filamenttypeptr type2);
+int filContactTypeOn(const filamenttypeptr filtype);
+int filContactOn(const filamentssptr filss);
+double filContourPosition(const filamentptr fil,int seg,double frac);
+double filContactGap(const filamentptr fil1,int seg1,double frac1,const filamentptr fil2,int seg2,double frac2);
+double filContactMobility(const filamentptr fil,int seg,double frac);
+int filContactAdd(filamentptr fil,int seg,double frac,const double *norm,double kjac);
+int filContactPair(segmentptr seg1,segmentptr seg2,double k,double contact,int dim);
+int filContactForces(simptr sim);
+void filAddContactForces(filamentptr fil,int nodemin,int nodemax);
 int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr);
 
 // Force computation
 void filAddStretchForces(filamentptr fil,int nodemin,int nodemax);
 void filAddStretchForceMat(filamentptr fil);
+void filDrawThermalForces(filamentptr fil);
 void filAddThermalForces(filamentptr fil,int nodemin,int nodemax);
-void filPrepareThermalForces(filamentptr fil);
+void filAddMatrixForceStep(filamentptr fil,double dtmu,double *flatvect);
 void filAddBendForces(filamentptr fil,int nodemin,int nodemax);
 void filAddBendForceMat(filamentptr fil);
-int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daughter,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr);
+void filJunctionParams(const filjunctionptr junct,int dim,double *kappaptr,double *theta0ptr,double *kazptr,double *kjptr);
+int filJunctionGeometry(const filjunctionptr junct,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr,int *maptr,int *mbptr);
+void filSubtreeSpringForce(filamentptr fil,int dim,double *sum);
 void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax);
-void filAddConfineForces(filamentptr fil,int nodemin,int nodemax);
+double filNodeThickness(const filamentptr fil,int node);
+double filNodeMobility(const filamentptr fil,int node);
+double filRotMobility(const filamenttypeptr filtype);
+double filSegRollMobility(const filamentptr fil,int seg);
+void filAddSurfForces(filamentptr fil,int nodemin,int nodemax);
+void filSurfInteractForces(filamentptr fil,int nodemin,int nodemax,int reaction,double *fsum);
+void filSurfReactionForces(simptr sim);
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeDerivForceMat(filamentptr fil,double dtmu);
 
 // Dynamics functions
 void filStepDynamics(filamentptr fil,double dtmu,int in,int out);
-void filStepMaterialFrame(filamentptr fil,double dtmu,int in,int out);
 void filEulerDynamics(simptr sim,filamenttypeptr filtype);
 void filRK2Dynamics(simptr sim,filamenttypeptr filtype);
 void filRK4Dynamics(simptr sim,filamenttypeptr filtype);
+int filMobilityWeights(filamentptr fil,double *wt);
+void filScaleMatrixRows(sparsematrix sprs,const double *wt,int nrows);
 void filEulerMatDynamics(simptr sim,filamenttypeptr filtype);
 void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype);
 void filImplicitDynamics(simptr sim,filamenttypeptr filtype);
+int filConstrained(filamenttypeptr filtype);
+int filConstraintGrad(filamentptr fil,int c,int *idx,double *g,double *res);
+void filConstraintStart(filamentptr fil);
+int filProjectConstraints(filamentptr fil);
+int filUnstable(simptr sim,filamenttypeptr filtype);
+void filDynamicsEnds(simptr sim,filamenttypeptr filtype);
+int filDynamicsIntegrate(simptr sim,filamenttypeptr filtype);
 int filDynamics(simptr sim);
 
+
+void filAddConfineForces(filamentptr fil,int nodemin,int nodemax);
+int filtypeSetPlusEnd(filamenttypeptr type,char end);
+void filPrepareThermalForces(filamentptr fil);
+static void filConfinePointForce(filamenttypeptr type,panelptr panel,const double *point,double *force);
+static void filLegacyConfineNodeForce(const filamentptr fil,int node,double *force);
+static void filLegacySurfaceReaction(simptr sim);
 
 /******************************************************************************/
 /********************************* enumerated types ***************************/
@@ -176,12 +275,12 @@ int filDynamics(simptr sim);
 
 /* filFD2string */
 char *filFD2string(enum FilamentDynamics fd,char *string) {
-	if(fd==FDeuler) strcpy(string,"Euler");
+	if(fd==FDimplicitnetwork) strcpy(string,"implicit_network");
+	else if(fd==FDeuler) strcpy(string,"Euler");
 	else if(fd==FDRK2) strcpy(string,"RK2");
 	else if(fd==FDRK4) strcpy(string,"RK4");
 	else if(fd==FDeulermat) strcpy(string,"EulerMat");
 	else if(fd==FDimplicitold) strcpy(string,"ImplicitOld");
-	else if(fd==FDimplicitnetwork) strcpy(string,"ImplicitNetwork");
 	else if(fd==FDimplicit) strcpy(string,"Implicit");
 	else strcpy(string,"none");
 	return string; }
@@ -196,11 +295,109 @@ enum FilamentDynamics filstring2FD(const char *string) {
 	else if(strbegin(string,"RK2",0)) ans=FDRK2;
 	else if(strbegin(string,"RK4",0)) ans=FDRK4;
 	else if(strbegin(string,"eulermat",0)) ans=FDeulermat;
-	else if(strbegin(string,"implicitold",0)) ans=FDimplicitold;
 	else if(!strcmp(string,"implicit_network")) ans=FDimplicitnetwork;
-	else if(strbegin(string,"implicit",0)) ans=FDimplicit;
+	else if(strbegin(string,"implicit",0)) ans=FDimplicit;	// before implicitold, which "implicit" abbreviates
+	else if(strbegin(string,"implicitold",0)) ans=FDimplicitold;
 	else ans=FDnone;
 	return ans; }
+
+
+/* filFES2string */
+char *filFES2string(enum FilEndState fes,char *string) {
+	if(fes==FESopen) strcpy(string,"open");
+	else if(fes==FEScapped) strcpy(string,"capped");
+	else if(fes==FESshrink) strcpy(string,"shrink");
+	else if(fes==FESbarbed) strcpy(string,"barbed");
+	else strcpy(string,"none");
+	return string; }
+
+
+/* filstring2FES */
+enum FilEndState filstring2FES(const char *string) {
+	enum FilEndState ans;
+
+	if(!strcmp(string,"open")) ans=FESopen;
+	else if(!strcmp(string,"capped")) ans=FEScapped;
+	else if(!strcmp(string,"shrink")) ans=FESshrink;
+	else if(!strcmp(string,"barbed")) ans=FESbarbed;
+	else ans=FESnone;
+	return ans; }
+
+
+/* filstring2end */
+// Filament end index for the word "minus" (0) or "plus" (1); -1 for anything else.
+int filstring2end(const char *string) {
+	if(!strcmp(string,"minus")) return 0;
+	if(!strcmp(string,"plus")) return 1;
+	return -1; }
+
+
+/* filend2char */
+// End character, 'm' or 'p', used by the segment functions for end index 0 or 1.
+char filend2char(int end) {
+	return end==1?'p':'m'; }
+
+
+/* filFSA2string */
+char *filFSA2string(enum FilSurfAction fsa,char *string) {
+	if(fsa==FSAsoftwall) strcpy(string,"softwall");
+	else if(fsa==FSArepel) strcpy(string,"repel");
+	else if(fsa==FSAreflect) strcpy(string,"reflect");
+	else if(fsa==FSAadsorb) strcpy(string,"adsorb");
+	else if(fsa==FSAdesorb) strcpy(string,"desorb");
+	else if(fsa==FSAbranch) strcpy(string,"branch");
+	else strcpy(string,"none");
+	return string; }
+
+
+/* filstring2FSA */
+enum FilSurfAction filstring2FSA(const char *string) {
+	enum FilSurfAction ans;
+
+	if(!strcmp(string,"softwall")) ans=FSAsoftwall;
+	else if(!strcmp(string,"repel")) ans=FSArepel;
+	else if(!strcmp(string,"reflect")) ans=FSAreflect;
+	else if(!strcmp(string,"adsorb")) ans=FSAadsorb;
+	else if(!strcmp(string,"desorb")) ans=FSAdesorb;
+	else if(!strcmp(string,"branch")) ans=FSAbranch;
+	else ans=FSAnone;
+	return ans; }
+
+
+/* filstring2parts */
+// Reads a comma-separated list of filament parts, from "plus", "minus", "side", and
+// "all", into filpart, which is indexed by FPplus, FPminus, and FPside and is set to 1
+// for each listed part and 0 for the others. Returns 0 for success or 1 for an
+// unrecognized or empty list.
+int filstring2parts(const char *string,int *filpart) {
+	char str[STRCHAR],*word;
+	int part,any;
+
+	for(part=0;part<FILPARTMAX;part++) filpart[part]=0;
+	strncpy(str,string,STRCHAR-1);
+	str[STRCHAR-1]='\0';
+	any=0;
+	for(word=strtok(str,",");word;word=strtok(NULL,",")) {
+		if(!strcmp(word,"plus")) filpart[FPplus]=1;
+		else if(!strcmp(word,"minus")) filpart[FPminus]=1;
+		else if(!strcmp(word,"side")) filpart[FPside]=1;
+		else if(!strcmp(word,"all")) filpart[FPplus]=filpart[FPminus]=filpart[FPside]=1;
+		else return 1;
+		any=1; }
+	return any?0:1; }
+
+
+/* filparts2string */
+// Writes the filament parts in filpart as a comma-separated list, or "all" or "none".
+char *filparts2string(const int *filpart,char *string) {
+	string[0]='\0';
+	if(filpart[FPplus] && filpart[FPminus] && filpart[FPside]) strcpy(string,"all");
+	else {
+		if(filpart[FPplus]) strcat(string,"plus");
+		if(filpart[FPminus]) strcat(string,string[0]?",minus":"minus");
+		if(filpart[FPside]) strcat(string,string[0]?",side":"side");
+		if(!string[0]) strcpy(string,"none"); }
+	return string; }
 
 
 /******************************************************************************/
@@ -287,11 +484,12 @@ segmentptr filSegmentAlloc() {
 	CHECKMEM(segment=(segmentptr) malloc(sizeof(struct segmentstruct)));
 	segment->fil=NULL;
 	segment->index=0;
-	segment->stericindex=-1;
-	segment->xyzfront=NULL;
-	segment->xyzback=NULL;
+	segment->xyzminus=NULL;
+	segment->xyzplus=NULL;
 	segment->len=0;
 	segment->thk=1;
+	segment->contactid=0;
+	segment->contactmark=0;
 	segment->ypr[0]=segment->ypr[1]=segment->ypr[2]=0;
 	Sph_One2Qtn(segment->qrel);
 	Sph_One2Qtn(segment->qabs);
@@ -333,6 +531,12 @@ filamentworkptr filWorkAlloc(filamentptr fil,int maxseg) {
 	filwork->forcemat=NULL;
 	filwork->thermtime=sim->time-sim->dt;
 	filwork->thermforce=NULL;
+	filwork->thermtorque=NULL;
+	filwork->wqabs=NULL;
+	filwork->cidx=NULL;
+	filwork->cng=NULL;
+	filwork->cg=NULL;
+	filwork->startnodes=NULL;
 
 	CHECKMEM(filwork->wnodes=(double***) calloc(3,sizeof(double**)));
 	filwork->wnodes[0]=fil->nodes;
@@ -340,13 +544,17 @@ filamentworkptr filWorkAlloc(filamentptr fil,int maxseg) {
 	CHECKMEM(filwork->wnodes[1]=(double**) calloc(maxseg+1,sizeof(double*)));
 	CHECKMEM(filwork->wnodes[2]=(double**) calloc(maxseg+1,sizeof(double*)));
 	CHECKMEM(filwork->thermforce=(double**) calloc(maxseg+1,sizeof(double*)));
+	CHECKMEM(filwork->thermtorque=(double*) calloc(maxseg,sizeof(double)));
+	CHECKMEM(filwork->startnodes=(double**) calloc(maxseg+1,sizeof(double*)));
 	for(seg=0;seg<=maxseg;seg++) {
 		CHECKMEM(filwork->wnodes[1][seg]=(double*) calloc(3,sizeof(double)));
 		filwork->wnodes[1][seg][0]=filwork->wnodes[1][seg][1]=filwork->wnodes[1][seg][2]=0;
 		CHECKMEM(filwork->wnodes[2][seg]=(double*) calloc(3,sizeof(double)));
 		filwork->wnodes[2][seg][0]=filwork->wnodes[2][seg][1]=filwork->wnodes[2][seg][2]=0;
 		CHECKMEM(filwork->thermforce[seg]=(double*) calloc(3,sizeof(double)));
-		filwork->thermforce[seg][0]=filwork->thermforce[seg][1]=filwork->thermforce[seg][2]=0; }
+		filwork->thermforce[seg][0]=filwork->thermforce[seg][1]=filwork->thermforce[seg][2]=0;
+		CHECKMEM(filwork->startnodes[seg]=(double*) calloc(3,sizeof(double)));
+		filwork->startnodes[seg][0]=filwork->startnodes[seg][1]=filwork->startnodes[seg][2]=0; }
 
 	CHECKMEM(filwork->wroll=(double**) calloc(3,sizeof(double*)));
 	filwork->wroll[0]=fil->roll;
@@ -355,6 +563,15 @@ filamentworkptr filWorkAlloc(filamentptr fil,int maxseg) {
 	CHECKMEM(filwork->wroll[2]=(double*) calloc(maxseg,sizeof(double)));
 	for(seg=0;seg<maxseg;seg++)
 		filwork->wroll[1][seg]=filwork->wroll[2][seg]=0;
+
+	CHECKMEM(filwork->wqabs=(double**) calloc(3,sizeof(double*)));
+	filwork->wqabs[0]=filwork->wqabs[1]=filwork->wqabs[2]=NULL;
+	for(i=0;i<3;i++)
+		CHECKMEM(filwork->wqabs[i]=(double*) calloc(4*(maxseg>0?maxseg:1),sizeof(double)));
+
+	CHECKMEM(filwork->cidx=(int*) calloc(44*(maxseg>0?maxseg:1),sizeof(int)));		// up to 4 constraints per segment with up to 11 coordinates each
+	CHECKMEM(filwork->cng=(int*) calloc(4*(maxseg>0?maxseg:1),sizeof(int)));
+	CHECKMEM(filwork->cg=(double*) calloc(44*(maxseg>0?maxseg:1),sizeof(double)));
 
 	CHECKMEM(filwork->flatnodes=(double**) calloc(3,sizeof(double*)));
 	filwork->flatnodes[0]=filwork->flatnodes[1]=filwork->flatnodes[2]=NULL;
@@ -419,6 +636,16 @@ void filWorkFree(filamentworkptr filwork,int maxseg) {
 		free(filwork->wroll[2]);
 		free(filwork->wroll); }
 
+	if(filwork->wqabs) {
+		free(filwork->wqabs[0]);
+		free(filwork->wqabs[1]);
+		free(filwork->wqabs[2]);
+		free(filwork->wqabs); }
+
+	free(filwork->cidx);
+	free(filwork->cng);
+	free(filwork->cg);
+
 	if(filwork->flatnodes) {
 		free(filwork->flatnodes[0]);
 		free(filwork->flatnodes[1]);
@@ -440,29 +667,32 @@ void filWorkFree(filamentworkptr filwork,int maxseg) {
 			free(filwork->forces[seg]);
 		free(filwork->forces); }
 
+	if(filwork->startnodes) {
+		for(seg=0;seg<=maxseg;seg++)
+			free(filwork->startnodes[seg]);
+		free(filwork->startnodes); }
+
 	free(filwork->torques);
-	if(filwork->thermforce)
-		for(seg=0;seg<=maxseg;seg++) free(filwork->thermforce[seg]);
 	free(filwork->thermforce);
+	free(filwork->thermtorque);
 	sparseFreeM(filwork->forcemat);
 	free(filwork);
 	return; }
 
 
 /* filAlloc */
-filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
-	int seg,br,seqi;
+filamentptr filAlloc(filamentptr fil,int maxseg,int maxjunct,int maxsequence) {
+	int seg,j,seqi;
 	segmentptr *newsegments;
-	int *newbranchspots;
-	filamentptr *newbranches;
+	filjunctionptr *newjuncts;
 	char *newsequence;
-	double **newnodes,**newnodesx,*newroll,*newnodemobility,*newbranchazim0;
+	double **newnodes,**newnodesx,*newroll,*newnodemobility,*newnodesrfmob,*newcontactforce;
+	panelptr *newnodepnl;
+	enum PanelFace *newnodeface;
 
 	if(!fil) {
 		CHECKMEM(fil=(filamentptr) malloc(sizeof(struct filamentstruct)));
 		fil->filtype=NULL;
-		fil->filwork=NULL;
-		fil->stericnodeoffset=-1;
 		fil->filname=NULL;
 		fil->maxseg=0;
 		fil->nseg=0;
@@ -471,20 +701,27 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 		fil->nodesx=NULL;
 		fil->roll=NULL;
 		fil->nodemobility=NULL;
+		fil->nodepnl=NULL;
+		fil->nodeface=NULL;
+		fil->nodesrfmob=NULL;
+		fil->contactforce=NULL;
+		fil->maxcontact=0;
+		fil->ncontact=0;
+		fil->contacts=NULL;
+		for(seg=0;seg<2;seg++)
+			fil->endcontact[seg][0]=fil->endcontact[seg][1]=fil->endcontact[seg][2]=0;
 		fil->seg0up[0]=fil->seg0up[1]=0;
 		fil->seg0up[2]=1;
-		fil->frontend=NULL;
-		fil->backend=NULL;
-		fil->maxbranch=0;
-		fil->nbranch=0;
-		fil->branchspots=NULL;
-		fil->branches=NULL;
-		fil->branchazim0=NULL;
+		fil->endjunct[0]=fil->endjunct[1]=NULL;
+		fil->maxjunct=0;
+		fil->njunct=0;
+		fil->juncts=NULL;
 		fil->maxsequence=0;
 		fil->nsequence=0;
 		fil->sequence=NULL;
-		fil->growbank=0;
-		fil->capped=0; }
+		fil->endstate[0]=fil->endstate[1]=FESopen;
+		fil->lenbank[0]=fil->lenbank[1]=0;
+		fil->filwork=NULL; }
 
 	if(maxseg>fil->maxseg) {
 		CHECKMEM(newsegments=(segmentptr*) calloc(maxseg,sizeof(segmentptr)));
@@ -492,6 +729,10 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 		CHECKMEM(newnodesx=(double**) calloc(maxseg+1,sizeof(double*)));
 		CHECKMEM(newroll=(double*) calloc(maxseg,sizeof(double)));
 		CHECKMEM(newnodemobility=(double*) calloc(maxseg+1,sizeof(double)));
+		CHECKMEM(newnodepnl=(panelptr*) calloc(maxseg+1,sizeof(panelptr)));
+		CHECKMEM(newnodeface=(enum PanelFace*) calloc(maxseg+1,sizeof(enum PanelFace)));
+		CHECKMEM(newnodesrfmob=(double*) calloc(maxseg+1,sizeof(double)));
+		CHECKMEM(newcontactforce=(double*) calloc(3*(maxseg+1),sizeof(double)));	// recomputed each time step, so not copied
 
 		for(seg=0;seg<=maxseg;seg++) newnodes[seg]=NULL;		// nodes
 		seg=0;
@@ -499,12 +740,18 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 			for(seg=0;seg<=fil->maxseg;seg++) {
 				newnodes[seg]=fil->nodes[seg];
 				newnodesx[seg]=fil->nodesx[seg];
-				newnodemobility[seg]=fil->nodemobility[seg]; }}
+				newnodemobility[seg]=fil->nodemobility[seg];
+				newnodepnl[seg]=fil->nodepnl[seg];
+				newnodeface[seg]=fil->nodeface[seg];
+				newnodesrfmob[seg]=fil->nodesrfmob[seg]; }}
 		for(;seg<=maxseg;seg++) {
 			CHECKMEM(newnodes[seg]=calloc(3,sizeof(double)));
 			CHECKMEM(newnodesx[seg]=calloc(3,sizeof(double)));
 			newnodes[seg][0]=newnodes[seg][1]=newnodes[seg][2]=0;
-			newnodemobility[seg]=1; }
+			newnodemobility[seg]=1;
+			newnodepnl[seg]=NULL;
+			newnodeface[seg]=PFnone;
+			newnodesrfmob[seg]=1; }
 
 		for(seg=0;seg<maxseg;seg++) {													// segments and torques
 			newsegments[seg]=NULL;
@@ -516,8 +763,8 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 			CHECKMEM(newsegments[seg]=filSegmentAlloc());
 			newsegments[seg]->fil=fil;
 			newsegments[seg]->index=seg;
-			newsegments[seg]->xyzfront=newnodes[seg];
-			newsegments[seg]->xyzback=newnodes[seg+1];
+			newsegments[seg]->xyzminus=newnodes[seg];
+			newsegments[seg]->xyzplus=newnodes[seg+1];
 			newroll[seg]=0; }
 
 		free(fil->segments);
@@ -525,34 +772,32 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 		free(fil->nodesx);
 		free(fil->roll);
 		free(fil->nodemobility);
+		free(fil->nodepnl);
+		free(fil->nodeface);
+		free(fil->nodesrfmob);
+		free(fil->contactforce);
+		fil->contactforce=newcontactforce;
 		fil->segments=newsegments;
 		fil->nodes=newnodes;
 		fil->nodesx=newnodesx;
 		fil->roll=newroll;
 		fil->nodemobility=newnodemobility;
+		fil->nodepnl=newnodepnl;
+		fil->nodeface=newnodeface;
+		fil->nodesrfmob=newnodesrfmob;
 		if(fil->filtype && fil->filtype->dynamics!=FDnone)
 			filWorkAlloc(fil,maxseg);
 		fil->maxseg=maxseg; }
 
-	if(maxbranch>fil->maxbranch) {
-		CHECKMEM(newbranchspots=(int*) calloc(maxbranch,sizeof(int)));
-		CHECKMEM(newbranches=(filamentptr*) calloc(maxbranch,sizeof(filamentptr)));
-		CHECKMEM(newbranchazim0=(double*) calloc(maxbranch,sizeof(double)));
-		for(br=0;br<fil->maxbranch;br++) {
-			newbranchspots[br]=fil->branchspots[br];
-			newbranches[br]=fil->branches[br];
-			newbranchazim0[br]=fil->branchazim0[br]; }
-		for(;br<maxbranch;br++) {
-			newbranchspots[br]=0;
-			newbranches[br]=NULL;
-			newbranchazim0[br]=-1; }
-		free(fil->branchspots);					// was leaked and never reassigned (latent bug)
-		fil->branchspots=newbranchspots;
-		free(fil->branches);
-		fil->branches=newbranches;
-		free(fil->branchazim0);
-		fil->branchazim0=newbranchazim0;
-		fil->maxbranch=maxbranch;	}
+	if(maxjunct>fil->maxjunct) {
+		CHECKMEM(newjuncts=(filjunctionptr*) calloc(maxjunct,sizeof(filjunctionptr)));
+		for(j=0;j<fil->maxjunct;j++)
+			newjuncts[j]=fil->juncts[j];
+		for(;j<maxjunct;j++)
+			newjuncts[j]=NULL;
+		free(fil->juncts);
+		fil->juncts=newjuncts;
+		fil->maxjunct=maxjunct; }
 
 	if(maxsequence>fil->maxsequence) {
 		CHECKMEM(newsequence=(char*) calloc(maxsequence,sizeof(char)));
@@ -575,7 +820,6 @@ void filFree(filamentptr fil) {
 	int seg;
 
 	if(!fil) return;
-	filWorkFree(fil->filwork,fil->maxseg);
 	if(fil->segments) {
 		for(seg=0;seg<fil->maxseg;seg++)
 			filSegmentFree(fil->segments[seg]);
@@ -591,9 +835,12 @@ void filFree(filamentptr fil) {
 
 	free(fil->roll);
 	free(fil->nodemobility);
-	free(fil->branchspots);
-	free(fil->branches);
-	free(fil->branchazim0);
+	free(fil->nodepnl);
+	free(fil->nodeface);
+	free(fil->nodesrfmob);
+	free(fil->contactforce);
+	free(fil->contacts);
+	free(fil->juncts);
 	free(fil->sequence);
 	free(fil);
 	return; }
@@ -601,7 +848,7 @@ void filFree(filamentptr fil) {
 
 /* filamentTypeAlloc */
 filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface) {
-	int f,fc;
+	int f,fc,end,fes,fes2;
 	filamentptr *newfillist;
 	char **newfacename,**newfilnames;
 
@@ -610,6 +857,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->filss=NULL;
 		filtype->ftname=NULL;
 		filtype->dynamics=FDnone;
+		filtype->constraintwarn=0;
 		filtype->bundlevalue=1;
 
 		filtype->color[0]=filtype->color[1]=filtype->color[2]=0;
@@ -628,10 +876,16 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->klen=1;
 		filtype->kypr[0]=filtype->kypr[1]=filtype->kypr[2]=1;
 		filtype->kT=1;
-		filtype->brownian=1;
+		filtype->persist=-1;
+		filtype->persisttwist=-1;
+		filtype->kpsiset=0;
 		filtype->treadrate=0;
 		filtype->mobility=1;
+		filtype->mobilityset=0;
+		filtype->rotmobility=-1;
+		filtype->viscosity=-1;
 		filtype->filradius=1;
+
 		filtype->stericradius=0;
 		filtype->sterick=0;
 		filtype->stericskin=0;
@@ -644,29 +898,42 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->constraintiterations=20;
 		filtype->stericgrowth=1;
 
+		filtype->brownian=1;filtype->confinesrf=NULL;filtype->confineforce=0;filtype->confineface=PFfront;filtype->plusend='p';
+		filtype->elongmodel=filtype->elongoverlap=0;filtype->elongstep=filtype->elongenergy=filtype->elongstiffness=0;
+		filtype->elongattempted=filtype->elongaccepted=filtype->elongwork=0;filtype->elongstalled=filtype->elongremesh=0;
 		filtype->branchrate=0;											// branching off by default
 		filtype->branchangle=70.0*PI/180.0;			// Arp2/3 ~70 deg
 		filtype->branchspread=-1;										// negative = unset; every consumer is gated on >0, so unset behaves as deterministic until derived
+		filtype->branchspreadderived=0;
 		filtype->branchsegments=1;									// daughters born as a single segment
+		filtype->branchend='m';											// daughters attach by their minus end by default
+		filtype->branchminspacing=0;								// no minimum branch spacing by default
+		filtype->junctforce=0;											// loop-closing junction spring defaults to force_length
 		filtype->branchforceangle=0;								// junction torsional spring off by default
 		filtype->branchazimuth=-1;									// negative = uniform random birth azimuth
 		filtype->branchazimuthfix=0;								// azimuth free by default
+		filtype->thickdrag=1;												// thicker filaments have more drag by default
 		filtype->branchforceazimuth=0;							// azimuthal spring off by default
 		filtype->branchsrf=NULL;										// no location gate by default
 		filtype->branchsrfdist=0;
 		filtype->branchcmpt=NULL;										// no location gate by default
-		filtype->confinesrf=NULL;										// no confinement by default
-		filtype->confineforce=0;
-		filtype->confineface=PFfront;								// confine to the front side when on
+		filtype->maxsurfint=0;											// no interactions by default
+		filtype->nsurfint=0;
+		filtype->surfint=NULL;
+		filtype->maxmolint=0;
+		filtype->nmolint=0;
+		filtype->molint=NULL;
+		filtype->maxfilint=0;
+		filtype->nfilint=0;
+		filtype->filint=NULL;
 
-		filtype->plusend='b';												// back = barbed/plus, matching every existing convention
-		filtype->elongrate=0;												// elongation off by default
+		for(end=0;end<2;end++) {										// ends don't change length or state by default
+			filtype->endstate0[end]=FESopen;
+			for(fes=0;fes<FESMAX;fes++) {
+				filtype->endrate[end][fes]=0;
+				for(fes2=0;fes2<FESMAX;fes2++) filtype->endtrans[end][fes][fes2]=0; }}
+		filtype->barbedparameters[0][0]=filtype->barbedparameters[0][1]=filtype->barbedparameters[1][0]=filtype->barbedparameters[1][1]=0;
 		filtype->elongmaxlen=0;											// 0 => unbounded growth
-		filtype->elongmodel=0;filtype->elongoverlap=0;filtype->elongstep=0;filtype->elongenergy=0;filtype->elongstiffness=0;
-		filtype->elongattempted=filtype->elongaccepted=filtype->elongwork=0;
-		filtype->elongstalled=filtype->elongremesh=0;
-		filtype->caprate=0;													// capping off by default
-		filtype->uncaprate=0;
 
 		filtype->maxface=0;
 		filtype->nface=0;
@@ -719,7 +986,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 /* filamentTypeFree */
 void filamentTypeFree(filamenttypeptr filtype) {
 	if(!filtype) return;
-	int f,fc;
+	int f,fc,i;
 
 	if(filtype->fillist && filtype->filnames) {
 		for(f=0;f<filtype->maxfil;f++) {
@@ -733,7 +1000,52 @@ void filamentTypeFree(filamenttypeptr filtype) {
 			free(filtype->facename[fc]);
 		free(filtype->facename); }
 
+	for(i=0;i<filtype->nsurfint;i++)
+		filSurfInteractFree(filtype->surfint[i]);
+	free(filtype->surfint);
+	for(i=0;i<filtype->nmolint;i++)							// molecule and filament interactions are not implemented yet
+		free(filtype->molint[i]);
+	free(filtype->molint);
+	for(i=0;i<filtype->nfilint;i++)
+		free(filtype->filint[i]);
+	free(filtype->filint);
+
 	free(filtype);
+	return; }
+
+
+/* filSurfInteractAlloc */
+// Allocates and initializes a filament-surface interaction for filament type filtype,
+// with no surface, no filament parts, and no action. Returns it, or NULL if memory
+// could not be allocated.
+filsurfinteractptr filSurfInteractAlloc(filamenttypeptr filtype) {
+	filsurfinteractptr fsi;
+	int part;
+
+	fsi=(filsurfinteractptr) malloc(sizeof(struct filsurfinteractstruct));
+	if(!fsi) return NULL;
+	fsi->filtype=filtype;
+	fsi->selfsurf=NULL;
+	for(part=0;part<FILPARTMAX;part++) fsi->filpart[part]=0;
+	fsi->endstate=FESnone;
+	fsi->sequence[0]='\0';
+	fsi->filface=-1;
+	fsi->othersurf=NULL;
+	fsi->surfface=PFfront;
+	fsi->compart=NULL;
+	fsi->action=FSAnone;
+	fsi->kforce=0;
+	fsi->repeldist=0;
+	fsi->rate=0;
+	fsi->capdist=0;
+	fsi->srfmob=1;
+	fsi->offset=0;
+	return fsi; }
+
+
+/* filSurfInteractFree */
+void filSurfInteractFree(filsurfinteractptr fsi) {
+	free(fsi);
 	return; }
 
 
@@ -745,14 +1057,18 @@ filamentssptr filssAlloc(filamentssptr filss,int maxtype) {
 
 	if(!filss) {
 		CHECKMEM(filss=(filamentssptr) malloc(sizeof(struct filamentsuperstruct)));
-		filss->condition=SCinit;
+		filss->condition=SCinit;filss->steric=NULL;filss->workers=1;
 		filss->sim=NULL;
 		filss->maxtype=0;
 		filss->ntype=0;
 		filss->ftnames=NULL;
 		filss->filtypes=NULL;
-		filss->steric=NULL;
-		filss->workers=1; }
+		filss->maxjunct=0;
+		filss->njunct=0;
+		filss->junctlist=NULL;
+		filss->nspring=0;
+		filss->boxlists=0;
+		filss->contacton=0; }
 
 	if(maxtype>=filss->maxtype) {
 		CHECKMEM(newfiltypes=(filamenttypeptr*) calloc(maxtype,sizeof(filamenttypeptr)));
@@ -783,10 +1099,15 @@ failure:
 
 /* filssFree */
 void filssFree(filamentssptr filss) {
-	int ft;
+	int ft,j;
 
 	if(!filss) return;
 	filStericFree(filss);
+
+	if(filss->junctlist) {
+		for(j=0;j<filss->maxjunct;j++)
+			free(filss->junctlist[j]);
+		free(filss->junctlist); }
 
 	if(filss->filtypes) {
 		for(ft=0;ft<filss->maxtype;ft++)
@@ -809,7 +1130,8 @@ void filssFree(filamentssptr filss) {
 
 /* filOutput */
 void filOutput(const filamentptr fil) {
-	int seg,br,seqi,dim;
+	int seg,j,e,seqi,dim,node;
+	char string1[STRCHAR],string2[STRCHAR];
 	simptr sim;
 	segmentptr segment;
 
@@ -835,37 +1157,42 @@ void filOutput(const filamentptr fil) {
 	if(dim==2) {
 		for(seg=0;seg<fil->nseg;seg++) {
 			segment=fil->segments[seg];
-			simLog(sim,seg>5?1:2,"    %i length=%1.3g, thick=%1.3g, front pos.=(%1.3g %1.3g), rel. angle=%1.3g",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->ypr[0]);
-			simLog(sim,fil->nodemobility[seg]==1?1:2," front mobility=%g",fil->nodemobility[seg]);
-			simLog(sim,1,", back pos.=(%1.3g %1.3g), qrel=(%1.3g %1.3g %1.3g %1.3g), qabs=(%1.3g %1.3g %1.3g %1.3g)",segment->xyzback[0],segment->xyzback[1],segment->qrel[0],segment->qrel[1],segment->qrel[2],segment->qrel[3],segment->qabs[0],segment->qabs[1],segment->qabs[2],segment->qabs[3]);
+			simLog(sim,seg>5?1:2,"    %i length=%1.3g, thick=%1.3g, minus pos.=(%1.3g %1.3g), rel. angle=%1.3g",segment->index,segment->len,segment->thk,segment->xyzminus[0],segment->xyzminus[1],segment->ypr[0]);
+			simLog(sim,fil->nodemobility[seg]==1?1:2," minus mobility=%g",fil->nodemobility[seg]);
+			simLog(sim,1,", plus pos.=(%1.3g %1.3g), qrel=(%1.3g %1.3g %1.3g %1.3g), qabs=(%1.3g %1.3g %1.3g %1.3g)",segment->xyzplus[0],segment->xyzplus[1],segment->qrel[0],segment->qrel[1],segment->qrel[2],segment->qrel[3],segment->qabs[0],segment->qabs[1],segment->qabs[2],segment->qabs[3]);
 			simLog(sim,seg>5?1:2,"\n"); }
 		segment=fil->segments[fil->nseg-1];
-		simLog(sim,2,"     back pos.=(%1.3g %1.3g)",segment->xyzback[0],segment->xyzback[1]);
-		simLog(sim,fil->nodemobility[seg]==1?1:2," back mobility=%g",fil->nodemobility[seg]);
+		simLog(sim,2,"     plus pos.=(%1.3g %1.3g)",segment->xyzplus[0],segment->xyzplus[1]);
+		simLog(sim,fil->nodemobility[seg]==1?1:2," plus mobility=%g",fil->nodemobility[seg]);
 		simLog(sim,2,"\n"); }
 	else {
 		for(seg=0;seg<fil->nseg;seg++) {
 			segment=fil->segments[seg];
-			simLog(sim,seg>5?1:2,"    %i length=%1.3g, thick=%1.3g, front pos.=(%1.3g %1.3g %1.3g), rel. angle=(%1.3g %1.3g %1.3g)",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->xyzfront[2],segment->ypr[0],segment->ypr[1],segment->ypr[2]);
-			simLog(sim,fil->nodemobility[seg]==1?1:2," front mobility=%g",fil->nodemobility[seg]);
-			simLog(sim,1,", back pos.=(%1.3g %1.3g %1.3g), qrel=(%1.3g %1.3g %1.3g %1.3g), qabs=(%1.3g %1.3g %1.3g %1.3g)",segment->xyzback[0],segment->xyzback[1],segment->xyzback[2],segment->qrel[0],segment->qrel[1],segment->qrel[2],segment->qrel[3],segment->qabs[0],segment->qabs[1],segment->qabs[2],segment->qabs[3]);
+			simLog(sim,seg>5?1:2,"    %i length=%1.3g, thick=%1.3g, minus pos.=(%1.3g %1.3g %1.3g), rel. angle=(%1.3g %1.3g %1.3g)",segment->index,segment->len,segment->thk,segment->xyzminus[0],segment->xyzminus[1],segment->xyzminus[2],segment->ypr[0],segment->ypr[1],segment->ypr[2]);
+			simLog(sim,fil->nodemobility[seg]==1?1:2," minus mobility=%g",fil->nodemobility[seg]);
+			simLog(sim,1,", plus pos.=(%1.3g %1.3g %1.3g), qrel=(%1.3g %1.3g %1.3g %1.3g), qabs=(%1.3g %1.3g %1.3g %1.3g)",segment->xyzplus[0],segment->xyzplus[1],segment->xyzplus[2],segment->qrel[0],segment->qrel[1],segment->qrel[2],segment->qrel[3],segment->qabs[0],segment->qabs[1],segment->qabs[2],segment->qabs[3]);
 			simLog(sim,seg>5?1:2,"\n"); }
 		segment=fil->segments[fil->nseg-1];
-		simLog(sim,2,"     back pos.=(%1.3g %1.3g %1.3g)\n",segment->xyzback[0],segment->xyzback[1],segment->xyzback[2]);
-		simLog(sim,fil->nodemobility[seg]==1?1:2," back mobility=%g",fil->nodemobility[seg]); }
+		simLog(sim,2,"     plus pos.=(%1.3g %1.3g %1.3g)\n",segment->xyzplus[0],segment->xyzplus[1],segment->xyzplus[2]);
+		simLog(sim,fil->nodemobility[seg]==1?1:2," plus mobility=%g",fil->nodemobility[seg]); }
 
-	if(fil->frontend)
-		simLog(sim,2,"   front branched from: %s\n",fil->frontend->filname);
-	if(fil->backend)
-		simLog(sim,2,"   back branched from: %s\n",fil->backend->filname);
+	for(e=0;e<2;e++)
+		if(fil->endjunct[e])
+			simLog(sim,2,"   %s end attached to: %s:%s node %i, %s\n",e?"plus":"minus",fil->endjunct[e]->target->filtype->ftname,fil->endjunct[e]->target->filname,fil->endjunct[e]->node,fil->endjunct[e]->rigid?"rigid":"spring (closes a loop)");
 
-	simLog(sim,fil->capped?2:1,"   plus end: %s\n",fil->capped?"capped":"free");
-	simLog(sim,fil->growbank>0?2:1,fil->filtype->elongmodel?"   incorporated terminal rest-length excess: %g|L\n":"   pending growth: %g|L\n",fil->growbank);
+	if(fil->nodepnl && filNodesAdsorbed(fil)>0) {
+		simLog(sim,2,"   adsorbed nodes: %i\n",filNodesAdsorbed(fil));
+		for(node=0;node<=fil->nseg;node++)
+			if(fil->nodepnl[node])
+				simLog(sim,2,"    node %i on %s face of surface %s, panel %s, lateral mobility factor %g\n",node,surfface2string(fil->nodeface[node],string1),fil->nodepnl[node]->srf->sname,fil->nodepnl[node]->pname,fil->nodesrfmob[node]); }
 
-	simLog(sim,1,"   allocated branches: %i\n",fil->maxbranch);
-	simLog(sim,fil->nbranch>0?2:1,"   number of branches: %i\n",fil->nbranch);
-	for(br=0;br<fil->nbranch;br++)
-		simLog(sim,2,"    %s at %i\n",fil->branches[br]->filname,fil->branchspots[br]);
+	simLog(sim,(fil->endstate[0]!=FESopen || fil->endstate[1]!=FESopen)?2:1,"   end states: minus %s, plus %s\n",filFES2string(fil->endstate[0],string1),filFES2string(fil->endstate[1],string2));
+	simLog(sim,(fil->lenbank[0]!=0 || fil->lenbank[1]!=0)?2:1,"   pending length change: minus %g|L, plus %g|L\n",fil->lenbank[0],fil->lenbank[1]);
+
+	simLog(sim,1,"   allocated junctions: %i\n",fil->maxjunct);
+	simLog(sim,fil->njunct>0?2:1,"   number of filament ends attached here: %i\n",fil->njunct);
+	for(j=0;j<fil->njunct;j++)
+		simLog(sim,2,"    %s:%s %s end at node %i, %s\n",fil->juncts[j]->fil->filtype->ftname,fil->juncts[j]->fil->filname,fil->juncts[j]->end=='p'?"plus":"minus",fil->juncts[j]->node,fil->juncts[j]->rigid?"rigid":"spring (closes a loop)");
 
 	simLog(sim,1,"   sequence codes: %i of %i allocated,",fil->nsequence,fil->maxsequence);
 	if(fil->nsequence) {
@@ -882,15 +1209,27 @@ void filOutput(const filamentptr fil) {
 	return; }
 
 
+/* filAngleStdDevString */
+// Writes the equilibrium standard deviation of a joint angle with force constant k at
+// thermal energy kT, sqrt(kT/k) for thickness 1, to string, which needs at least STRCHAR
+// characters, and returns string. A negative force constant is a fixed angle, so the
+// standard deviation is 0, and a force constant of 0 leaves the angle unconstrained.
+char *filAngleStdDevString(double k,double kT,char *string) {
+	if(k<0) strcpy(string,"0 (fixed)");
+	else if(k==0) strcpy(string,"unconstrained");
+	else snprintf(string,STRCHAR,"%g",kT>0?sqrt(kT/k):0);
+	return string; }
+
+
 /* filtypeOutput */
 void filtypeOutput(const filamenttypeptr filtype) {
-	char string[STRCHAR];
-	int fc,f,dim;
+	char string[STRCHAR],string2[STRCHAR],string3[STRCHAR],colorstr[STRCHAR];
+	int fc,f,dim,end,fes,fes2,active,grows,i;
+	double rtot,kphi,ktheta,persist;
 	simptr sim;
+	filsurfinteractptr fsi;
 
-	if(!filtype) {
-		simLog(NULL,2," NULL filament type\n");
-		return; }
+	if(!filtype) {simLog(NULL,2," NULL filament type\n");return;}
 
 	if(filtype->filss) {
 		sim=filtype->filss->sim;
@@ -902,79 +1241,122 @@ void filtypeOutput(const filamenttypeptr filtype) {
 	simLog(sim,2," Filament type: %s\n",filtype->ftname);
 	simLog(sim,1,"  superstructure: %s\n",filtype->filss?"assigned":"missing (assuming dim=3)");
 	simLog(sim,2,"  dynamics: %s\n",filFD2string(filtype->dynamics,string));
-	if(filtype->dynamics==FDimplicitnetwork)
-		simLog(sim,2,"  implicit tolerance %g (length), Newton limit %i, Krylov limit %i\n",filtype->implicittol,filtype->implicititerations,filtype->implicitkrylov);
-	if(filtype->dynamics==FDimplicitnetwork)
-		simLog(sim,2,"  implicit preconditioner: %s\n",filtype->implicitpreconditioner?"banded":"diagonal");
-	if(filtype->dynamics==FDimplicitnetwork && filtype->implicitmethod)
-		simLog(sim,2,"  implicit method: projected, predictor defect tolerance %g (length); Newton fallback enabled\n",filtype->projectedtol);
-	if(filtype->dynamics==FDimplicitnetwork && filtype->implicitjacobian)
-		simLog(sim,2,"  implicit Jacobian: cached local operator, residual-difference fallback enabled\n");
 	simLog(sim,filtype->bundlevalue!=1?2:1,"  bundle value: %g\n",filtype->bundlevalue);
 
-	simLog(sim,2,"  color: %g %g %g %g\n",filtype->color[0],filtype->color[1],filtype->color[2],filtype->color[3]);
+	simLog(sim,2,"  color: %s\n",graphicscolor2string(filtype->color,colorstr));
 	if(filtype->drawforcescale!=0)
-		simLog(sim,2,"  force arrows scale: %g, color: %g %g %g %g\n",filtype->drawforcescale,filtype->drawforcecolor[0],filtype->drawforcecolor[1],filtype->drawforcecolor[2],filtype->drawforcecolor[3]);
+		simLog(sim,2,"  force arrows scale: %g|L2/E, color: %s\n",filtype->drawforcescale,graphicscolor2string(filtype->drawforcecolor,colorstr));
 	simLog(sim,2,"  edge points: %g, polygon mode: %s\n",filtype->edgepts,surfdm2string(filtype->drawmode,string));
 	if(filtype->edgestipple[1]!=0xFFFF) simLog(sim,2,"  edge stippling: %ui %X\n",filtype->edgestipple[0],filtype->edgestipple[1]);
 	if(filtype->shiny!=0) simLog(sim,2,"  shininess: %g\n",filtype->shiny);
 
 	simLog(sim,2,"  %s length: %g|L\n",filtype->klen>=0?"standard":"fixed",filtype->stdlen);
-	if(filtype->klen>0) simLog(sim,2,"  length force constant: %g|E/L\n",filtype->klen);
-	if(filtype->klen<0) simLog(sim,2,"  fixed-length constraint tolerance: %g (relative)\n",filtype->constrainttol);
+	if(filtype->klen>0) {
+		simLog(sim,2,"  length force constant: %g|E/L2\n",filtype->klen);
+		simLog(sim,2,"  length standard deviation: %g|L, for thickness 1\n",sqrt(filtype->kT/filtype->klen)); }	// equipartition, from 0.5*klen*(len-stdlen)^2
 
 	if(dim==2) {
 		simLog(sim,2,"  %s angle: %g\n",filtype->kypr[0]>=0?"standard":"fixed",filtype->stdypr[0]);
-		simLog(sim,2,"  bending force constant: %g|E\n",filtype->kypr[0]); }
+		simLog(sim,2,"  bending force constant: %g|E\n",filtype->kypr[0]);
+		simLog(sim,2,"  bending standard deviation: %s rad, for thickness 1\n",filAngleStdDevString(filtype->kypr[0],filtype->kT,string2)); }
 	else {
 		simLog(sim,2,"  standard angles: %g, %g, %g\n",filtype->stdypr[0],filtype->stdypr[1],filtype->stdypr[2]);
-		simLog(sim,2,"  bending force constants: %g|E, %g|E, %g|E\n",filtype->kypr[0],filtype->kypr[1],filtype->kypr[2]); }
+		simLog(sim,2,"  bending force constants: %g|E, %g|E, %g|E\n",filtype->kypr[0],filtype->kypr[1],filtype->kypr[2]);
+		filAngleStdDevString(filtype->kypr[0],filtype->kT,string2);
+		filAngleStdDevString(filtype->kypr[1],filtype->kT,string3);
+		simLog(sim,2,"  bending standard deviations: %s, %s, %s rad, for thickness 1\n",string2,string3,filAngleStdDevString(filtype->kypr[2],filtype->kT,colorstr)); }
 
 	simLog(sim,2,"  kT: %g|E\n",filtype->kT);
-	simLog(sim,filtype->treadrate!=0?2:1,"  treadmilling rate: %g\n",filtype->treadrate);
-	simLog(sim,filtype->branchrate>0?2:1,"  branch rate: %g\n",filtype->branchrate);
+	kphi=filtype->kypr[0];															// persistence length, ABC model
+	ktheta=dim==2?-1:filtype->kypr[1];									// 2D has no pitch, so treat it as fixed
+	if(filtype->kT<=0 || (kphi<0 && ktheta<0))
+		simLog(sim,2,"  persistence length: infinite\n");
+	else {
+		if(kphi<0) persist=2*filtype->stdlen*ktheta/filtype->kT;		// fixed angles don't bend
+		else if(ktheta<0) persist=2*filtype->stdlen*kphi/filtype->kT;
+		else persist=Fil_Statistics("ABC","Persist",filtype->kT,kphi,ktheta,filtype->stdlen);
+		simLog(sim,2,"  persistence length: %g|L, for thickness 1%s\n",persist,filtype->persist>0?" (from persistence_length)":""); }
+	if(dim==3) {																				// torsional persistence length
+		if(filtype->kT<=0 || filtype->kypr[2]<0)
+			simLog(sim,2,"  torsional persistence length: infinite\n");
+		else
+			simLog(sim,2,"  torsional persistence length: %g|L, for thickness 1%s\n",Fil_Statistics("ABC","TorsionPersist",filtype->kT,filtype->kypr[2],filtype->stdlen,0),
+				filtype->persisttwist>0?" (from persistence_length_twist)":(filtype->persist>0 && !filtype->kpsiset?" (3 times the persistence length)":"")); }
+	simLog(sim,filtype->treadrate!=0?2:1,"  treadmilling rate: %g|/T\n",filtype->treadrate);
+	simLog(sim,filtype->branchrate>0?2:1,"  branch rate: %g|/L/T\n",filtype->branchrate);
 	if(filtype->branchrate>0) {
 		simLog(sim,2,"  branch angle: %g rad\n",filtype->branchangle);
 		if(filtype->branchspread>=0) simLog(sim,filtype->branchspread>0?2:1,"  branch spread: %g\n",filtype->branchspread);
 		else simLog(sim,1,"  branch spread: unset\n");
-		simLog(sim,2,"  daughter segments at birth: %i\n",filtype->branchsegments); }
+		simLog(sim,2,"  daughter segments at birth: %i\n",filtype->branchsegments);
+		simLog(sim,filtype->branchend=='p'?2:1,"  daughters attach by their %s end\n",filtype->branchend=='p'?"plus":"minus");
+		if(filtype->branchminspacing>0) simLog(sim,2,"  minimum branch spacing: %g|L\n",filtype->branchminspacing); }
 	simLog(sim,filtype->branchforceangle>0?2:1,"  branch junction force constant: %g|E\n",filtype->branchforceangle);
+	if(filtype->junctforce>0) simLog(sim,2,"  loop-closing junction force constant: %g|E/L2\n",filtype->junctforce);
+	else simLog(sim,1,"  loop-closing junction force constant: unset, so force_length is used\n");
 	if(filtype->branchforceangle>0 && filtype->kT>0)								// equipartition spread the spring maintains
-		simLog(sim,2,"  branch junction equilibrium spread: %g rad\n",sqrt(filtype->kT/filtype->branchforceangle));
+		simLog(sim,2,"  branch junction equilibrium spread: %g rad, for thickness 1\n",sqrt(filtype->kT/filtype->branchforceangle));
 	if(filtype->branchazimuth>=0)
 		simLog(sim,2,"  branch azimuth: %g rad\n",filtype->branchazimuth);
 	simLog(sim,filtype->branchazimuthfix?2:1,"  branch azimuth fixed: %s\n",filtype->branchazimuthfix?"yes":"no");
+	simLog(sim,filtype->thickdrag?1:2,"  thickness affects drag: %s\n",filtype->thickdrag?"yes":"no");
 	simLog(sim,filtype->branchforceazimuth>0?2:1,"  branch azimuth force constant: %g|E\n",filtype->branchforceazimuth);
 	if(filtype->branchforceazimuth>0 && filtype->kT>0)
-		simLog(sim,2,"  branch azimuth equilibrium spread: %g rad\n",sqrt(filtype->kT/filtype->branchforceazimuth));
+		simLog(sim,2,"  branch azimuth equilibrium spread: %g rad, for thickness 1\n",sqrt(filtype->kT/filtype->branchforceazimuth));
 	if(filtype->branchsrf)
 		simLog(sim,2,"  branching gated to within %g|L of surface %s\n",filtype->branchsrfdist,filtype->branchsrf->sname);
 	if(filtype->branchcmpt)
 		simLog(sim,2,"  branching gated to inside compartment %s\n",filtype->branchcmpt->cname);
-	if(filtype->confinesrf && filtype->confineforce>0) {
-		simLog(sim,2,"  confined to %s side of surface %s, force constant %g\n",surfface2string(filtype->confineface,string),filtype->confinesrf->sname,filtype->confineforce);
-		if(filtype->brownian && filtype->kT>0)																// equipartition penetration depth the wall permits
-			simLog(sim,2,"  confinement equilibrium penetration spread: %g|L\n",sqrt(filtype->kT/filtype->confineforce)); }
+	for(i=0;i<filtype->nfilint;i++)
+		if(filtype->filint[i]->action==FFAsoftwall)
+			simLog(sim,2,"  softwall contact interaction with filament type %s, force constant %g|E/L2, contact distance %g|L\n",filtype->filint[i]->otherfiltype->ftname,filtype->filint[i]->kforce,filtype->filradius+filtype->filint[i]->otherfiltype->filradius);
+	simLog(sim,filtype->nsurfint>0?2:1,"  surface interactions: %i\n",filtype->nsurfint);
+	for(i=0;i<filtype->nsurfint;i++) {
+		fsi=filtype->surfint[i];
+		simLog(sim,2,"   %s with %s face of surface %s, for filament parts %s",filFSA2string(fsi->action,string),surfface2string(fsi->surfface,string2),fsi->othersurf->sname,filparts2string(fsi->filpart,string3));
+		if(fsi->endstate!=FESnone) simLog(sim,2," in the %s state",filFES2string(fsi->endstate,string3));
+		if(fsi->action==FSAsoftwall || fsi->action==FSArepel) {
+			if(fsi->action==FSArepel) simLog(sim,2,", force constant %g|E/L2, repel distance %g|L\n",fsi->kforce,fsi->repeldist);
+			else simLog(sim,2,", force constant %g|E/L2\n",fsi->kforce);
+			if(fsi->kforce>0 && filtype->kT>0)						// equipartition penetration depth the wall permits
+				simLog(sim,2,"    equilibrium penetration spread: %g|L, for thickness 1\n",sqrt(filtype->kT/fsi->kforce)); }
+		else if(fsi->action==FSAadsorb)
+			simLog(sim,2,", rate %g|/T, capture distance %g|L, lateral mobility factor %g\n",fsi->rate,fsi->capdist,fsi->srfmob);
+		else if(fsi->action==FSAdesorb)
+			simLog(sim,2,", rate %g|/T, offset %g|L\n",fsi->rate,fsi->offset);
+		else if(fsi->action==FSAbranch)
+			simLog(sim,2,", distance %g|L, rate %g|/T\n",fsi->capdist,fsi->rate);
+		else simLog(sim,2,"\n"); }
 
-	simLog(sim,(filtype->elongrate>0 || filtype->caprate>0)?2:1,"  plus end: %s\n",filtype->plusend=='f'?"front":"back");
-	simLog(sim,filtype->elongrate>0?2:1,"  elongation rate: %g|L/T\n",filtype->elongrate);
-	if(filtype->elongmodel) simLog(sim,2,"  mechanochemical elongation: reaction step %g, energy %g, stall growth force %g\n",filtype->elongstep,filtype->elongenergy,filtype->elongenergy/filtype->elongstep);
-	if(filtype->elongmodel && filtype->klen<0) simLog(sim,2,"  completed segments constrained; growing tip stiffness %g\n",filtype->elongstiffness);
-	if(filtype->elongoverlap) simLog(sim,2,"  overlap elongation: prescribed geometric growth; capsule and surface rejection disabled for elongation, existing forces relax overlaps\n");
-	if(filtype->elongrate>0 && filtype->elongmaxlen>0)
+	grows=0;
+	for(end=0;end<2;end++) {														// end dynamics
+		active=(filtype->endstate0[end]!=FESopen);
+		for(fes=0;fes<FESMAX;fes++) {
+			if(filtype->endrate[end][fes]!=0) active=1;
+			if(filtype->endrate[end][fes]>0) grows=1;
+			for(fes2=0;fes2<FESMAX;fes2++)
+				if(filtype->endtrans[end][fes][fes2]>0) active=1; }
+		simLog(sim,active?2:1,"  %s end: initial state %s\n",end?"plus":"minus",filFES2string(filtype->endstate0[end],string));
+		for(fes=0;fes<FESMAX;fes++)
+			if(filtype->endrate[end][fes]!=0 && fes!=FESbarbed)
+				simLog(sim,2,"   %s state velocity: %g|L/T\n",filFES2string((enum FilEndState)fes,string),filtype->endrate[end][fes]);
+		if(filtype->endstate0[end]==FESbarbed || filtype->endrate[end][FESbarbed]!=0 || filtype->barbedparameters[end][1]!=0)
+			simLog(sim,2,"   barbed state velocity a*min(exp(-k*F),2)-b: a=%g|L/T, k=%g|L/E, b=%g|L/T, so %g|L/T with no force\n",filtype->endrate[end][FESbarbed],filtype->barbedparameters[end][0],filtype->barbedparameters[end][1],filtype->endrate[end][FESbarbed]-filtype->barbedparameters[end][1]);
+		for(fes=0;fes<FESMAX;fes++)
+			for(fes2=0;fes2<FESMAX;fes2++)
+				if(filtype->endtrans[end][fes][fes2]>0)
+					simLog(sim,2,"   %s to %s transition rate: %g|/T\n",filFES2string((enum FilEndState)fes,string),filFES2string((enum FilEndState)fes2,string2),filtype->endtrans[end][fes][fes2]);
+		rtot=0;																						// the analytic target for a growth phase that ends by a transition
+		for(fes2=0;fes2<FESMAX;fes2++) rtot+=filtype->endtrans[end][FESopen][fes2];
+		if(filtype->endrate[end][FESopen]>0 && rtot>0)
+			simLog(sim,2,"   mean length added per open period: %g|L\n",filtype->endrate[end][FESopen]/rtot); }
+	if(grows && filtype->elongmaxlen>0)
 		simLog(sim,2,"  elongation max length: %g|L\n",filtype->elongmaxlen);
-	simLog(sim,filtype->caprate>0?2:1,"  capping rate: %g|/T\n",filtype->caprate);
-	simLog(sim,filtype->uncaprate>0?2:1,"  uncapping rate: %g|/T\n",filtype->uncaprate);
-	if(filtype->caprate>0)																					// the analytic target the pair is calibrated to
-		simLog(sim,2,"  mean length added before capping: %g|L\n",filtype->elongrate/filtype->caprate);
 
-	simLog(sim,2,"  mechanical Brownian motion: %s\n",filtype->brownian?"on":"off");
-	simLog(sim,2,"  mobility: %g\n",filtype->mobility);
-	simLog(sim,2,"  filament radius: %g\n",filtype->filradius);
-	if(filtype->stericradius>0)
-		simLog(sim,2,"  steric radius %g, stiffness %g, skin %g, mechanical substeps %i\n",filtype->stericradius,filtype->sterick,filtype->stericskin,filtype->stericsubsteps);
-	if(filtype->stericradius>0)
-		simLog(sim,2,"  steric growth overlap check: %s%s\n",filtype->stericgrowth?"on":"off",filtype->elongoverlap?" (branch/treadmill only; elongation permits overlaps)":"");
+	if(filtype->viscosity>0) simLog(sim,2,"  viscosity: %g|E.T/L3\n",filtype->viscosity);
+	simLog(sim,2,"  mobility: %g|L2/E/T%s\n",filtype->mobility,(filtype->viscosity>0 && !filtype->mobilityset)?" (from viscosity)":"");
+	if(dim==3) simLog(sim,2,"  rotational mobility: %g|/E/T%s\n",filRotMobility(filtype),filtype->rotmobility>0?"":(filtype->viscosity>0?" (from viscosity)":" (mobility/radius^2)"));
+	simLog(sim,2,"  filament radius: %g|L\n",filtype->filradius);
 
 	if(filtype->nface>0) {
 		simLog(sim,2,"  %i faces with twist of %g:",filtype->nface,filtype->facetwist);
@@ -982,10 +1364,15 @@ void filtypeOutput(const filamenttypeptr filtype) {
 			simLog(sim,2," %s,",filtype->facename[fc]);
 		simLog(sim,2,"\n"); }
 
+	simLog(sim,1,"  allocated filaments: %i, of which %i are unused or removed\n",filtype->maxfil,filtype->maxfil-filtype->nfil);
 	simLog(sim,2,"  %i filaments:\n",filtype->nfil);
 	for(f=0;f<filtype->nfil;f++)
 		filOutput(filtype->fillist[f]);
 
+    simLog(sim,2,"  mechanical Brownian motion: %s\n",filtype->brownian?"on":"off");
+    if(filtype->dynamics==FDimplicitnetwork) simLog(sim,2,"  coupled solver: tolerance %g, Newton %d, Krylov %d, mechanical substeps %d\n",filtype->implicittol,filtype->implicititerations,filtype->implicitkrylov,filtype->stericsubsteps);
+    if(filtype->elongoverlap) simLog(sim,2,"  overlap elongation: prescribed growth into walls/capsules; forces resolve penetration\n");
+    if(filtype->elongmodel) simLog(sim,2,"  mechanochemical growth: step %g, energy %g\n",filtype->elongstep,filtype->elongenergy);
 	return; }
 
 
@@ -1002,7 +1389,7 @@ void filssOutput(const simptr sim) {
 	simLog(sim,filss->condition<SCok?2:1," condition: %s\n",simsc2string(filss->condition,string));
 	simLog(sim,1," filament types allocated: %i,",filss->maxtype);
 	simLog(sim,2," filament types defined: %i\n",filss->ntype);
-	simLog(sim,2," mechanical workers requested: %i (0 automatic), parallel support: %s\n",filss->workers,filWorkersSupported()?"yes":"no");
+	simLog(sim,filss->boxlists?2:1," filaments listed in virtual boxes: %s\n",filss->boxlists?"yes":"no");
 	for(ft=0;ft<filss->ntype;ft++)
 		filtypeOutput(filss->filtypes[ft]);
 
@@ -1024,17 +1411,20 @@ void filWrite(const simptr sim,FILE *fptr) {
 
 /* filCheckParams */
 int filCheckParams(const simptr sim,int *warnptr) {
-	int error,warn,dim,f,seg,ft,pcount;
-	double fval;
+	int error,warn,dim,f,seg,ft,pcount,end,fes,fes2,grows,changes,reach[FESMAX],more,j,j2,i;
+	filsurfinteractptr fsi;
+	double kappa,theta0,kaz,kj;
+	filjunctionptr junct,junct2;
+	double fval,ksum,mobility;
 	enum PanelShape ps;
 	filamentssptr filss;
 	filamentptr fil;
+	filamenttypeptr filtype2;
 	filamenttypeptr filtype;
 	segmentptr segment;
 	char string[STRCHAR];
 
 	error=warn=0;
-	if(filStericValidate(sim)) error++;
 	dim=sim->dim;
 	filss=sim->filss;
 	if(!filss) {
@@ -1045,23 +1435,70 @@ int filCheckParams(const simptr sim,int *warnptr) {
 		warn++;
 		simLog(sim,7," WARNING: filament structure %s\n",simsc2string(filss->condition,string)); }
 
-	if(filss->workers<0 || filss->workers>256 || (filss->workers>1 && !filWorkersSupported())) {
-		error++;simLog(sim,9,"ERROR: invalid or unavailable filament worker count\n"); }
 	if(filss->ntype==0) {warn++;simLog(sim,5,"WARNING: Filament superstructure is defined, but no filament types are defined\n");}
+	for(j=0;j<filss->njunct;j++) {										// loop-closing junctions
+		junct=filss->junctlist[j];
+		if(junct->rigid) continue;
+		filJunctionParams(junct,dim,&kappa,&theta0,&kaz,&kj);
+		if(kj<=0) {
+			warn++;simLog(sim,5,"WARNING: the %s end of filament %s closes a loop, but nothing holds it in place; set junction_force or force_length for filament type %s\n",junct->end=='p'?"plus":"minus",junct->fil->filname,junct->fil->filtype->ftname);}
+		else if(junct->fil->filtype->dynamics==FDnone && junct->target->filtype->dynamics==FDnone) {
+			warn++;simLog(sim,5,"WARNING: the %s end of filament %s closes a loop between filaments with dynamics none, so the junction spring has no effect\n",junct->end=='p'?"plus":"minus",junct->fil->filname);}
+		else {
+			fval=sim->dt*kj*(junct->fil->filtype->mobility>junct->target->filtype->mobility?junct->fil->filtype->mobility:junct->target->filtype->mobility);
+			if(fval>0.5) {
+				warn++;simLog(sim,5,"WARNING: the loop-closing junction at the %s end of filament %s may be numerically unstable, because time_step * mobility * junction spring constant = %g, which should be well below 1; reduce time_step or junction_force\n",junct->end=='p'?"plus":"minus",junct->fil->filname,fval);}}
+		if(dim==3) {																	// azimuthal springs act on the attached filament only, so a loop can turn steadily
+			fval=kaz;
+			if(filRigidParent(junct->fil)) {
+				filJunctionParams(filRigidParent(junct->fil),dim,&kappa,&theta0,&kaz,&kj);
+				if(kaz>fval) fval=kaz; }
+			if(fval>0) {
+				warn++;simLog(sim,5,"WARNING: filament %s is in a loop and has a junction with an azimuthal spring (branch_force_azimuth), which can make the loop rotate steadily because the spring has no reaction on the filament it attaches to\n",junct->fil->filname);}}}
+	for(j=0;j<filss->njunct;j++) {										// rigid junctions that transmit loop-closing junction springs
+		junct=filss->junctlist[j];
+		if(!junct->rigid || filss->nspring==0) continue;
+		ksum=0;
+		for(j2=0;j2<filss->njunct;j2++) {
+			junct2=filss->junctlist[j2];
+			if(junct2->rigid || filInSubtree(junct2->fil,junct->fil)==filInSubtree(junct2->target,junct->fil)) continue;	// springs within or outside the subtree aren't transmitted
+			filJunctionParams(junct2,dim,&kappa,&theta0,&kaz,&kj);
+			ksum+=kj; }
+		mobility=junct->fil->filtype->mobility>junct->target->filtype->mobility?junct->fil->filtype->mobility:junct->target->filtype->mobility;
+		fval=sim->dt*mobility*ksum;
+		if(fval>0.5) {
+			warn++;simLog(sim,5,"WARNING: the %s end of filament %s is rigidly attached, and its attachment transmits the forces of loop-closing junction springs with a total spring constant of %g, so time_step * mobility * total = %g, which may be numerically unstable; reduce time_step or junction_force\n",junct->end=='p'?"plus":"minus",junct->fil->filname,ksum,fval);}}
 	for(ft=0;ft<filss->ntype;ft++) {
 		filtype=filss->filtypes[ft];
 
-		if(filtype->elongrate>0 && filtype->stdlen<=0) {		// otherwise the banked-growth loop has a zero threshold
-			error++;simLog(sim,9,"ERROR: filament type %s has elongation_rate>0 but standard_length<=0; elongation needs a positive standard_length\n",filtype->ftname);}
-		error+=filGrowthValidate(filtype);
-		if(filtype->elongmodel && filtype->elongrate*sim->dt>0.25*filtype->stdlen) {
-			error++;simLog(sim,9,"ERROR: mechanochemical elongation_rate*time_step must be <= standard_length/4\n");}
-		if(filtype->treadrate!=0 && filtype->elongrate>0) {
-			warn++;simLog(sim,5,"WARNING: filament type %s has both treadmill_rate and elongation_rate set; these compose as turnover plus net growth\n",filtype->ftname);}
-		if(filtype->branchrate>0 && filtype->plusend!='b') {		// filAddBranch always anchors a daughter by its front
-			error++;simLog(sim,9,"ERROR: filament type %s combines branch_rate with plus_end front; branching currently requires plus_end back\n",filtype->ftname);}
-		if(filtype->treadrate!=0 && filtype->caprate>0 && (filtype->treadrate>0)!=(filtype->plusend=='b')) {
-			warn++;simLog(sim,5,"WARNING: filament type %s treadmills at its minus end, so plus-end capping does not block treadmilling\n",filtype->ftname);}
+		grows=changes=0;
+		for(end=0;end<2;end++)
+			for(fes=0;fes<FESMAX;fes++) {
+				if(filtype->endrate[end][fes]>0) grows=1;
+				if(filtype->endrate[end][fes]!=0) changes=1; }
+		if(filtype->barbedparameters[0][1]>0 || filtype->barbedparameters[1][1]>0) changes=1;
+		if(grows && filtype->stdlen<=0) {									// otherwise the banked-growth loop has a zero threshold
+			error++;simLog(sim,9,"ERROR: filament type %s has a positive elongation_rate but standard_length<=0; elongation needs a positive standard_length\n",filtype->ftname);}
+		if(filtype->treadrate!=0 && changes) {
+			warn++;simLog(sim,5,"WARNING: filament type %s has both treadmill_rate and elongation_rate set; these compose as turnover plus net length change\n",filtype->ftname);}
+		for(end=0;end<2;end++) {													// end states with velocities that are never reached
+			for(fes=0;fes<FESMAX;fes++) reach[fes]=0;
+			reach[filtype->endstate0[end]]=1;							// new filaments start here
+			for(f=0;f<filtype->nfil;f++)										// existing filaments may have been set to other states
+				reach[filtype->fillist[f]->endstate[end]]=1;
+			for(more=1;more;) {
+				more=0;
+				for(fes=0;fes<FESMAX;fes++)
+					if(reach[fes])
+						for(fes2=0;fes2<FESMAX;fes2++)
+							if(!reach[fes2] && filtype->endtrans[end][fes][fes2]>0) reach[fes2]=more=1; }
+			for(fes=0;fes<FESMAX;fes++)
+				if(!reach[fes] && filtype->endrate[end][fes]!=0) {
+					warn++;simLog(sim,5,"WARNING: filament type %s sets an elongation_rate for the %s end in the %s state, but no filament starts in that state and no transition reaches it\n",filtype->ftname,end?"plus":"minus",filFES2string((enum FilEndState)fes,string));}
+			if(reach[FESbarbed] && filtype->endrate[end][FESbarbed]>0 && filtype->barbedparameters[end][0]>0 && !filSurfForceOn(filtype) && !filContactTypeOn(filtype)) {
+				warn++;simLog(sim,5,"WARNING: filament type %s has a barbed %s end, but no softwall or repel surface interactions or filament contact interactions, so its elongation rate won't depend on force\n",filtype->ftname,end?"plus":"minus");} }
+		if((filtype->persist>0 || filtype->persisttwist>0) && (filtype->kT<=0 || filtype->stdlen<=0)) {
+			error++;simLog(sim,10,"ERROR: filament type %s has a persistence length entered, but force constants can only be computed from it if kT and standard_length are both positive\n",filtype->ftname);}
 		if(filtype->branchforceangle>0 && filtype->kT>0) {	// birth spread should match the spring's equilibrium spread (filUpdateParams derives it when unset)
 			fval=sqrt(filtype->kT/filtype->branchforceangle);
 			if(filtype->branchspread==0) {
@@ -1080,6 +1517,15 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			error++;simLog(sim,9,"ERROR: filament type %s sets both branch_surface and branch_compartment; use a single location gate\n",filtype->ftname);}
 		if((filtype->branchsrf || filtype->branchcmpt) && filtype->branchrate<=0) {
 			warn++;simLog(sim,5,"WARNING: filament type %s has a branch location gate but branch_rate is 0, so no branching will occur\n",filtype->ftname);}
+		if(filtype->branchminspacing>0 && filtype->branchrate<=0 && !filSurfBranchOn(filtype)) {
+			warn++;simLog(sim,5,"WARNING: filament type %s has branch_min_spacing but branch_rate is 0 and there are no branch surface interactions; the spacing only applies to branch nucleation\n",filtype->ftname);}
+		if(filtype->branchminspacing>0) {						// branches entered by the user are kept, but report ones that violate the spacing
+			pcount=0;
+			for(j=0;j<filss->njunct;j++) {
+				junct=filss->junctlist[j];
+				if(junct->target->filtype==filtype && !junct->bend && !filBranchNodeSpaced(junct->target,junct->node,filtype->branchminspacing,junct)) pcount++; }
+			if(pcount>0) {
+				warn++;simLog(sim,5,"WARNING: filament type %s has %i branches that are closer than branch_min_spacing to another branch; these are kept, and the spacing only applies to new branches from branch nucleation\n",filtype->ftname,pcount);}}
 		if(filtype->branchsrf) {													// a gate bound to empty geometry closes silently otherwise
 			pcount=0;
 			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1)) pcount+=filtype->branchsrf->npanel[ps];
@@ -1087,20 +1533,43 @@ int filCheckParams(const simptr sim,int *warnptr) {
 				warn++;simLog(sim,5,"WARNING: filament type %s branch_surface %s has no panels; the gate is closed and no branching will occur\n",filtype->ftname,filtype->branchsrf->sname);}}
 		if(filtype->branchcmpt && filtype->branchcmpt->npts==0 && filtype->branchcmpt->ncmptl==0) {
 			warn++;simLog(sim,5,"WARNING: filament type %s branch_compartment %s has no inside-defining points; the gate is closed and no branching will occur\n",filtype->ftname,filtype->branchcmpt->cname);}
-		if(filtype->confinesrf && filtype->confineforce>0) {
-			if(filtype->dynamics==FDnone) {
-				warn++;simLog(sim,5,"WARNING: filament type %s sets confine_surface with dynamics none; the confinement force is never applied\n",filtype->ftname);}
+		if(filtype->dynamics==FDeulermat) {					// test methods, not for production simulations
+			warn++;simLog(sim,5,"WARNING: filament type %s uses dynamics EulerMat, which is a test method; it gives the same results as Euler but more slowly, so use Euler, RK4, or Implicit for simulations\n",filtype->ftname);}
+		if(filtype->dynamics==FDimplicitold) {
+			warn++;simLog(sim,5,"WARNING: filament type %s uses dynamics ImplicitOld, which is a test method; it can be unstable even with short time steps, so use Implicit for simulations\n",filtype->ftname);}
+		for(i=0;i<filtype->nfilint;i++) {							// filament-filament interactions
+			filtype2=filtype->filint[i]->otherfiltype;		// Implicit dynamics are stable for these, and fixed filaments don't move
+			mobility=(filtype->dynamics==FDnone || filtype->dynamics==FDimplicit)?0:filtype->mobility;
+			if(filtype2->dynamics!=FDnone && filtype2->dynamics!=FDimplicit && filtype2->mobility>mobility) mobility=filtype2->mobility;
+			fval=sim->dt*filtype->filint[i]->kforce*mobility;
+			if(filtype->filint[i]->action==FFAsoftwall && fval>0.5) {
+				warn++;simLog(sim,5,"WARNING: the contact interaction between filament types %s and %s may be numerically unstable, because time_step * mobility * force constant = %g, which should be well below 1 unless using dynamics Implicit\n",filtype->ftname,filtype2->ftname,fval);} }
+		for(i=0;i<filtype->nsurfint;i++) {						// filament-surface interactions
+			fsi=filtype->surfint[i];
 			pcount=0;
-			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1)) pcount+=filtype->confinesrf->npanel[ps];
+			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1)) pcount+=fsi->othersurf->npanel[ps];
 			if(pcount==0) {
-				warn++;simLog(sim,5,"WARNING: filament type %s confine_surface %s has no panels; confinement is inert\n",filtype->ftname,filtype->confinesrf->sname);}
-			if(filtype->dynamics!=FDimplicitnetwork && filtype->mobility*filtype->confineforce*sim->dt>0.5) {		// explicit relaxation of the wall spring must be resolved; per-node mobility factors multiply this further
-				warn++;simLog(sim,5,"WARNING: filament type %s confinement is stiff for this time step (mobility*force*dt = %g > 0.5, before any node mobility factors); explicit integration may oscillate or blow up at the wall\n",filtype->ftname,filtype->mobility*filtype->confineforce*sim->dt);}}
-		if((filtype->branchforceangle>0 || filtype->branchforceazimuth>0 || (filtype->confinesrf && filtype->confineforce>0)) && (filtype->dynamics==FDeulermat || filtype->dynamics==FDimplicitold)) {
-			warn++;simLog(sim,5,"WARNING: filament type %s uses junction springs or confinement with dynamics eulermat or implicitold, which drive from the analytic force matrix (stretch and bend only); these forces will not be applied\n",filtype->ftname);}
+				warn++;simLog(sim,5,"WARNING: filament type %s has a %s interaction with surface %s, which has no panels, so the interaction has no effect\n",filtype->ftname,filFSA2string(fsi->action,string),fsi->othersurf->sname);}
+			if((fsi->action==FSAadsorb || fsi->action==FSAdesorb || fsi->action==FSAbranch) && fsi->rate*sim->dt>0.2) {
+				warn++;simLog(sim,5,"WARNING: filament type %s %s interaction with surface %s has a high rate for this time step (rate*dt = %g); the probability per time step is 1-exp(-rate*dt), but a shorter time step would resolve the kinetics better\n",filtype->ftname,filFSA2string(fsi->action,string),fsi->othersurf->sname,fsi->rate*sim->dt);}
+			if(fsi->action==FSAadsorb && fsi->rate>0 && fsi->capdist==0) {
+				warn++;simLog(sim,5,"WARNING: filament type %s adsorb interaction with surface %s has a capture distance of 0, so nodes essentially never adsorb\n",filtype->ftname,fsi->othersurf->sname);}
+			if(fsi->action==FSAbranch && fsi->rate>0 && fsi->capdist==0) {
+				warn++;simLog(sim,5,"WARNING: filament type %s branch interaction with surface %s has a distance of 0, so nodes essentially never branch\n",filtype->ftname,fsi->othersurf->sname);}
+			if((fsi->action==FSAsoftwall || fsi->action==FSArepel) && fsi->kforce>0) {
+				if(filtype->dynamics==FDnone) {
+					warn++;simLog(sim,5,"WARNING: filament type %s has a %s interaction with surface %s but dynamics none; the force is never applied\n",filtype->ftname,filFSA2string(fsi->action,string),fsi->othersurf->sname);}
+				fval=1;																			// thickest node, since the wall spring scales with node thickness
+				for(f=0;f<filtype->nfil;f++)
+					for(seg=0;seg<filtype->fillist[f]->nseg;seg++)
+						if(filtype->fillist[f]->segments[seg]->thk>fval) fval=filtype->fillist[f]->segments[seg]->thk;
+				if(filtype->mobility*fsi->kforce*fval*sim->dt>0.5) {		// explicit relaxation of the wall spring must be resolved; per-node mobility factors multiply this further
+					warn++;simLog(sim,5,"WARNING: filament type %s %s interaction with surface %s is stiff for this time step (mobility*force*thickness*dt = %g > 0.5, for the thickest node and before any node mobility factors); explicit integration may oscillate or blow up at the wall\n",filtype->ftname,filFSA2string(fsi->action,string),fsi->othersurf->sname,filtype->mobility*fsi->kforce*fval*sim->dt);}}}
 
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
+			if(filtype->dynamics!=FDnone && filConstrained(filtype) && filNodesAdsorbed(fil)>0) {
+				warn++;simLog(sim,5,"WARNING: filament %s has nodes adsorbed to surfaces and its type has rigid constraints (negative force constants); the constraints are enforced first, and then the adsorbed nodes are moved back onto their surfaces, so the constraints may not be met exactly\n",fil->filname);}
 			for(seg=0;seg<fil->nseg;seg++) {
 				segment=fil->segments[seg];
 				if(segment->len<=0) {error++;simLog(sim,9,"ERROR: filament %s segment %i has length %1/3g; it should be >=0",fil->filname,seg,segment->len);}
@@ -1112,6 +1581,7 @@ int filCheckParams(const simptr sim,int *warnptr) {
 				if(dim==2 && segment->ypr[2]!=0) {error++;simLog(sim,9,"ERROR: filament %s segment %i roll bending angle is non-zero in a 2D system\n",fil->filname,seg);} }}}
 
 	if(warnptr) *warnptr=warn;
+	error+=filStericValidate(sim);
 	return error; }
 
 
@@ -1131,10 +1601,156 @@ int filSetNodeMobility(filamentptr fil,int node,double value) {
 	return 0; }
 
 
+/* filNodeStateClear */
+// Sets the per-node state of node node of filament fil to that of a new node: node
+// mobility factor 1 and not adsorbed to a surface.
+void filNodeStateClear(filamentptr fil,int node) {
+	fil->nodemobility[node]=1;
+	fil->nodepnl[node]=NULL;
+	fil->nodeface[node]=PFnone;
+	fil->nodesrfmob[node]=1;
+	return; }
+
+
+/* filNodeStateCopy */
+// Copies the per-node state (node mobility factor and surface adsorption) of node
+// from of filament fil to node to.
+void filNodeStateCopy(filamentptr fil,int to,int from) {
+	fil->nodemobility[to]=fil->nodemobility[from];
+	fil->nodepnl[to]=fil->nodepnl[from];
+	fil->nodeface[to]=fil->nodeface[from];
+	fil->nodesrfmob[to]=fil->nodesrfmob[from];
+	return; }
+
+
+/* filNodeAdsorb */
+// Adsorbs node node of filament fil to surface srf, on face face, with lateral mobility
+// factor mobility. The node moves to the closest point of the surface, and then onto
+// the face side of that panel. If face is PFboth or PFnone, the face is the side of
+// the panel that the node was on, or the front if it was exactly on the panel. A node that is the attached end of a filament that
+// is rigidly pinned to its mother can't be adsorbed, because the pin holds it at the
+// mother's node. Negative node numbers count back from the plus end, so -1 is the
+// plus end. The filament is added to the surface's list of filaments with adsorbed
+// nodes. Returns 0 for success, 1 if the node doesn't exist, 2 if the surface has
+// no panels, 3 if the node is a rigidly pinned end, or 4 for out of memory.
+int filNodeAdsorb(filamentptr fil,int node,surfaceptr srf,enum PanelFace face,double mobility) {
+	simptr sim;
+	panelptr pnl;
+	double pnlpt[3],*nodept;
+	int d,dim,e;
+
+	if(node<0) node=fil->nseg+1+node;
+	if(node<0 || node>fil->nseg || fil->nseg<1) return 1;
+	for(e=0;e<2;e++)
+		if(fil->endjunct[e] && fil->endjunct[e]->rigid && node==(e?fil->nseg:0)) return 3;
+	sim=fil->filtype->filss->sim;
+	dim=sim->dim;
+	nodept=fil->nodes[node];
+	if(closestsurfacept(srf,dim,nodept,pnlpt,&pnl,NULL)<0) return 2;
+	if(surfaddfilament(srf,fil)) return 4;
+	if(face!=PFfront && face!=PFback) {
+		face=panelside(nodept,pnl,dim,NULL,1,0);
+		if(face==PFnone) face=PFfront; }						// a node exactly on the panel goes to its front
+	for(d=0;d<dim;d++) nodept[d]=pnlpt[d];
+	fixpt2panel(nodept,pnl,dim,face,sim->srfss->epsilon);
+	fil->nodepnl[node]=pnl;
+	fil->nodeface[node]=face;
+	fil->nodesrfmob[node]=mobility;
+	filNodes2Angles(fil,-1,-1);
+	return 0; }
+
+
+/* filNodeDesorb */
+// Desorbs node node of filament fil from its surface, if it is adsorbed. Negative node
+// numbers count back from the plus end. If no other node of fil is adsorbed to that
+// surface, fil is removed from the surface's list of filaments with adsorbed nodes.
+void filNodeDesorb(filamentptr fil,int node) {
+	surfaceptr srf;
+	int n;
+
+	if(node<0) node=fil->nseg+1+node;
+	if(node<0 || node>fil->nseg || !fil->nodepnl[node]) return;
+	srf=fil->nodepnl[node]->srf;
+	fil->nodepnl[node]=NULL;
+	fil->nodeface[node]=PFnone;
+	fil->nodesrfmob[node]=1;
+	for(n=0;n<=fil->nseg && !(fil->nodepnl[n] && fil->nodepnl[n]->srf==srf);n++);
+	if(n>fil->nseg) surfremovefilament(srf,fil);
+	return; }
+
+
+/* filNodesAdsorbed */
+// Returns the number of nodes of filament fil that are adsorbed to surfaces.
+int filNodesAdsorbed(const filamentptr fil) {
+	int node,n;
+
+	n=0;
+	for(node=0;node<=fil->nseg;node++)
+		if(fil->nodepnl[node]) n++;
+	return n; }
+
+
 
 /******************************************************************************/
 /********************************* filament type ******************************/
 /******************************************************************************/
+
+
+/* filtypeApplyPersistence */
+// Computes bending and twisting force constants from the persistence lengths, if they
+// were entered, for the ABC model with equal yaw and pitch force constants and
+// thickness 1. If the bending persistence length was entered but neither the roll
+// force constant nor the torsional persistence length was, then the torsional
+// persistence length is taken to be three times the bending one.
+void filtypeApplyPersistence(filamenttypeptr filtype) {
+	int dim;
+	double kT,len,twist;
+
+	kT=filtype->kT;
+	len=filtype->stdlen;
+	if(kT<=0 || len<=0) return;													// can't compute; filCheckParams reports it
+	dim=(filtype->filss && filtype->filss->sim)?filtype->filss->sim->dim:3;
+	if(filtype->persist>0) {
+		if(dim==2) filtype->kypr[0]=kT*filtype->persist/(2*len);		// 2D: Lp = 2 l k / kT
+		else filtype->kypr[0]=filtype->kypr[1]=Fil_Statistics("ABC","kBend_Persist",kT,filtype->persist,len,0); }
+	if(dim==3) {
+		twist=filtype->persisttwist;
+		if(twist<=0 && filtype->persist>0 && !filtype->kpsiset) twist=3*filtype->persist;
+		if(twist>0) filtype->kypr[2]=Fil_Statistics("ABC","kTwist_Persist",kT,twist,len,0); }
+	return; }
+
+
+/* filViscousMobility */
+// Returns the translational mobility (for code 't') or rotational mobility about the
+// segment axis (for code 'r') of a cylinder with length len and radius radius in a
+// medium with viscosity visc, or -1 if any input isn't positive. The translational
+// mobility is the orientation average, from Tirado and Garcia de la Torre (J. Chem.
+// Phys. 71:2581, 1979; 73:1986, 1980), mu = (ln p + nu)/(3 pi visc len), where p is the
+// aspect ratio len/(2 radius) and nu = 0.312 + 0.565/p - 0.100/p^2. This is for p from
+// about 2 to 30, so p is set to at least 2. The rotational mobility is for rotation
+// about the cylinder axis, mu_r = 1/(4 pi visc radius^2 len), which is exact for a long
+// cylinder.
+double filViscousMobility(double visc,double len,double radius,char code) {
+	double p;
+
+	if(visc<=0 || len<=0 || radius<=0) return -1;
+	if(code=='r') return 1.0/(4*PI*visc*radius*radius*len);
+	p=len/(2*radius);
+	if(p<2) p=2;
+	return (log(p)+0.312+0.565/p-0.100/(p*p))/(3*PI*visc*len); }
+
+
+/* filtypeApplyViscosity */
+// If the viscosity was entered and the mobility wasn't, this sets the mobility from the
+// viscosity, standard length, and radius, with filViscousMobility. Each node is treated
+// as carrying the drag of one segment.
+void filtypeApplyViscosity(filamenttypeptr filtype) {
+	double mob;
+
+	if(filtype->viscosity<=0 || filtype->mobilityset) return;
+	mob=filViscousMobility(filtype->viscosity,filtype->stdlen,filtype->filradius,'t');
+	if(mob>0) filtype->mobility=mob;
+	return; }
 
 
 /* filtypeSetParam */
@@ -1144,7 +1760,15 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 	er=0;
 	if(!strcmp(param,"stdlen")) {
 		if(value<0) er=2;
-		else filtype->stdlen=value; }
+		else {
+			filtype->stdlen=value;
+			filtypeApplyPersistence(filtype);
+			filtypeApplyViscosity(filtype); }}
+
+    else if(!strcmp(param,"brownian")) {
+        if(value!=0 && value!=1) er=2;
+        else {filtype->brownian=(int)value;for(int f=0;f<filtype->nfil;f++) if(filtype->fillist[f]->filwork) filtype->fillist[f]->filwork->thermtime=-DBL_MAX;}
+    }
 
 	else if(!strcmp(param,"stdypr")) {
 		if(value<-PI || value>PI) er=2;
@@ -1155,24 +1779,36 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 	else if(!strcmp(param,"klen")) {
 		filtype->klen=value; }
 
+	else if(!strcmp(param,"junctforce")) {						// loop-closing junction spring; 0 = use klen
+		if(value<0) er=2;
+		else filtype->junctforce=value; }
+
 	else if(!strcmp(param,"kypr")) {
 		if(index<0) filtype->kypr[0]=filtype->kypr[1]=filtype->kypr[2]=value;
-		else filtype->kypr[index]=value; }
+		else filtype->kypr[index]=value;
+		if(index<0 || index==2) filtype->kpsiset=1;
+		filtypeApplyPersistence(filtype); }						// persistence lengths take precedence
 
 	else if(!strcmp(param,"kT")) {
 		if(value<0) er=2;
-		else filtype->kT=value; }
+		else {
+			filtype->kT=value;
+			filtypeApplyPersistence(filtype); }}
+
+	else if(!strcmp(param,"persist")) {								// bending persistence length
+		if(value<=0) er=2;
+		else {
+			filtype->persist=value;
+			filtypeApplyPersistence(filtype); }}
+
+	else if(!strcmp(param,"persisttwist")) {					// torsional persistence length
+		if(value<=0) er=2;
+		else {
+			filtype->persisttwist=value;
+			filtypeApplyPersistence(filtype); }}
 
 	else if(!strcmp(param,"treadrate")) {
 		filtype->treadrate=value; }
-
-	else if(!strcmp(param,"brownian")) {
-		if(value!=0 && value!=1) er=2;
-		else {
-			int f;
-			filtype->brownian=(int)value;
-			for(f=0;f<filtype->nfil;f++) if(filtype->fillist[f]->filwork)
-				filtype->fillist[f]->filwork->thermtime=-DBL_MAX; }}
 
 	else if(!strcmp(param,"branchrate")) {						// branch nucleation rate
 		if(value<0) er=2;
@@ -1183,11 +1819,17 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 
 	else if(!strcmp(param,"branchspread")) {					// angular spread of branch
 		if(value<0) er=2;
-		else filtype->branchspread=value; }
+		else {
+			filtype->branchspread=value;
+			filtype->branchspreadderived=0; }}
 
 	else if(!strcmp(param,"branchsegments")) {				// segments per newborn daughter
 		if(value<1) er=2;
 		else filtype->branchsegments=(int)(value+0.5); }
+
+	else if(!strcmp(param,"branchminspacing")) {			// minimum contour distance between branch points
+		if(value<0) er=2;
+		else filtype->branchminspacing=value; }
 
 	else if(!strcmp(param,"branchforceangle")) {			// junction torsional spring constant
 		if(value<0) er=2;
@@ -1203,6 +1845,10 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 		if(value!=0 && value!=1) er=2;
 		else filtype->branchazimuthfix=(int)value; }
 
+	else if(!strcmp(param,"thickdrag")) {							// thickness divides node mobility factors
+		if(value!=0 && value!=1) er=2;
+		else filtype->thickdrag=(int)value; }
+
 	else if(!strcmp(param,"branchforceazimuth")) {		// azimuthal spring constant
 		if(value<0) er=2;
 		else filtype->branchforceazimuth=value; }
@@ -1211,29 +1857,45 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 		if(value<=0) er=2;
 		else filtype->branchsrfdist=value; }
 
-	else if(!strcmp(param,"confineforce")) {					// confinement spring constant
-		if(value<0) er=2;
-		else filtype->confineforce=value; }
+	else if(!strcmp(param,"endrate")) {								// end velocity, length/time; index = end*FESMAX+state
+		if(index<0 || index>=2*FESMAX) er=2;
+		else filtype->endrate[index/FESMAX][index%FESMAX]=value; }
 
-	else if(!strcmp(param,"elongrate")) {							// plus-end growth velocity, length/time
-		if(value<0) er=2;
-		else filtype->elongrate=value; }
+	else if(!strcmp(param,"barbedparameters")) {			// barbed end velocity parameters; index = end*2+i, where i is 0 for k and 1 for b
+		if(index<0 || index>=4 || value<0) er=2;
+		else filtype->barbedparameters[index/2][index%2]=value; }
+
+	else if(!strcmp(param,"endtrans")) {							// end state transition rate, 1/time; index = (end*FESMAX+from)*FESMAX+to
+		if(index<0 || index>=2*FESMAX*FESMAX || value<0) er=2;
+		else if(index/FESMAX%FESMAX==index%FESMAX) er=2;	// no transition from a state to itself
+		else filtype->endtrans[index/(FESMAX*FESMAX)][index/FESMAX%FESMAX][index%FESMAX]=value; }
+
+	else if(!strcmp(param,"endstate0")) {							// initial end state; index = end, value = state
+		if(index<0 || index>=2 || value<0 || value>=FESMAX) er=2;
+		else filtype->endstate0[index]=(enum FilEndState)(int)value; }
 
 	else if(!strcmp(param,"elongmaxlen")) {						// contour-length ceiling; 0 = unbounded
 		if(value<0) er=2;
 		else filtype->elongmaxlen=value; }
 
-	else if(!strcmp(param,"caprate")) {								// plus-end capping rate, 1/time
-		if(value<0) er=2;
-		else filtype->caprate=value; }
+	else if(!strcmp(param,"mobility")) {							// negative = unset, so computed from the viscosity if it was entered
+		if(value==0) er=2;
+		else if(value<0) {
+			filtype->mobilityset=0;
+			filtypeApplyViscosity(filtype); }
+		else {
+			filtype->mobility=value;
+			filtype->mobilityset=1; }}
 
-	else if(!strcmp(param,"uncaprate")) {							// plus-end uncapping rate, 1/time
-		if(value<0) er=2;
-		else filtype->uncaprate=value; }
+	else if(!strcmp(param,"rotmobility")) {						// rotational mobility; negative = from viscosity or mobility/filradius^2
+		if(value==0) er=2;
+		else filtype->rotmobility=value<0?-1:value; }
 
-	else if(!strcmp(param,"mobility")) {
+	else if(!strcmp(param,"viscosity")) {							// viscosity of the medium
 		if(value<=0) er=2;
-		else filtype->mobility=value; }
+		else {
+			filtype->viscosity=value;
+			filtypeApplyViscosity(filtype); }}
 
 	else if(!strcmp(param,"bundle")) {
 		if(value<=0) er=2;
@@ -1241,7 +1903,9 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 
 	else if(!strcmp(param,"radius")) {
 		if(value<=0) er=2;
-		else filtype->filradius=value; }
+		else {
+			filtype->filradius=value;
+			filtypeApplyViscosity(filtype); }}
 
 	else if(!strcmp(param,"facetwist")) {
 		filtype->facetwist=value; }
@@ -1311,14 +1975,6 @@ int filtypeSetDynamics(filamenttypeptr filtype,enum FilamentDynamics fd) {
 	return 0; }
 
 
-/* filtypeSetPlusEnd */
-int filtypeSetPlusEnd(filamenttypeptr filtype,char endchar) {
-	if(!filtype) return 1;
-	if(endchar!='b' && endchar!='f') return 2;
-	filtype->plusend=endchar;
-	return 0; }
-
-
 /* filtypeAddFace */
 int filtypeAddFace(filamenttypeptr filtype,const char* facename) {
 	if(filtype->nface==filtype->maxface) {
@@ -1326,6 +1982,100 @@ int filtypeAddFace(filamenttypeptr filtype,const char* facename) {
 		if(!filtype) return -1; }
 	strcpy(filtype->facename[filtype->nface++],facename);
 	return 0; }
+
+
+/* filtypeAddSurfInteract */
+// Adds a filament-surface interaction to filament type filtype, between the filament
+// parts in filpart (indexed by FPplus, FPminus, and FPside) and face face of surface
+// srf, which is the side of the surface that the filament is on. endstate is the state
+// that end parts need to be in for the interaction to apply, or FESnone for any state.
+// action is the type of interaction, kforce is its force constant, for FSAsoftwall and
+// FSArepel, and repeldist is the distance at which the force starts, for FSArepel. If
+// the type already has an interaction with the same surface, face, parts, end state,
+// and action, then its parameters are replaced instead, so that entering an
+// interaction again changes it. Returns the interaction, or NULL if memory could not
+// be allocated.
+filsurfinteractptr filtypeAddSurfInteract(filamenttypeptr filtype,surfaceptr srf,enum PanelFace face,const int *filpart,enum FilEndState endstate,enum FilSurfAction action,double kforce,double repeldist) {
+	filsurfinteractptr fsi,*newlist;
+	int i,part,newmax;
+
+	fsi=NULL;
+	for(i=0;i<filtype->nsurfint && !fsi;i++) {
+		fsi=filtype->surfint[i];
+		if(fsi->othersurf!=srf || fsi->surfface!=face || fsi->endstate!=endstate || fsi->action!=action) fsi=NULL;
+		for(part=0;part<FILPARTMAX && fsi;part++)
+			if(fsi->filpart[part]!=filpart[part]) fsi=NULL; }
+
+	if(!fsi) {
+		if(filtype->nsurfint==filtype->maxsurfint) {
+			newmax=2*filtype->maxsurfint+1;
+			newlist=(filsurfinteractptr*) calloc(newmax,sizeof(filsurfinteractptr));
+			if(!newlist) return NULL;
+			for(i=0;i<filtype->nsurfint;i++) newlist[i]=filtype->surfint[i];
+			free(filtype->surfint);
+			filtype->surfint=newlist;
+			filtype->maxsurfint=newmax; }
+		fsi=filSurfInteractAlloc(filtype);
+		if(!fsi) return NULL;
+		fsi->othersurf=srf;
+		fsi->surfface=face;
+		for(part=0;part<FILPARTMAX;part++) fsi->filpart[part]=filpart[part];
+		fsi->endstate=endstate;
+		fsi->action=action;
+		filtype->surfint[filtype->nsurfint++]=fsi; }
+
+	fsi->kforce=kforce;
+	fsi->repeldist=repeldist;
+	return fsi; }
+
+
+/* filSurfInteractApplies */
+// Returns 1 if surface interaction fsi applies to part part (FPplus, FPminus, or
+// FPside) of filament fil, and 0 if not. It applies if the interaction lists that part
+// and, for the plus and minus parts, if the interaction has no end state or the end is
+// in that state. Side nodes don't have states.
+int filSurfInteractApplies(const filsurfinteractptr fsi,const filamentptr fil,int part) {
+	if(!fsi->filpart[part]) return 0;
+	if(fsi->endstate==FESnone || part==FPside) return 1;
+	return fil->endstate[part==FPplus?1:0]==fsi->endstate; }
+
+
+/* filtypeAddFilInteract */
+// Adds an interaction with action action between filament types filtype and other, which
+// can be the same type, or sets the force constant of the existing one. These
+// interactions are symmetric, so an interaction that was entered from either type is the
+// same one, and is listed in only one type's filint list. Returns the interaction, or
+// NULL if memory could not be allocated.
+filfilinteractptr filtypeAddFilInteract(filamenttypeptr filtype,filamenttypeptr other,enum FilFilAction action,double kforce) {
+	filfilinteractptr ffi,*newlist;
+	int i,newmax;
+
+	ffi=NULL;
+	for(i=0;i<filtype->nfilint && !ffi;i++)
+		if(filtype->filint[i]->otherfiltype==other && filtype->filint[i]->action==action) ffi=filtype->filint[i];
+	for(i=0;i<other->nfilint && !ffi;i++)
+		if(other->filint[i]->otherfiltype==filtype && other->filint[i]->action==action) ffi=other->filint[i];
+
+	if(!ffi) {
+		if(filtype->nfilint==filtype->maxfilint) {
+			newmax=2*filtype->maxfilint+1;
+			newlist=(filfilinteractptr*) calloc(newmax,sizeof(filfilinteractptr));
+			if(!newlist) return NULL;
+			for(i=0;i<filtype->nfilint;i++) newlist[i]=filtype->filint[i];
+			free(filtype->filint);
+			filtype->filint=newlist;
+			filtype->maxfilint=newmax; }
+		ffi=(filfilinteractptr) calloc(1,sizeof(struct filfilinteractstruct));
+		if(!ffi) return NULL;
+		ffi->filtype=filtype;
+		ffi->selffilface=-1;
+		ffi->otherfiltype=other;
+		ffi->otherfilface=-1;
+		ffi->action=action;
+		filtype->filint[filtype->nfilint++]=ffi; }
+
+	ffi->kforce=kforce;
+	return ffi; }
 
 
 /* filAddFilamentType */
@@ -1373,16 +2123,6 @@ void filSetCondition(filamentssptr filss,enum StructCond cond,int upgrade) {
 	return; }
 
 
-/* Superstructure setting, like other filEnable/filSet operations. No global
-   OpenMP settings are changed: separate simulations retain their own choices. */
-int filSetWorkers(simptr sim,int workers) {
- if(!sim) return 1;
- if(workers<0 || workers>256 || (workers>1 && !filWorkersSupported())) return 2;
- if(!sim->filss && filEnableFilaments(sim)) return 1;
- sim->filss->workers=workers;return 0;
-}
-
-
 /* filEnableFilaments */
 int filEnableFilaments(simptr sim) {
 	filamentssptr filss;
@@ -1408,13 +2148,13 @@ int filEnableFilaments(simptr sim) {
 int filUpdateParams(simptr sim) {
 	int ft;
 	filamenttypeptr filtype;
-	if(filStericValidate(sim)) return 1;
 
 	for(ft=0;ft<sim->filss->ntype;ft++) {
 		filtype=sim->filss->filtypes[ft];
 		if(filtype->branchspread<0 && filtype->branchforceangle>0 && filtype->kT>0) {
 			filtype->branchspread=sqrt(filtype->kT/filtype->branchforceangle);
-			simLog(sim,2,"branch_spread for filament type %s set to sqrt(kT/branch_force_angle) = %g\n",filtype->ftname,filtype->branchspread); }}
+			filtype->branchspreadderived=1;						// at birth, divided by the square root of the thickness, because the spring scales with thickness
+			simLog(sim,2,"branch_spread for filament type %s set to sqrt(kT/branch_force_angle) = %g, for thickness 1\n",filtype->ftname,filtype->branchspread); }}
 	return 0; }
 
 
@@ -1438,7 +2178,8 @@ int filUpdate(simptr sim) {
 		if(filss->condition==SCparams) {
 			er=filUpdateParams(sim);
 			if(er) return er;
-			filSetCondition(filss,SCok,1); }}
+			filSetCondition(filss,SCok,1); }
+		if(filBoxesUpdate(sim)) return 1; }						// boxes may have been rebuilt
 	return 0; }
 
 
@@ -1454,11 +2195,15 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	int nvar,dim;
 
 	int itct,er,i1,i2;
-	char nm[STRCHARLONG],nm1[STRCHARLONG];
-	double fltv1[9],f1;
+	char nm[STRCHARLONG],nm1[STRCHARLONG],nm2[STRCHARLONG],nm3[STRCHARLONG],*chptr;
+	double fltv1[9],f1,f2,f3;
+	enum FilEndState fes1,fes2;
 	enum DrawMode dm;
 	enum FilamentDynamics fd;
 	enum PanelFace pf;
+	enum FilSurfAction fsa;
+	filsurfinteractptr fsi;
+	int filpart[FILPARTMAX];
 
 //	printf("%s %s\n",word,line2);//?? debug
 	dim=sim->dim;
@@ -1584,6 +2329,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(!strnword(line2,2),"unexpected text following steric_growth_check");
 		filtype->stericgrowth=i1;filSetCondition(filtype->filss,SCparams,0); }
 
+
 	else if(!strcmp(word,"thickness")) {				// thickness
 		CHECKS(filtype,"need to enter filament type name before thickness");
 		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&f1);
@@ -1624,7 +2370,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 
 	else if(!strcmp(word,"force_arrows")) {			// force_arrows
 		CHECKS(filtype,"need to enter filament type name before force_arrows");
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&f1);
+		itct=strmathsscanf(line2,"%mlg|L2/E",varnames,varvalues,nvar,&f1);		// arrow length per force
 		CHECKM(itct==1,"force_arrows format: scale color. ");
 		er=filtypeSetDrawForceArrows(filtype,f1,NULL);
 		CHECKS(!er,"BUG: error in filtypeSetDrawForceArrows");
@@ -1647,12 +2393,6 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		filtypeSetParam(filtype,"kT",0,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following kT"); }
 
-	else if(!strcmp(word,"treadmill_rate")) {		// treadmill_rate
-		CHECKS(filtype,"need to enter filament type name before treadmill_rate");
-		itct=strmathsscanf(line2,"%mlg|/T",varnames,varvalues,nvar,&f1);
-		CHECKM(itct==1,"treadmill_rate format: value. ");
-		filtypeSetParam(filtype,"treadrate",0,f1);
-		CHECKS(!strnword(line2,2),"unexpected text following treadmill_rate"); }
 
 	else if(!strcmp(word,"brownian_motion")) {
 		CHECKS(filtype,"need to enter filament type name before brownian_motion");
@@ -1661,6 +2401,14 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(f1==0 || f1==1,"brownian_motion requires 0 or 1");
 		CHECKS(!strnword(line2,2),"unexpected text following brownian_motion");
 		filtypeSetParam(filtype,"brownian",0,f1); }
+
+
+	else if(!strcmp(word,"treadmill_rate")) {		// treadmill_rate
+		CHECKS(filtype,"need to enter filament type name before treadmill_rate");
+		itct=strmathsscanf(line2,"%mlg|/T",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"treadmill_rate format: value. ");
+		filtypeSetParam(filtype,"treadrate",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following treadmill_rate"); }
 
 	else if(!strcmp(word,"branch_rate")) {			// branch_rate (per unit length per time)
 		CHECKS(filtype,"need to enter filament type name before branch_rate");
@@ -1693,6 +2441,23 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		filtypeSetParam(filtype,"branchsegments",0,(double)i1);
 		CHECKS(!strnword(line2,2),"unexpected text following branch_segments"); }
 
+	else if(!strcmp(word,"branch_min_spacing")) {	// branch_min_spacing: minimum contour distance between branch points
+		CHECKS(filtype,"need to enter filament type name before branch_min_spacing");
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"branch_min_spacing format: value. ");
+		CHECKS(f1>=0,"branch_min_spacing value needs to be >=0");
+		filtypeSetParam(filtype,"branchminspacing",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following branch_min_spacing"); }
+
+	else if(!strcmp(word,"branch_end")) {				// branch_end: which daughter end attaches to the mother
+		CHECKS(filtype,"need to enter filament type name before branch_end");
+		itct=sscanf(line2,"%s",nm1);
+		CHECKS(itct==1,"branch_end format: minus or plus");
+		if(!strcmp(nm1,"minus")) filtype->branchend='m';
+		else if(!strcmp(nm1,"plus")) filtype->branchend='p';
+		else CHECKS(0,"branch_end options: minus, plus");
+		CHECKS(!strnword(line2,2),"unexpected text following branch_end"); }
+
 	else if(!strcmp(word,"branch_force_angle")) {	// branch_force_angle: junction torsional spring constant, energy/rad^2
 		CHECKS(filtype,"need to enter filament type name before branch_force_angle");
 		itct=strmathsscanf(line2,"%mlg|E",varnames,varvalues,nvar,&f1);
@@ -1721,6 +2486,14 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(i1==0 || i1==1,"branch_azimuth_fix value needs to be 0 or 1");
 		filtypeSetParam(filtype,"branchazimuthfix",0,(double)i1);
 		CHECKS(!strnword(line2,2),"unexpected text following branch_azimuth_fix"); }
+
+	else if(!strcmp(word,"thickness_drag")) {				// thickness_drag: whether thickness divides node mobility
+		CHECKS(filtype,"need to enter filament type name before thickness_drag");
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
+		CHECKM(itct==1,"thickness_drag format: 0 or 1. ");
+		CHECKS(i1==0 || i1==1,"thickness_drag value needs to be 0 or 1");
+		filtypeSetParam(filtype,"thickdrag",0,(double)i1);
+		CHECKS(!strnword(line2,2),"unexpected text following thickness_drag"); }
 
 	else if(!strcmp(word,"branch_force_azimuth")) {	// branch_force_azimuth: azimuthal spring constant, energy/rad^2
 		CHECKS(filtype,"need to enter filament type name before branch_force_azimuth");
@@ -1760,38 +2533,141 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 
 	else if(!strcmp(word,"confine_surface")) {		// confine_surface: harmonic confinement, surface name + spring constant (energy/length^2) + optional face
 		CHECKS(filtype,"need to enter filament type name before confine_surface");
-		CHECKS(line2,"confine_surface format: surface_name force_constant [front|back]");
+		CHECKS(line2,"confine_surface format: surface_name force_constant [front/back]");
 		itct=sscanf(line2,"%s",nm1);
-		CHECKS(itct==1,"confine_surface format: surface_name force_constant [front|back]");
+		CHECKS(itct==1,"confine_surface format: surface_name force_constant [front/back]");
 		CHECKS(sim->srfss,"confine_surface requires that surfaces be defined first");
 		i1=stringfind(sim->srfss->snames,sim->srfss->nsrf,nm1);
 		CHECKS(i1>=0,"confine_surface surface name not recognized (define the surface before the filament type)");
 		line2=strnword(line2,2);
-		CHECKS(line2,"confine_surface format: surface_name force_constant [front|back]");
-		itct=strmathsscanf(line2,"%mlg|E/L",varnames,varvalues,nvar,&f1);
-		CHECKM(itct==1,"confine_surface format: surface_name force_constant [front|back]");
+		CHECKS(line2,"confine_surface format: surface_name force_constant [front/back]");
+		itct=strmathsscanf(line2,"%mlg|E/L2",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"confine_surface format: surface_name force_constant [front/back]");
 		CHECKS(f1>=0,"confine_surface force constant needs to be >=0");
-		pf=filtype->confineface;										// default stands unless a face token overrides
+		pf=PFfront;																	// default face
 		line2=strnword(line2,2);
 		if(line2) {																	// optional face: which side nodes are confined to
 			itct=sscanf(line2,"%s",nm1);
-			CHECKS(itct==1,"confine_surface format: surface_name force_constant [front|back]");
+			CHECKS(itct==1,"confine_surface format: surface_name force_constant [front/back]");
 			pf=surfstring2face(nm1);
 			CHECKS(pf==PFfront || pf==PFback,"confine_surface face options: front, back");
 			CHECKS(!strnword(line2,2),"unexpected text following confine_surface"); }
-		filtype->confinesrf=sim->srfss->srflist[i1];	// parse-time binding; committed only after full validation so a failed runtime set changes nothing
-		filtypeSetParam(filtype,"confineforce",0,f1);
-		filtype->confineface=pf; }
+		filpart[FPplus]=filpart[FPminus]=filpart[FPside]=1;	// shorthand for a softwall interaction on all parts; committed only after full validation so a failed runtime set changes nothing
+		if(filtype->dynamics==FDimplicitnetwork || filtype->stericradius>0) {filtype->confinesrf=sim->srfss->srflist[i1];filtype->confineforce=f1;filtype->confineface=pf;}
+        else CHECKS(filtypeAddSurfInteract(filtype,sim->srfss->srflist[i1],pf,filpart,FESnone,FSAsoftwall,f1,0),"out of memory adding confine_surface"); }
 
-	else if(!strcmp(word,"plus_end")) {				// plus_end: which geometric end is barbed
-		CHECKS(filtype,"need to enter filament type name before plus_end");
-		itct=sscanf(line2,"%s",nm1);
-		CHECKS(itct==1,"plus_end format: back or front");
-		if(nm1[0]=='B' || nm1[0]=='b') er=filtypeSetPlusEnd(filtype,'b');
-		else if(nm1[0]=='F' || nm1[0]=='f') er=filtypeSetPlusEnd(filtype,'f');
-		else er=2;
-		CHECKS(!er,"plus_end options: back, front");
-		CHECKS(!strnword(line2,2),"unexpected text following plus_end"); }
+	else if(!strcmp(word,"radius")) {						// radius: value, length
+		CHECKS(filtype,"need to enter filament type name before radius");
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"radius format: value. ");
+		CHECKS(f1>0,"radius value needs to be >0");
+		filtypeSetParam(filtype,"radius",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following radius"); }
+
+	else if(!strcmp(word,"filament_interaction")) {	// filament_interaction: filament_type softwall force_constant
+		CHECKS(filtype,"need to enter filament type name before filament_interaction");
+		itct=sscanf(line2,"%s %s",nm1,nm2);
+		CHECKS(itct==2,"filament_interaction format: filament_type softwall force_constant");
+		i1=stringfind(sim->filss->ftnames,sim->filss->ntype,nm1);
+		CHECKS(i1>=0,"filament_interaction filament type not recognized (define it before this filament type)");
+		CHECKS(!strcmp(nm2,"softwall"),"filament_interaction action needs to be softwall");
+		line2=strnword(line2,3);
+		CHECKS(line2,"filament_interaction format: filament_type softwall force_constant");
+		itct=strmathsscanf(line2,"%mlg|E/L2",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"filament_interaction format: filament_type softwall force_constant. ");
+		CHECKS(f1>=0,"filament_interaction force constant needs to be >=0");
+		CHECKMEM(filtypeAddFilInteract(filtype,sim->filss->filtypes[i1],FFAsoftwall,f1));
+		CHECKS(!strnword(line2,2),"unexpected text following filament_interaction"); }
+
+	else if(!strcmp(word,"surface_interaction")) {	// surface_interaction: surface face parts[(state)] action [parameters]
+		CHECKS(filtype,"need to enter filament type name before surface_interaction");
+		itct=sscanf(line2,"%s %s %s %s",nm1,nm2,nm,nm3);
+		CHECKS(itct==4,"surface_interaction format: surface_name face parts action [parameters]");
+		CHECKS(sim->srfss,"surface_interaction requires that surfaces be defined first");
+		i1=stringfind(sim->srfss->snames,sim->srfss->nsrf,nm1);
+		CHECKS(i1>=0,"surface_interaction surface name not recognized (define the surface before the filament type)");
+		pf=surfstring2face(nm2);
+		CHECKS(pf==PFfront || pf==PFback || pf==PFboth,"surface_interaction face options: front, back, both");
+		fes1=FESnone;
+		chptr=strchr(nm,'(');
+		if(chptr) {																	// optional end state, as in plus(open)
+			CHECKS(nm[strlen(nm)-1]==')',"surface_interaction end state needs to be in parentheses, with no spaces, as in plus(open)");
+			nm[strlen(nm)-1]='\0';
+			*chptr='\0';
+			fes1=filstring2FES(chptr+1);
+			CHECKS(fes1!=FESnone,"surface_interaction end state needs to be open, capped, shrink, or barbed"); }
+		CHECKS(!filstring2parts(nm,filpart),"surface_interaction parts need to be plus, minus, side, all, or a comma-separated list of them, such as plus,side");
+		CHECKS(fes1==FESnone || !filpart[FPside],"surface_interaction end state can only be used with the plus and minus parts, since side nodes don't have states");
+		fsa=filstring2FSA(nm3);
+		CHECKS(fsa==FSAsoftwall || fsa==FSArepel || fsa==FSAreflect || fsa==FSAadsorb || fsa==FSAdesorb || fsa==FSAbranch,"surface_interaction action options: softwall, repel, reflect, adsorb, desorb, branch");
+		line2=strnword(line2,5);
+		f1=f2=0;
+		if(fsa==FSAsoftwall) {
+			CHECKS(pf!=PFboth,"surface_interaction softwall needs a front or back face, which is the side that the filament is on");
+			CHECKS(line2,"surface_interaction softwall format: surface_name face parts softwall force_constant");
+			itct=strmathsscanf(line2,"%mlg|E/L2",varnames,varvalues,nvar,&f1);
+			CHECKM(itct==1,"surface_interaction softwall format: surface_name face parts softwall force_constant");
+			CHECKS(f1>=0,"surface_interaction force constant needs to be >=0");
+			line2=strnword(line2,2); }
+		else if(fsa==FSArepel) {
+			CHECKS(pf!=PFboth,"surface_interaction repel needs a front or back face, which is the side that the filament is on");
+			CHECKS(line2,"surface_interaction repel format: surface_name face parts repel force_constant repel_distance");
+			itct=strmathsscanf(line2,"%mlg|E/L2 %mlg|L",varnames,varvalues,nvar,&f1,&f2);
+			CHECKM(itct==2,"surface_interaction repel format: surface_name face parts repel force_constant repel_distance");
+			CHECKS(f1>=0,"surface_interaction force constant needs to be >=0");
+			CHECKS(f2>=0,"surface_interaction repel distance needs to be >=0");
+			line2=strnword(line2,3); }
+		else if(fsa==FSAadsorb) {
+			CHECKS(line2,"surface_interaction adsorb format: surface_name face parts adsorb rate capture_distance [mobility]");
+			itct=strmathsscanf(line2,"%mlg|/T %mlg|L",varnames,varvalues,nvar,&fltv1[0],&fltv1[1]);
+			CHECKM(itct==2,"surface_interaction adsorb format: surface_name face parts adsorb rate capture_distance [mobility]");
+			CHECKS(fltv1[0]>=0,"surface_interaction adsorption rate needs to be >=0");
+			CHECKS(fltv1[1]>=0,"surface_interaction capture distance needs to be >=0");
+			fltv1[2]=1;																// default lateral mobility factor
+			line2=strnword(line2,3);
+			if(line2) {
+				itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&fltv1[2]);
+				CHECKM(itct==1,"surface_interaction adsorb format: surface_name face parts adsorb rate capture_distance [mobility]");
+				CHECKS(fltv1[2]>=0,"surface_interaction lateral mobility factor needs to be >=0");
+				line2=strnword(line2,2); }}
+		else if(fsa==FSAdesorb) {
+			CHECKS(line2,"surface_interaction desorb format: surface_name face parts desorb rate [offset]");
+			itct=strmathsscanf(line2,"%mlg|/T",varnames,varvalues,nvar,&fltv1[0]);
+			CHECKM(itct==1,"surface_interaction desorb format: surface_name face parts desorb rate [offset]");
+			CHECKS(fltv1[0]>=0,"surface_interaction desorption rate needs to be >=0");
+			fltv1[1]=0;																// default offset
+			line2=strnword(line2,2);
+			if(line2) {
+				itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&fltv1[1]);
+				CHECKM(itct==1,"surface_interaction desorb format: surface_name face parts desorb rate [offset]");
+				CHECKS(fltv1[1]>=0,"surface_interaction desorption offset needs to be >=0");
+				line2=strnword(line2,2); }}
+		else if(fsa==FSAbranch) {
+			CHECKS(line2,"surface_interaction branch format: surface_name face parts branch distance rate");
+			itct=strmathsscanf(line2,"%mlg|L %mlg|/T",varnames,varvalues,nvar,&fltv1[0],&fltv1[1]);
+			CHECKM(itct==2,"surface_interaction branch format: surface_name face parts branch distance rate");
+			CHECKS(fltv1[0]>=0,"surface_interaction branch distance needs to be >=0");
+			CHECKS(fltv1[1]>=0,"surface_interaction branch rate needs to be >=0");
+			line2=strnword(line2,3); }
+		CHECKS(!line2,"unexpected text following surface_interaction");
+		fsi=filtypeAddSurfInteract(filtype,sim->srfss->srflist[i1],pf,filpart,fes1,fsa,f1,f2);
+		CHECKS(fsi,"out of memory adding surface_interaction");
+		if(fsa==FSAadsorb) {
+			fsi->rate=fltv1[0];
+			fsi->capdist=fltv1[1];
+			fsi->srfmob=fltv1[2]; }
+		else if(fsa==FSAdesorb) {
+			fsi->rate=fltv1[0];
+			fsi->offset=fltv1[1]; }
+		else if(fsa==FSAbranch) {
+			fsi->capdist=fltv1[0];
+			fsi->rate=fltv1[1]; }}
+
+	else if(!strcmp(word,"plus_end")) {
+        CHECKS(filtype,"plus_end requires a filament type");
+        CHECKS(sscanf(line2,"%255s",nm1)==1 && !strnword(line2,2),"plus_end: back/plus or front/minus");
+        CHECKS(!strcmp(nm1,"back") || !strcmp(nm1,"plus") || !strcmp(nm1,"front") || !strcmp(nm1,"minus"),"plus_end: back/plus or front/minus");
+        filtype->plusend=(!strcmp(nm1,"front") || !strcmp(nm1,"minus"))?'m':'p'; }
 
 	else if(!strcmp(word,"elongation_model")) {
 		CHECKS(filtype,"need filament type before elongation_model");
@@ -1817,13 +2693,73 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		if(!strcmp(word,"elongation_step")) filtype->elongstep=f1;else filtype->elongenergy=f1;
 		filSetCondition(filtype->filss,SCparams,0); }
 
-	else if(!strcmp(word,"elongation_rate")) {	// elongation_rate: plus-end velocity, length/time
+
+	else if(!strcmp(word,"elongation_rate")) {	// elongation_rate: [end state] velocity, or end barbed a [k [b]]; length/time
 		CHECKS(filtype,"need to enter filament type name before elongation_rate");
-		itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&f1);
-		CHECKM(itct==1,"elongation_rate format: value. ");
-		CHECKS(f1>=0,"elongation_rate value needs to be >=0");
-		filtypeSetParam(filtype,"elongrate",0,f1);
-		CHECKS(!strnword(line2,2),"unexpected text following elongation_rate"); }
+		if(!strnword(line2,2)) {										// short form: plus end velocity in the open state
+			itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&f1);
+			CHECKM(itct==1,"elongation_rate format: [end state] value. ");
+			CHECKS(f1>=0,"elongation_rate value needs to be >=0");
+			i1=filtype->plusend!='m';
+			fes1=FESopen; }
+		else {
+			itct=sscanf(line2,"%s %s",nm,nm1);
+			CHECKS(itct==2,"elongation_rate format: [end state] value");
+			i1=filstring2end(nm);
+			CHECKS(i1>=0,"elongation_rate end needs to be minus or plus");
+			fes1=filstring2FES(nm1);
+			CHECKS(fes1!=FESnone,"elongation_rate state needs to be open, capped, shrink, or barbed");
+			line2=strnword(line2,3);
+			CHECKS(line2,"elongation_rate format: [end state] value");
+			itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&f1);
+			CHECKM(itct==1,"elongation_rate format: [end state] value. ");
+			CHECKS(fes1!=FESbarbed || f1>=0,"elongation_rate a value for the barbed state needs to be >=0"); }
+		filtypeSetParam(filtype,"endrate",i1*FESMAX+fes1,f1);
+		if(fes1==FESbarbed) {												// barbed state: v=a*min(exp(-k*F),2)-b
+			f2=f3=0;
+			line2=strnword(line2,2);
+			if(line2) {
+				itct=strmathsscanf(line2,"%mlg|L/E",varnames,varvalues,nvar,&f2);
+				CHECKM(itct==1,"elongation_rate format: end barbed a [k [b]]. ");
+				line2=strnword(line2,2); }
+			if(line2) {
+				itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&f3);
+				CHECKM(itct==1,"elongation_rate format: end barbed a [k [b]]. ");
+				CHECKS(!strnword(line2,2),"unexpected text following elongation_rate"); }
+			CHECKS(f2>=0 && f3>=0,"elongation_rate k and b values need to be >=0");
+			filtypeSetParam(filtype,"barbedparameters",i1*2,f2);
+			filtypeSetParam(filtype,"barbedparameters",i1*2+1,f3); }
+		else
+			CHECKS(!strnword(line2,2),"unexpected text following elongation_rate; only the barbed state has more parameters"); }
+
+	else if(!strcmp(word,"end_transition")) {		// end_transition: end from to rate, 1/time
+		CHECKS(filtype,"need to enter filament type name before end_transition");
+		itct=sscanf(line2,"%s %s %s",nm,nm1,nm2);
+		CHECKS(itct==3,"end_transition format: end from_state to_state rate");
+		i1=filstring2end(nm);
+		CHECKS(i1>=0,"end_transition end needs to be minus or plus");
+		fes1=filstring2FES(nm1);
+		fes2=filstring2FES(nm2);
+		CHECKS(fes1!=FESnone && fes2!=FESnone,"end_transition states need to be open, capped, or shrink");
+		CHECKS(fes1!=fes2,"end_transition states need to be different");
+		line2=strnword(line2,4);
+		CHECKS(line2,"end_transition format: end from_state to_state rate");
+		itct=strmathsscanf(line2,"%mlg|/T",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"end_transition format: end from_state to_state rate. ");
+		CHECKS(f1>=0,"end_transition rate needs to be >=0");
+		filtypeSetParam(filtype,"endtrans",(i1*FESMAX+fes1)*FESMAX+fes2,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following end_transition"); }
+
+	else if(!strcmp(word,"end_state")) {				// end_state: end state, the initial state for new filaments
+		CHECKS(filtype,"need to enter filament type name before end_state");
+		itct=sscanf(line2,"%s %s",nm,nm1);
+		CHECKS(itct==2,"end_state format: end state");
+		i1=filstring2end(nm);
+		CHECKS(i1>=0,"end_state end needs to be minus or plus");
+		fes1=filstring2FES(nm1);
+		CHECKS(fes1!=FESnone,"end_state state needs to be open, capped, shrink, or barbed");
+		filtypeSetParam(filtype,"endstate0",i1,(double)fes1);
+		CHECKS(!strnword(line2,3),"unexpected text following end_state"); }
 
 	else if(!strcmp(word,"elongation_max_length")) {	// elongation_max_length: contour-length ceiling
 		CHECKS(filtype,"need to enter filament type name before elongation_max_length");
@@ -1833,25 +2769,41 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		filtypeSetParam(filtype,"elongmaxlen",0,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following elongation_max_length"); }
 
-	else if(!strcmp(word,"capping_rate")) {		// capping_rate: plus-end capping, 1/time
+	else if(!strcmp(word,"capping_rate")) {		// capping_rate: plus end open to capped, 1/time
 		CHECKS(filtype,"need to enter filament type name before capping_rate");
 		itct=strmathsscanf(line2,"%mlg|/T",varnames,varvalues,nvar,&f1);
 		CHECKM(itct==1,"capping_rate format: value. ");
 		CHECKS(f1>=0,"capping_rate value needs to be >=0");
-		filtypeSetParam(filtype,"caprate",0,f1);
+		filtypeSetParam(filtype,"endtrans",(1*FESMAX+FESopen)*FESMAX+FEScapped,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following capping_rate"); }
 
-	else if(!strcmp(word,"uncapping_rate")) {	// uncapping_rate: plus-end uncapping, 1/time
+	else if(!strcmp(word,"uncapping_rate")) {	// uncapping_rate: plus end capped to open, 1/time
 		CHECKS(filtype,"need to enter filament type name before uncapping_rate");
 		itct=strmathsscanf(line2,"%mlg|/T",varnames,varvalues,nvar,&f1);
 		CHECKM(itct==1,"uncapping_rate format: value. ");
 		CHECKS(f1>=0,"uncapping_rate value needs to be >=0");
-		filtypeSetParam(filtype,"uncaprate",0,f1);
+		filtypeSetParam(filtype,"endtrans",(1*FESMAX+FEScapped)*FESMAX+FESopen,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following uncapping_rate"); }
+
+	else if(!strcmp(word,"viscosity")) {				// viscosity
+		CHECKS(filtype,"need to enter filament type name before viscosity");
+		itct=strmathsscanf(line2,"%mlg|E.T/L3",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"viscosity format: value. ");
+		CHECKS(f1>0,"viscosity value needs to be greater than 0");
+		filtypeSetParam(filtype,"viscosity",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following viscosity"); }
+
+	else if(!strcmp(word,"rotational_mobility")) {	// rotational_mobility
+		CHECKS(filtype,"need to enter filament type name before rotational_mobility");
+		itct=strmathsscanf(line2,"%mlg|/E/T",varnames,varvalues,nvar,&f1);			// roll rate per torque
+		CHECKM(itct==1,"rotational_mobility format: value. ");
+		CHECKS(f1>0,"rotational_mobility value needs to be greater than 0");
+		filtypeSetParam(filtype,"rotmobility",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following rotational_mobility"); }
 
 	else if(!strcmp(word,"mobility")) {			// mobility
 		CHECKS(filtype,"need to enter filament type name before mobility");
-		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&f1);				//?? Units are incorrect
+		itct=strmathsscanf(line2,"%mlg|L2/E/T",varnames,varvalues,nvar,&f1);		// velocity per force
 		CHECKM(itct==1,"mobility format: value. ");
 		CHECKS(f1>0,"mobility value needs to be greater than 0");
 		filtypeSetParam(filtype,"mobility",0,f1);
@@ -1881,11 +2833,18 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 
 	else if(!strcmp(word,"force_length")) {		// force_length
 		CHECKS(filtype,"need to enter filament type name before force_length");
-		itct=strmathsscanf(line2,"%mlg|E/L",varnames,varvalues,nvar,&f1);
+		itct=strmathsscanf(line2,"%mlg|E/L2",varnames,varvalues,nvar,&f1);
 		CHECKM(itct==1,"force_length format: value. ");
-		CHECKS(isfinite(f1),"force_length must be finite (negative selects fixed length)");
 		filtypeSetParam(filtype,"klen",0,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following force_length"); }
+
+	else if(!strcmp(word,"junction_force")) {		// junction_force: spring for loop-closing junctions
+		CHECKS(filtype,"need to enter filament type name before junction_force");
+		itct=strmathsscanf(line2,"%mlg|E/L2",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"junction_force format: value. ");
+		CHECKS(f1>=0,"junction_force value needs to be >=0");
+		filtypeSetParam(filtype,"junctforce",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following junction_force"); }
 
 	else if(!strcmp(word,"force_angle")) {		// force_angle
 		CHECKS(filtype,"need to enter filament type name before force_angle");
@@ -1900,6 +2859,23 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		filtypeSetParam(filtype,"kypr",1,fltv1[1]);
 		filtypeSetParam(filtype,"kypr",2,fltv1[2]);
 		CHECKS(!strnword(line2,4),"unexpected text following force_angle"); }
+
+	else if(!strcmp(word,"persistence_length")) {		// persistence_length
+		CHECKS(filtype,"need to enter filament type name before persistence_length");
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"persistence_length format: value. ");
+		CHECKS(f1>0,"persistence_length value needs to be >0");
+		filtypeSetParam(filtype,"persist",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following persistence_length"); }
+
+	else if(!strcmp(word,"persistence_length_twist")) {	// persistence_length_twist
+		CHECKS(filtype,"need to enter filament type name before persistence_length_twist");
+		CHECKS(dim==3,"persistence_length_twist is only used in 3D");
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"persistence_length_twist format: value. ");
+		CHECKS(f1>0,"persistence_length_twist value needs to be >0");
+		filtypeSetParam(filtype,"persisttwist",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following persistence_length_twist"); }
 
 //?? Need to add faces and facetwist
 
@@ -1921,9 +2897,11 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 
 	filamentptr fil2;
 	filamenttypeptr filtype2;
-	int itct,er,i1,seg;
+	int itct,er,i1,i2,seg,node;
 	char nm[STRCHAR],nm1[STRCHAR],endchar,str1[STRCHAR],str2[STRCHAR],str3[STRCHAR],str4[STRCHAR],str5[STRCHAR],str6[STRCHAR],symbol;
 	double fltv1[9],length,angle[3],thick,f1,pos[3];
+	enum FilEndState fes;
+	enum PanelFace face;
 
 	dim=sim->dim;
 
@@ -1963,12 +2941,12 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		line2=strnword(line2,itct+1);
 		thick=1;
 		if(line2) {
-			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
+			itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&thick);
 			if(dim==2) {CHECKM(itct==1,"first_segment format: x y length angle [thickness]. ");}
 			else {CHECKM(itct==1,"first_segment format: x y z length yaw pitch roll [thickness]. ");}
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2); }
-		er=filAddSegment(fil,fltv1,length,angle,thick,'b');
+		er=filAddSegment(fil,fltv1,length,angle,thick,'p');
 		CHECKS(er==0,"BUG: error in filAddsegment");
 		CHECKS(!line2,"unexpected text following first_segment"); }
 
@@ -1978,27 +2956,27 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		if(dim==2) {
 			itct=strmathsscanf(line2,"%mlg|L %mlg|",varnames,varvalues,nvar,&length,&angle[0]);
 			angle[1]=angle[2]=0;
-			CHECKM(itct==2,"add_segment format: length angle0 [thickness [end]]. "); }
+			CHECKM(itct==2,"add_segment format: length angle0 [thickness [plus/minus]]. "); }
 		else {
 			itct=strmathsscanf(line2,"%mlg|L %mlg| %mlg| %mlg|",varnames,varvalues,nvar,&length,&angle[0],&angle[1],&angle[2]);
-			CHECKM(itct==4,"add_segment format: length angle0 angle1 angle2 [thickness [end]]. "); }
+			CHECKM(itct==4,"add_segment format: length angle0 angle1 angle2 [thickness [plus/minus]]. "); }
 		CHECKS(length>0,"length needs to be >0");
 		line2=strnword(line2,itct+1);
 		thick=1;
-		endchar='b';
+		endchar='p';
 		if(line2) {
-			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
-			if(dim==2) {CHECKM(itct==1,"add_segment format: length angle0 [thickness [end]]. ");}
-			else {CHECKM(itct==1,"add_segment format: length angle0 angle1 angle2 [thickness [end]]. ");}
+			itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&thick);
+			if(dim==2) {CHECKM(itct==1,"add_segment format: length angle0 [thickness [plus/minus]]. ");}
+			else {CHECKM(itct==1,"add_segment format: length angle0 angle1 angle2 [thickness [plus/minus]]. ");}
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2);
 			if(line2) {
 				itct=sscanf(line2,"%s",nm1);
-				if(dim==2) {CHECKS(itct==1,"add_segment format: length angle0 [thickness [end]]");}
-				else {CHECKS(itct==1,"add_segment format: length angle0 angle1 angle2 [thickness [end]]");}
-				if(nm1[0]=='B' || nm1[0]=='b') endchar='b';
-				else if(nm1[0]=='F' || nm1[0]=='f') endchar='f';
-				else CHECKS(0,"end needs to be 'back' or 'front'");
+				if(dim==2) {CHECKS(itct==1,"add_segment format: length angle0 [thickness [plus/minus]]");}
+				else {CHECKS(itct==1,"add_segment format: length angle0 angle1 angle2 [thickness [plus/minus]]");}
+				if(nm1[0]=='P' || nm1[0]=='p') endchar='p';
+				else if(nm1[0]=='M' || nm1[0]=='m') endchar='m';
+				else CHECKS(0,"end needs to be 'plus' or 'minus'");
 				line2=strnword(line2,2); }}
 		er=filAddSegment(fil,NULL,length,angle,thick,endchar);
 		CHECKS(er==0,"BUG: error in filAddsegment");
@@ -2008,11 +2986,11 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		CHECKS(fil,"need to enter filament name before remove_segment");
 		CHECKS(fil->nseg>0,"filament has no segments to remove");
 		itct=sscanf(line2,"%s",nm1);
-		CHECKS(itct==1,"remove_segment format: end");
-		endchar='b';
-		if(nm1[0]=='B' || nm1[0]=='b') endchar='b';
-		else if(nm1[0]=='F' || nm1[0]=='f') endchar='f';
-		else CHECKS(0,"end needs to be 'back' or 'front'");
+		CHECKS(itct==1,"remove_segment format: plus/minus");
+		endchar='p';
+		if(nm1[0]=='P' || nm1[0]=='p') endchar='p';
+		else if(nm1[0]=='M' || nm1[0]=='m') endchar='m';
+		else CHECKS(0,"end needs to be 'plus' or 'minus'");
 		er=filRemoveSegment(fil,endchar);
 		CHECKS(!er,"BUG: error in filRemovesegment");
 		CHECKS(!strnword(line2,2),"unexpected text following remove_segment"); }
@@ -2020,7 +2998,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 	else if(!strcmp(word,"random_segments")) {		// random_segments
 		CHECKS(fil,"need to enter filament name before random_segments");
 		CHECKS(fil->filtype,"need to enter filament type before random_segments");
-		CHECKS(fil->filtype->klen!=0,"cannot compute random segments because the filament type has length force constant equal to 0");
+		CHECKS(fil->filtype->klen==-1 || fil->filtype->klen>0,"cannot compute random segments because the filament type has length force constant equal to 0");
 		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
 		CHECKM(itct==1,"random_segments format: number [x y z phi theta psi] [thickness]. ");
 		CHECKS(i1>0,"number needs to be >0");
@@ -2043,7 +3021,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 				line2=strnword(line2,7); }}
 		thick=1;
 		if(line2) {
-			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
+			itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&thick);
 			if(dim==2) {CHECKM(itct==1,"random_segments format: number [x y phi] [thickness]. ");}
 			else {CHECKM(itct==1,"random_segments format: number [x y z phi theta psi] [thickness]. ");}
 			CHECKS(thick>0,"thickness needs to be >0");
@@ -2072,48 +3050,48 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 	else if(!strcmp(word,"modify_segment")) {				// modify_segment
 		CHECKS(fil,"need to enter filament name before modify_segment");
 		itct=strmathsscanf(line2,"%mi| %s %c",varnames,varvalues,nvar,&seg,nm,&symbol);
-		CHECKM(itct==3,"modify_segment format: segment length/angle/thickness +/-/= value [end]. ");
+		CHECKM(itct==3,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus/minus]. ");
 		CHECKS(seg>=0 && seg<fil->nseg,"segment number is not within filament");
 		line2=strnword(line2,4);
-		CHECKS(line2,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+		CHECKS(line2,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus/minus]");
 		CHECKS(symbol=='=' || symbol=='+' || symbol=='-',"symbol needs to be '=', '+', or '-'");
 		if(!strcmp(nm,"length")) {
 			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&length);
-			CHECKM(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]. ");
+			CHECKM(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus/minus]. ");
 			line2=strnword(line2,2);
-			endchar='b';
+			endchar='p';
 			if(line2) {
 				itct=sscanf(line2,"%s",nm1);
-				CHECKS(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+				CHECKS(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus/minus]");
 				line2=strnword(line2,2);
-				if(nm1[0]=='B' || nm1[0]=='b') endchar='b';
-				else if(nm1[0]=='F' || nm1[0]=='f') endchar='f';
-				else CHECKS(0,"end needs to be 'back' or 'front'"); }
+				if(nm1[0]=='P' || nm1[0]=='p') endchar='p';
+				else if(nm1[0]=='M' || nm1[0]=='m') endchar='m';
+				else CHECKS(0,"end needs to be 'plus' or 'minus'"); }
 			er=filLengthenSegment(fil,seg,length,endchar,symbol);
 			CHECKS(!er,"Error while trying to change segment length - new length must be positive"); }
 		else if(!strcmp(nm,"angle")) {
 			angle[0]=angle[1]=angle[2]=0;
 			if(dim==2) {
 				itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&angle[0]);
-				CHECKM(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]. ");
+				CHECKM(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus/minus]. ");
 				line2=strnword(line2,2); }
 			else {
 				itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&angle[0],&angle[1],&angle[2]);
 				CHECKM(itct==3,"insufficient angle values. ");
 				line2=strnword(line2,4); }
-			endchar='b';
+			endchar='p';
 			if(line2) {
 				itct=sscanf(line2,"%s",nm1);
-				CHECKS(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+				CHECKS(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus/minus]");
 				line2=strnword(line2,2);
-				if(nm1[0]=='B' || nm1[0]=='b') endchar='b';
-				else if(nm1[0]=='F' || nm1[0]=='f') endchar='f';
-				else CHECKS(0,"end needs to be 'back' or 'front'"); }
+				if(nm1[0]=='P' || nm1[0]=='p') endchar='p';
+				else if(nm1[0]=='M' || nm1[0]=='m') endchar='m';
+				else CHECKS(0,"end needs to be 'plus' or 'minus'"); }
 			filRotateVertex(fil,seg,angle,endchar,symbol); }
-		else if(!strcmp(nm,"front_position")) {
+		else if(!strcmp(nm,"minus_position")) {
 			pos[0]=pos[1]=pos[2]=0;
 			if(dim==2) {
-				itct=strmathsscanf(line2,"%mlg|L $mlg|L",varnames,varvalues,nvar,&pos[0],&pos[1]);
+				itct=strmathsscanf(line2,"%mlg|L %mlg|L",varnames,varvalues,nvar,&pos[0],&pos[1]);
 				CHECKM(itct==2,"insufficient position values. ");
 				line2=strnword(line2,3); }
 			else {
@@ -2122,13 +3100,13 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 				line2=strnword(line2,4); }
 			filTranslateNode(fil,seg,pos,symbol); }
 		else if(!strcmp(nm,"thickness")) {
-			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
-			CHECKM(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]. ");
+			itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&thick);
+			CHECKM(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus/minus]. ");
 			line2=strnword(line2,2);
 			er=filChangeThickness(fil,seg,thick,symbol);
 			CHECKS(!er,"Error while trying to change segment thickness - new value cannot be negative"); }
 		else
-			CHECKS(0,"modification option needs to be 'length', 'angle', or 'thickness'");
+			CHECKS(0,"modification option needs to be 'length', 'angle', 'minus_position', or 'thickness'");
 		CHECKS(!line2,"unexpected text following modify_segment"); }
 
 	else if(!strcmp(word,"copy_to")) {							// copy_to
@@ -2147,26 +3125,38 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		er=filCopyFilament(fil2,fil,filtype2);
 		CHECKS(!strnword(line2,2),"unexpected text following copy_to"); }
 
-	else if(!strcmp(word,"branch")) {							// branch: daughtername segment [yaw pitch roll]
+	else if(!strcmp(word,"branch")) {							// branch: daughtername node [minus/plus] [length [yaw pitch roll]]
 		CHECKS(fil,"need to enter filament name before branch");
 		CHECKS(fil->nseg>0,"mother filament has no segments to branch from");
 		itct=sscanf(line2,"%s",nm1);
-		CHECKS(itct==1,"branch format: daughter_name segment [yaw pitch roll]");
+		CHECKS(itct==1,"branch format: daughter_name node [minus/plus] [length [yaw pitch roll]]");
 		line2=strnword(line2,2);
-		CHECKS(line2,"branch format: daughter_name segment [yaw pitch roll]");
-		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&seg);
-		CHECKM(itct==1,"branch format: daughter_name segment [yaw pitch roll]. ");
-		CHECKS(seg>=0 && seg<fil->nseg,"branch segment is not within the mother filament");
+		CHECKS(line2,"branch format: daughter_name node [minus/plus] [length [yaw pitch roll]]");
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&node);
+		CHECKM(itct==1,"branch format: daughter_name node [minus/plus] [length [yaw pitch roll]]. ");
+		CHECKS(node>=0 && node<=fil->nseg,"branch node needs to be from 0 to the number of mother segments");
 		angle[0]=fil->filtype->branchangle;						// default to the filament type's branch angle
 		angle[1]=angle[2]=0;
 		line2=strnword(line2,2);
+		endchar=fil->filtype->branchend;							// default to the filament type's branch end
+		if(line2) {
+			sscanf(line2,"%s",nm);
+			if(!strcmp(nm,"minus") || !strcmp(nm,"plus")) {
+				endchar=nm[0];
+				line2=strnword(line2,2); }}
+		length=0;																			// 0 = random length for segment 0
+		if(line2) {
+			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&length);
+			CHECKM(itct==1,"branch format: daughter_name node [minus/plus] [length [yaw pitch roll]]. ");
+			CHECKS(length>0,"branch length needs to be >0");
+			line2=strnword(line2,2); }
 		if(line2) {
 			itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&angle[0],&angle[1],&angle[2]);
 			CHECKM(itct==3 || itct==1,"branch angle needs 1 or 3 values. ");
 			if(dim==2) angle[1]=angle[2]=0;
 			line2=strnword(line2,itct+1); }
-		thick=fil->segments[seg]->thk;
-		fil2=filAddBranch(sim,fil,seg,angle,thick,nm1);
+		thick=fil->segments[node>0?node-1:0]->thk;
+		fil2=filAddBranch(sim,fil,node,endchar,length,angle,thick,nm1);
 		CHECKS(fil2,"failed to create branch");
 		CHECKS(!line2,"unexpected text following branch"); }
 
@@ -2188,6 +3178,95 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		er=filSetNodeMobility(fil,i1,f1);
 		CHECKS(!er,"error while trying to set node mobility");
 		CHECKS(!strnword(line2,3),"unexpected text following node_mobility"); }
+
+	else if(!strcmp(word,"adsorb_node")) {				// adsorb_node: node surface [face [mobility]]
+		CHECKS(fil,"need to enter filament name before adsorb_node");
+		CHECKS(fil->nseg>0,"filament has no segments");
+		CHECKS(sim->srfss,"adsorb_node requires that surfaces be defined first");
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
+		CHECKM(itct==1,"adsorb_node format: node surface [face [mobility]]. ");
+		CHECKS(i1<=fil->nseg && i1>=-fil->nseg-1,"node number is outside of filament size");
+		line2=strnword(line2,2);
+		CHECKS(line2,"adsorb_node format: node surface [face [mobility]]");
+		itct=sscanf(line2,"%s",nm);
+		CHECKS(itct==1,"adsorb_node format: node surface [face [mobility]]");
+		er=stringfind(sim->srfss->snames,sim->srfss->nsrf,nm);
+		CHECKS(er>=0,"adsorb_node surface name not recognized");
+		i2=er;
+		face=PFnone;																// default: the side that the node is on
+		f1=1;																				// default lateral mobility factor
+		line2=strnword(line2,2);
+		if(line2) {
+			itct=sscanf(line2,"%s",nm1);
+			CHECKS(itct==1,"adsorb_node format: node surface [face [mobility]]");
+			face=surfstring2face(nm1);
+			CHECKS(face==PFfront || face==PFback,"adsorb_node face options: front, back");
+			line2=strnword(line2,2);
+			if(line2) {
+				itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&f1);
+				CHECKM(itct==1,"adsorb_node format: node surface [face [mobility]]. ");
+				CHECKS(f1>=0,"adsorb_node mobility needs to be >=0");
+				CHECKS(!strnword(line2,2),"unexpected text following adsorb_node"); }}
+		er=filNodeAdsorb(fil,i1,sim->srfss->srflist[i2],face,f1);
+		CHECKS(er!=1,"adsorb_node node number is outside of filament size");
+		CHECKS(er!=2,"adsorb_node surface has no panels");
+		CHECKS(er!=3,"adsorb_node can't adsorb a filament end that is rigidly attached to its mother");
+		CHECKS(er!=4,"out of memory in adsorb_node"); }
+
+	else if(!strcmp(word,"desorb_node")) {				// desorb_node: node
+		CHECKS(fil,"need to enter filament name before desorb_node");
+		CHECKS(fil->nseg>0,"filament has no segments");
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
+		CHECKM(itct==1,"desorb_node format: node. ");
+		CHECKS(i1<=fil->nseg && i1>=-fil->nseg-1,"node number is outside of filament size");
+		filNodeDesorb(fil,i1);
+		CHECKS(!strnword(line2,2),"unexpected text following desorb_node"); }
+
+	else if(!strcmp(word,"attach")) {						// attach: end target node
+		CHECKS(fil,"need to enter filament name before attach");
+		CHECKS(fil->nseg>0,"filament has no segments to attach");
+		itct=sscanf(line2,"%s %s",str1,str2);
+		CHECKS(itct==2,"attach format: end target_filament node");
+		i1=filstring2end(str1);
+		CHECKS(i1>=0,"attach end needs to be minus or plus");
+		CHECKS(!fil->endjunct[i1],"this filament end is already attached; detach it first");
+		filtype2=NULL;
+		fil2=NULL;
+		er=filReadFilName(sim,str2,&filtype2,&fil2,NULL);
+		CHECKS(er!=-1 && er!=-3,"cannot read target filament name");
+		CHECKS(er!=-4,"unknown target filament type");
+		CHECKS(er!=-5,"unknown target filament name");
+		CHECKS(fil2->nseg>0,"target filament has no segments");
+		line2=strnword(line2,3);
+		CHECKS(line2,"attach format: end target_filament node");
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&node);
+		CHECKM(itct==1,"attach format: end target_filament node. ");
+		CHECKS(node>=0 && node<=fil2->nseg,"attach node needs to be from 0 to the number of target filament segments");
+		CHECKS(!(fil2==fil && node==(i1?fil->nseg:0)),"a filament end cannot attach to itself");
+		er=filAttachEnd(fil,filend2char(i1),fil2,node);
+		CHECKS(!er,"failed to attach filament end");
+		CHECKS(!strnword(line2,2),"unexpected text following attach"); }
+
+	else if(!strcmp(word,"detach")) {						// detach: end
+		CHECKS(fil,"need to enter filament name before detach");
+		itct=sscanf(line2,"%s",str1);
+		CHECKS(itct==1,"detach format: end");
+		i1=filstring2end(str1);
+		CHECKS(i1>=0,"detach end needs to be minus or plus");
+		CHECKS(fil->endjunct[i1],"this filament end is not attached");
+		filRemoveJunction(fil->endjunct[i1]);
+		CHECKS(!strnword(line2,2),"unexpected text following detach"); }
+
+	else if(!strcmp(word,"end_state")) {				// end_state: end state
+		CHECKS(fil,"need to enter filament name before end_state");
+		itct=sscanf(line2,"%s %s",str1,str2);
+		CHECKS(itct==2,"end_state format: end state");
+		i1=filstring2end(str1);
+		CHECKS(i1>=0,"end_state end needs to be minus or plus");
+		fes=filstring2FES(str2);
+		CHECKS(fes!=FESnone,"end_state state needs to be open, capped, shrink, or barbed");
+		fil->endstate[i1]=fes;
+		CHECKS(!strnword(line2,3),"unexpected text following end_state"); }
 
 	else {																				// unknown word
 		CHECKS(0,"syntax error within filament block: statement not recognized"); }
@@ -2304,8 +3383,8 @@ int filSetSequence(filamentptr fil,char *str) {
 	int len;
 
 	len=strlen(str);
-	if(len > fil->maxsequence) {
-		fil=filAlloc(fil,0,0,len);
+	if(len+1 > fil->maxsequence) {									// room for the terminating null
+		fil=filAlloc(fil,0,0,len+1);
 		if(!fil) return 1; }
 	strcpy(fil->sequence,str);
 	fil->nsequence=len;
@@ -2385,9 +3464,9 @@ double *filGetPositionOnFil(const filamentptr fil,double frac,double *pos) {
 
 	segment=fil->segments[seg>0?seg-1:0];
 	x=(newpath-fpath)/segment->len;						// interpolate within segment
-	pos[0]=x*segment->xyzfront[0]+(1-x)*segment->xyzback[0];
-	pos[1]=x*segment->xyzfront[1]+(1-x)*segment->xyzback[1];
-	pos[2]=x*segment->xyzfront[2]+(1-x)*segment->xyzback[2];
+	pos[0]=x*segment->xyzminus[0]+(1-x)*segment->xyzplus[0];
+	pos[1]=x*segment->xyzminus[1]+(1-x)*segment->xyzplus[1];
+	pos[2]=x*segment->xyzminus[2]+(1-x)*segment->xyzplus[2];
 	return pos; }
 
 
@@ -2407,8 +3486,8 @@ double filStretchEnergy(const filamentptr fil,int seg1,int seg2) {
 	if(seg2==-1) seg2=fil->nseg;
 	for(seg=seg1;seg<seg2;seg++) {
 		thk=fil->segments[seg]->thk;
+        if(filtype->elongmodel) {stdlen=filSegmentRestLength(fil,seg);klen=filSegmentStiffness(fil,seg);thk=1;}
 		len=fil->segments[seg]->len;
-		if(filtype->elongmodel) {stdlen=filSegmentRestLength(fil,seg);klen=filSegmentStiffness(fil,seg);thk=1;}
 		energy+=0.5*thk*klen*(len-stdlen)*(len-stdlen); }
 	return energy; }
 
@@ -2441,7 +3520,7 @@ double filBendEnergy(const filamentptr fil,int seg1,int seg2) {
 // filBendTorque
 void filBendTorque(const filamentptr fil,int node,double *torque) {
 	filamenttypeptr filtype;
-	double *kypr,*stdypr,*ypr,cphi,sphi,ctht,stht,deltaypr[3],reltorque[3];
+	double *kypr,*stdypr,*ypr,cphi,sphi,ctht,stht,deltaypr[3],reltorque[3],thk;
 	int dim;
 
 	if(node<=0 || node>=fil->nseg) {
@@ -2453,9 +3532,10 @@ void filBendTorque(const filamentptr fil,int node,double *torque) {
 	stdypr=filtype->stdypr;
 	ypr=fil->segments[node]->ypr;
 	dim=filtype->filss->sim->dim;
+	thk=0.5*(fil->segments[node-1]->thk+fil->segments[node]->thk);	// force constants scale with the average thickness of the two segments, as in filBendEnergy
 
 	if(dim==2) {
-		deltaypr[0]=kypr[0]*(ypr[0]-stdypr[0]);
+		deltaypr[0]=(kypr[0]>0)?thk*kypr[0]*(ypr[0]-stdypr[0]):0;		// a negative constant is a constraint (filProjectConstraints)
 		torque[0]=torque[1]=0;
 		torque[2]=-deltaypr[0]; }
 	else {
@@ -2464,13 +3544,14 @@ void filBendTorque(const filamentptr fil,int node,double *torque) {
 		ctht=cos(ypr[1]);
 		stht=sin(ypr[1]);
 
-		deltaypr[0]=kypr[0]*(ypr[0]-stdypr[0]);
-		deltaypr[1]=kypr[1]*(ypr[1]-stdypr[1]);
-		deltaypr[2]=kypr[2]*(ypr[2]-stdypr[2]);
+		deltaypr[0]=(kypr[0]>0)?thk*kypr[0]*(ypr[0]-stdypr[0]):0;		// a negative constant is a constraint (filProjectConstraints)
+		deltaypr[1]=(kypr[1]>0)?thk*kypr[1]*(ypr[1]-stdypr[1]):0;
+		deltaypr[2]=(kypr[2]>0)?thk*kypr[2]*(ypr[2]-stdypr[2]):0;
 
-		reltorque[0]=-deltaypr[2]*ctht*cphi+deltaypr[1]*sphi;					// compute torque in segment reference frame
-		reltorque[1]=-deltaypr[1]*cphi-deltaypr[2]*sphi;
-		reltorque[2]=-deltaypr[0]+deltaypr[2]*cphi*stht;
+		if(ctht<FILCOSPMIN) ctht=FILCOSPMIN;										// bound the torque near gimbal lock, where yaw is undefined
+		reltorque[0]=-deltaypr[0]*stht/ctht*cphi+deltaypr[1]*sphi-deltaypr[2]*cphi/ctht;	// torque in segment reference frame: minus the gradient of the energy with respect to rotation
+		reltorque[1]=-deltaypr[0]*stht/ctht*sphi-deltaypr[1]*cphi-deltaypr[2]*sphi/ctht;
+		reltorque[2]=-deltaypr[0];
 
 		Sph_QtniRotate(fil->segments[node-1]->qabs,reltorque,torque); }	// convert torque to system reference frame
 	return; }
@@ -2496,8 +3577,8 @@ void filNodes2Angles(filamentptr fil,int nodemin,int nodemax) {
 		else aphim1=Sph_Qtn2Yaw(fil->segments[nodemin-1]->qabs);
 		for(seg=nodemin;seg<nodemax;seg++) {
 			segment=fil->segments[seg];
-			x[0]=segment->xyzback[0]-segment->xyzfront[0];
-			x[1]=segment->xyzback[1]-segment->xyzfront[1];
+			x[0]=segment->xyzplus[0]-segment->xyzminus[0];
+			x[1]=segment->xyzplus[1]-segment->xyzminus[1];
 			len=sqrt(x[0]*x[0]+x[1]*x[1]);
 			segment->len=len;												// segment->len
 			aphi=atan2(x[1],x[0]);									// absolute yaw
@@ -2518,9 +3599,9 @@ void filNodes2Angles(filamentptr fil,int nodemin,int nodemax) {
 	else {																				// 3D
 		if(nodemin==0) {
 			segment=fil->segments[0];
-			x[0]=segment->xyzback[0]-segment->xyzfront[0];			// displacement of segment
-			x[1]=segment->xyzback[1]-segment->xyzfront[1];
-			x[2]=segment->xyzback[2]-segment->xyzfront[2];
+			x[0]=segment->xyzplus[0]-segment->xyzminus[0];			// displacement of segment
+			x[1]=segment->xyzplus[1]-segment->xyzminus[1];
+			x[2]=segment->xyzplus[2]-segment->xyzminus[2];
 			len=sqrt(x[0]*x[0]+x[1]*x[1]+x[2]*x[2]);
 			segment->len=len;
 			Sph_XZ2Qtni(x,fil->seg0up,segment->qrel);
@@ -2531,9 +3612,9 @@ void filNodes2Angles(filamentptr fil,int nodemin,int nodemax) {
 			seg=nodemin; }
 		for(;seg<nodemax;seg++) {
 			segment=fil->segments[seg];
-			x[0]=segment->xyzback[0]-segment->xyzfront[0];			// displacement of segment
-			x[1]=segment->xyzback[1]-segment->xyzfront[1];
-			x[2]=segment->xyzback[2]-segment->xyzfront[2];
+			x[0]=segment->xyzplus[0]-segment->xyzminus[0];			// displacement of segment
+			x[1]=segment->xyzplus[1]-segment->xyzminus[1];
+			x[2]=segment->xyzplus[2]-segment->xyzminus[2];
 			len=sqrt(x[0]*x[0]+x[1]*x[1]+x[2]*x[2]);
 			segment->len=len;
 			Sph_QtnRotate(fil->segments[seg-1]->qabs,x,x);			// rotate x into prior segment reference frame
@@ -2552,6 +3633,7 @@ void filNodes2Angles(filamentptr fil,int nodemin,int nodemax) {
 
 
 /* filCopyRollToYpr2 */
+// Copies the working roll values into the segments' roll angles, ypr[2].
 void filCopyRollToYpr2(filamentptr fil) {
 	int seg;
 
@@ -2561,6 +3643,7 @@ void filCopyRollToYpr2(filamentptr fil) {
 
 
 /* filCopyYpr2ToRoll */
+// Copies the segments' roll angles, ypr[2], into the working roll values.
 void filCopyYpr2ToRoll(filamentptr fil) {
 	int seg;
 
@@ -2598,6 +3681,9 @@ void filCopyWorkingNodes(filamentptr fil,int from,int to) {
 		seg0upto[2]=seg0upfrom[2];
 		for(seg=0;seg<fil->nseg;seg++)
 			rollto[seg]=rollfrom[seg];
+		if(from==0) filWorkFramesFromSegments(fil);
+		for(seg=0;seg<4*fil->nseg;seg++)
+			filwork->wqabs[to][seg]=filwork->wqabs[from][seg];
 		for(node=0;node<=fil->nseg;node++) {
 			nodesto[node][0]=nodesfrom[node][0];
 			nodesto[node][1]=nodesfrom[node][1];
@@ -2605,10 +3691,95 @@ void filCopyWorkingNodes(filamentptr fil,int from,int to) {
 	return; }
 
 
+/* filTransportFrames */
+// Moves the segment reference frames of filament fil from an old state to a new one, as
+// overdamped dynamics moves them. The old state has node positions nodesold and segment
+// frames qold, as 4 quaternion values per segment. In the new state, segment seg has
+// displacement vector segnew[3*seg..3*seg+2] and is rotated about its own axis by
+// dphi[seg*dphistride]. Each segment's frame turns by the minimal rotation that takes
+// its old direction to its new one, and then about its new direction by its dphi value,
+// so the frame of one segment does not depend on how other segments move. This returns
+// the new frames in qnew, and, unless rollnew is NULL, as the segment 0 up vector
+// seg0upnew and the relative rolls rollnew, which filNodes2Angles uses with the new node
+// positions to reconstruct these frames. qnew may be the same as qold, but nodesold
+// needs to hold the old positions.
+void filTransportFrames(filamentptr fil,double **nodesold,const double *qold,const double *segnew,const double *dphi,int dphistride,double *qnew,double *seg0upnew,double *rollnew) {
+	int seg,d;
+	double qnewm1[4],t[3],tn[3],k[3],c1[4],c2[4],q1[4],zold[3],zero[3];
+	double len,lenn,cosang,ch,sh,sinang,dq0,dq1,dq2,dq3;
+
+	zero[0]=zero[1]=zero[2]=0;
+	for(seg=0;seg<fil->nseg;seg++) {
+		len=lenn=0;
+		for(d=0;d<3;d++) {
+			t[d]=nodesold[seg+1][d]-nodesold[seg][d];
+			len+=t[d]*t[d];
+			tn[d]=segnew[3*seg+d];
+			lenn+=tn[d]*tn[d]; }
+		len=sqrt(len);
+		lenn=sqrt(lenn);
+		for(d=0;d<3;d++) {
+			t[d]/=len;
+			tn[d]/=lenn; }
+
+		k[0]=t[1]*tn[2]-t[2]*tn[1];											// minimal rotation from t to tn: about k, by the angle between them
+		k[1]=t[2]*tn[0]-t[0]*tn[2];
+		k[2]=t[0]*tn[1]-t[1]*tn[0];
+		cosang=t[0]*tn[0]+t[1]*tn[1]+t[2]*tn[2];
+		ch=sqrt(0.5*(1+cosang>0?1+cosang:0));						// cos of half the angle
+		if(ch>0.5) {																			// the quaternion for a rotation by a about axis u in the system frame is (cos(a/2),-u sin(a/2)); here sin(a/2)/sin(a) = 1/(2 ch)
+			c1[0]=ch;
+			for(d=0;d<3;d++) c1[d+1]=-k[d]/(2*ch); }
+		else {
+			sinang=sqrt(k[0]*k[0]+k[1]*k[1]+k[2]*k[2]);
+			sh=sqrt(0.5*(1-cosang));
+			if(sinang>1e-12) {
+				c1[0]=ch;
+				for(d=0;d<3;d++) c1[d+1]=-k[d]*sh/sinang; }
+			else {																					// antiparallel: rotate by pi about the old frame's z axis, which is perpendicular to t
+				Sph_QtniRotateUnitz(qold+4*seg,zold,zero,1);
+				c1[0]=0;
+				for(d=0;d<3;d++) c1[d+1]=-zold[d]; }}
+		Sph_QtnxQtn(c1,qold+4*seg,q1);
+
+		if(dphi[seg*dphistride]!=0) {											// roll about the new direction
+			c2[0]=cos(0.5*dphi[seg*dphistride]);
+			sh=sin(0.5*dphi[seg*dphistride]);
+			for(d=0;d<3;d++) c2[d+1]=-tn[d]*sh;
+			Sph_QtnxQtn(c2,q1,q1); }
+		len=sqrt(q1[0]*q1[0]+q1[1]*q1[1]+q1[2]*q1[2]+q1[3]*q1[3]);
+
+		if(seg>0)
+			for(d=0;d<4;d++) qnewm1[d]=qnew[4*(seg-1)+d];
+		for(d=0;d<4;d++) qnew[4*seg+d]=q1[d]/len;
+		if(!rollnew);																			// the caller only needs qnew
+		else if(seg==0)
+			Sph_QtniRotateUnitz(qnew,seg0upnew,zero,1);
+		else {																						// relative roll, from the relative quaternion as in Sph_Qtn2Ypr
+			dq0=qnewm1[0]*qnew[4*seg+0]+qnewm1[1]*qnew[4*seg+1]+qnewm1[2]*qnew[4*seg+2]+qnewm1[3]*qnew[4*seg+3];
+			dq1=qnewm1[0]*qnew[4*seg+1]-qnewm1[1]*qnew[4*seg+0]+qnewm1[2]*qnew[4*seg+3]-qnewm1[3]*qnew[4*seg+2];
+			dq2=qnewm1[0]*qnew[4*seg+2]-qnewm1[1]*qnew[4*seg+3]-qnewm1[2]*qnew[4*seg+0]+qnewm1[3]*qnew[4*seg+1];
+			dq3=qnewm1[0]*qnew[4*seg+3]+qnewm1[1]*qnew[4*seg+2]-qnewm1[2]*qnew[4*seg+1]-qnewm1[3]*qnew[4*seg+0];
+			rollnew[seg]=atan2(-2*dq0*dq1+2*dq2*dq3,dq0*dq0-dq1*dq1-dq2*dq2+dq3*dq3); }}
+	return; }
+
+
+/* filWorkFramesFromSegments */
+// Copies the segments' absolute quaternions into the working frames of state 0.
+void filWorkFramesFromSegments(filamentptr fil) {
+	int seg,d;
+	double *q;
+
+	q=fil->filwork->wqabs[0];
+	for(seg=0;seg<fil->nseg;seg++)
+		for(d=0;d<4;d++) q[4*seg+d]=fil->segments[seg]->qabs[d];
+	return; }
+
+
 /* filFlattenNodes */
 void filFlattenNodes(filamentptr fil,int from,int to) {
 	int node,dim;
-	double **nodes,*flatnodes,*roll;
+	double **nodes,*flatnodes;
 	filamentworkptr filwork;
 
 	filwork=fil->filwork;
@@ -2621,14 +3792,11 @@ void filFlattenNodes(filamentptr fil,int from,int to) {
 			flatnodes[2*node+0]=nodes[node][0];
 			flatnodes[2*node+1]=nodes[node][1]; }}
 	else {
-		if(from==0) filCopyYpr2ToRoll(fil);
-
-		roll=filwork->wroll[from];
 		for(node=0;node<fil->nseg;node++) {
 			flatnodes[4*node+0]=nodes[node][0];
 			flatnodes[4*node+1]=nodes[node][1];
 			flatnodes[4*node+2]=nodes[node][2];
-			flatnodes[4*node+3]=roll[node]; }
+			flatnodes[4*node+3]=0; }																// rotation of the segment about its own axis since the start of the step
 		flatnodes[4*node+0]=nodes[node][0];
 		flatnodes[4*node+1]=nodes[node][1];
 		flatnodes[4*node+2]=nodes[node][2]; }
@@ -2636,9 +3804,13 @@ void filFlattenNodes(filamentptr fil,int from,int to) {
 
 
 /* filUnflattenNodes */
+// Copies the flattened state flatnodes[from] to the working nodes wnodes[to]. In 3D, the
+// flattened roll of each segment is its rotation about its own axis since the state was
+// flattened, and the segment frames are moved from those of state to, which needs to be
+// the flattened state, with filTransportFrames.
 void filUnflattenNodes(filamentptr fil,int from,int to) {
-	int node,dim;
-	double **nodes,*flatnodes,*roll,axis[3],*seg0upin,*seg0upout;
+	int node,seg,d,dim;
+	double **nodes,*flatnodes,*segnew;
 	filamentworkptr filwork;
 
 	filwork=fil->filwork;
@@ -2651,24 +3823,18 @@ void filUnflattenNodes(filamentptr fil,int from,int to) {
 			nodes[node][0]=flatnodes[2*node];
 			nodes[node][1]=flatnodes[2*node+1]; }
 	else {
-		roll=filwork->wroll[to];
-		for(node=0;node<fil->nseg;node++) {
+		if(to==0) filCopyYpr2ToRoll(fil);
+		segnew=filwork->flatforces[1];								// scratch space
+		for(seg=0;seg<fil->nseg;seg++)
+			for(d=0;d<3;d++)
+				segnew[3*seg+d]=flatnodes[4*(seg+1)+d]-flatnodes[4*seg+d];
+		if(to==0) filWorkFramesFromSegments(fil);
+		filTransportFrames(fil,nodes,filwork->wqabs[to],segnew,flatnodes+3,4,filwork->wqabs[to],filwork->wseg0up[to],filwork->wroll[to]);
+		for(node=0;node<=fil->nseg;node++) {
 			nodes[node][0]=flatnodes[4*node+0];
 			nodes[node][1]=flatnodes[4*node+1];
-			nodes[node][2]=flatnodes[4*node+2];
-			roll[node]=flatnodes[4*node+3]; }
-		nodes[node][0]=flatnodes[4*node+0];
-		nodes[node][1]=flatnodes[4*node+1];
-		nodes[node][2]=flatnodes[4*node+2];
-
-		if(to==0) filCopyRollToYpr2(fil);
-
-		seg0upin=filwork->wseg0up[from];
-		seg0upout=filwork->wseg0up[to];
-		axis[0]=nodes[1][0]-nodes[0][0];					// process segment 0 torque
-		axis[1]=nodes[1][1]-nodes[0][1];
-		axis[2]=nodes[1][2]-nodes[0][2];
-		Sph_RotateVectorAxisAngle(seg0upin,axis,roll[0],seg0upout); }
+			nodes[node][2]=flatnodes[4*node+2]; }
+		if(to==0) filCopyRollToYpr2(fil); }
 
 	return; }
 
@@ -2714,7 +3880,7 @@ void filFlattenForces(filamentptr fil,int to,int nodemin,int nodemax) {
 
 /* filArrayShift */
 void filArrayShift(filamentptr fil,int shift) {
-	int i,br,nbr;
+	int i;
 	segmentptr newsegment;
 	double *newnode;
 
@@ -2728,10 +3894,7 @@ void filArrayShift(filamentptr fil,int shift) {
 		for(i=fil->nseg+shift;i>=shift;i--) {
 			newnode = fil->nodes[i];
 			fil->nodes[i]=fil->nodes[i-shift];
-			fil->nodes[i-shift]=newnode; }
-		for(i=0;i<shift;i++) {
-			fil->segments[i]->xyzfront=fil->nodes[i];
-			fil->segments[i]->xyzback=fil->nodes[i+1]; }}
+			fil->nodes[i-shift]=newnode; }}
 
 	else if(shift<0) {
 		shift=-shift;								// now shift is positive
@@ -2743,34 +3906,46 @@ void filArrayShift(filamentptr fil,int shift) {
 			newnode = fil->nodes[i];
 			fil->nodes[i]=fil->nodes[i+shift];
 			fil->nodes[i+shift]=newnode; }
-		for(i=fil->nseg-shift;i<fil->nseg;i++) {
-			fil->segments[i]->xyzfront=fil->nodes[i];
-			fil->segments[i]->xyzback=fil->nodes[i+1]; }
 		shift=-shift; }
 
-//?? The following code requires thought. Is it needed? Is it correct?
-	if(fil->nbranch) {													// segments were renumbered, so branch spots move with them
-		nbr=0;
-		for(br=0;br<fil->nbranch;br++) {
-			i=fil->branchspots[br]+shift;
-			if(i>=0 && i<fil->nseg) {								// keep the branch, on its renumbered segment
-				fil->branchspots[nbr]=i;
-				fil->branches[nbr]=fil->branches[br];
-				fil->branchazim0[nbr]=fil->branchazim0[br];
-				nbr++; }
-			else if(fil->branches[br]) {						// the branched segment is gone, so the junction is too
-				if(fil->branches[br]->frontend==fil) fil->branches[br]->frontend=NULL;
-				if(fil->branches[br]->backend==fil) fil->branches[br]->backend=NULL; }}
-		fil->nbranch=nbr; }
+	for(i=0;i<fil->maxseg;i++) {									// every segment, including spares past nseg, must point at its own nodes
+		fil->segments[i]->xyzminus=fil->nodes[i];
+		fil->segments[i]->xyzplus=fil->nodes[i+1]; }
 
-	for(i=0;i<fil->nseg;i++)
+	if(shift>0) {																	// per-node state moves with the nodes; new nodes start cleared
+		for(i=fil->nseg+shift;i>=shift;i--) filNodeStateCopy(fil,i,i-shift);
+		for(i=0;i<shift;i++) filNodeStateClear(fil,i); }
+	else if(shift<0) {
+		for(i=0;i<=fil->nseg+shift;i++) filNodeStateCopy(fil,i,i-shift);
+		for(i=fil->nseg+shift+1;i<=fil->nseg;i++) filNodeStateClear(fil,i); }
+
+	filShiftJunctionNodes(fil,shift,fil->nseg+shift);	// nodes were renumbered, so junction nodes move with them
+
+	for(i=0;i<fil->nseg+shift;i++)						// callers update nseg after this, so the new count is nseg+shift
 		fil->segments[i]->index=i;
 
 	return; }
 
 
+/* filShiftJunctionNodes */
+// Shift the node of each junction that attaches to fil by shift, and remove any junction
+// whose node is no longer from FILJUNCTMINNODE to nseg, where nseg is the filament's new
+// segment count. The attached filament end is released.
+void filShiftJunctionNodes(filamentptr fil,int shift,int nseg) {
+	int j,node;
+	filjunctionptr junct;
+
+	for(j=fil->njunct-1;j>=0;j--) {									// backward, since a removal shifts later entries down
+		junct=fil->juncts[j];
+		node=junct->node+shift;
+		if(node>=FILJUNCTMINNODE && node<=nseg) junct->node=node;
+		else filRemoveJunction(junct); }
+	return; }
+
+
 /* filAddSegment */
 int filAddSegment(filamentptr fil,const double *x,double length,const double *angle,double thickness,char endchar) {
+    if(endchar=='b') endchar='p';else if(endchar=='f') endchar='m';
 	int seg;
 	segmentptr segment,segmentm1,segmentp1;
 	double zero[3]={0,0,0};
@@ -2779,7 +3954,7 @@ int filAddSegment(filamentptr fil,const double *x,double length,const double *an
 		fil=filAlloc(fil,fil->maxseg*2+1,0,0);
 		if(!fil) return 1; }		// out of memory
 
-	if(endchar=='b') {
+	if(endchar=='p') {
 		seg=fil->nseg;
 		segment=fil->segments[seg];
 		segment->len=length;
@@ -2787,15 +3962,16 @@ int filAddSegment(filamentptr fil,const double *x,double length,const double *an
 		Sph_Ypr2Ypr(angle,segment->ypr);												// ypr = angle
 		Sph_Ypr2Qtn(angle,segment->qrel);												// a = Qtn(angle)
 		if(seg==0) {
-			segment->xyzfront[0]=x[0];														// x_i = input value
-			segment->xyzfront[1]=x[1];
-			segment->xyzfront[2]=x[2];
+			segment->xyzminus[0]=x[0];														// x_i = input value
+			segment->xyzminus[1]=x[1];
+			segment->xyzminus[2]=x[2];
 			Sph_Qtn2Qtn(segment->qrel,segment->qabs); 						// b = a
 			Sph_QtniRotateUnitz(segment->qabs,fil->seg0up,zero,1); }		// rotate segment z to lab frame
 		else {
 			segmentm1=fil->segments[seg-1];
 			Sph_QtnxQtn(segmentm1->qabs,segment->qrel,segment->qabs);	}	// b_i = b_{i-1} . a_i
-		Sph_QtniRotateUnitx(segment->qabs,segment->xyzback,segment->xyzfront,segment->len);			// x_{i+1} = x_i + l_i * b.xhat.bT
+		Sph_QtniRotateUnitx(segment->qabs,segment->xyzplus,segment->xyzminus,segment->len);			// x_{i+1} = x_i + l_i * b.xhat.bT
+		filNodeStateClear(fil,seg+1);												// the new plus-end node starts free
 		fil->nseg++; }
 
 	else {
@@ -2806,9 +3982,9 @@ int filAddSegment(filamentptr fil,const double *x,double length,const double *an
 		segment->thk=thickness;
 		if(fil->nseg==0) {
 			Sph_Ypr2Qtni(angle,segment->qabs);									// b_0
-			segment->xyzback[0]=x[0];														// back of segment = input value
-			segment->xyzback[1]=x[1];
-			segment->xyzback[2]=x[2]; }
+			segment->xyzplus[0]=x[0];														// plus end of segment = input value
+			segment->xyzplus[1]=x[1];
+			segment->xyzplus[2]=x[2]; }
 		else {
 			segmentp1=fil->segments[1];
 			Sph_Ypr2Ypr(angle,segmentp1->ypr);
@@ -2816,7 +3992,7 @@ int filAddSegment(filamentptr fil,const double *x,double length,const double *an
 			Sph_QtnxQtni(segmentp1->qabs,segmentp1->qrel,segment->qabs); }		// b_i = b_{i+1} . a_{i+1}*
 		Sph_Qtn2Qtn(segment->qabs,segment->qrel);									// a_i = b_i
 		Sph_Qtn2Ypr(segment->qrel,segment->ypr);									// a_0 = Ypr(B_0)
-		Sph_QtniRotateUnitx(segment->qabs,segment->xyzfront,segment->xyzback,-segment->len);
+		Sph_QtniRotateUnitx(segment->qabs,segment->xyzminus,segment->xyzplus,-segment->len);
 		Sph_QtniRotateUnitz(segment->qabs,fil->seg0up,zero,1);
 		fil->nseg++; }
 	return 0; }
@@ -2877,9 +4053,9 @@ int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char 
 	for(i=0;i<number;i++) {
 		len=filRandomLength(filtype,thickness,1);
 		if(fil->nseg>0) {
-			filRandomAngle(filtype,fil->nseg,thickness,1,angle);
+			filRandomAngle(filtype,fil->nseg,0.5*(thickness+fil->segments[fil->nseg-1]->thk),1,angle);	// the joint's stiffness uses the average thickness of its two segments
 			if(dim==2) angle[1]=angle[2]=0; }
-		er=filAddSegment(fil,pos,len,angle,thickness,'b');
+		er=filAddSegment(fil,pos,len,angle,thickness,'p');
 		if(er) return er; }
 
 	return 0; }
@@ -2889,26 +4065,27 @@ int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char 
 int filAddOneRandomSegment(simptr sim,filamentptr fil,const double *x,double thickness,char endchar,int constraints) {
 	int er,iter,cross,tryagain;
 	filamenttypeptr filtype;
-	double len,angle[3];
-	panelptr pnl;
+	double len,angle[3],jointthk;
 	segmentptr segment;
+	(void) sim;
 
 	filtype=fil->filtype;
 
 	tryagain=1;
+	jointthk=(fil->nseg>0)?0.5*(thickness+fil->segments[(endchar=='m')?0:fil->nseg-1]->thk):thickness;	// the joint's stiffness uses the average thickness of its two segments
 	len=filRandomLength(filtype,thickness,1);
-	filRandomAngle(filtype,fil->nseg,thickness,1,angle);
+	filRandomAngle(filtype,fil->nseg,jointthk,1,angle);
 	er=filAddSegment(fil,x,len,angle,thickness,endchar);
 	if(er) return er;
-	segment=fil->segments[((endchar=='f')?0:fil->nseg-1)];
+	segment=fil->segments[((endchar=='m')?0:fil->nseg-1)];
 	if(constraints==0) tryagain=0;
 	for(iter=0;iter<FILMAXTRIES && tryagain;iter++) {
 		tryagain=0;
-		if(constraints & 1) {	// check for surface crossing
-			cross=filSegmentXSurface(sim,segment,&pnl);
+		if(constraints & 1) {	// check for blocking by reflecting surfaces
+			cross=filSurfBlocksSegment(fil,segment,endchar);
 			if(cross) {
 				len=filRandomLength(filtype,thickness,1);
-				filRandomAngle(filtype,fil->nseg,thickness,1,angle);
+				filRandomAngle(filtype,fil->nseg,jointthk,1,angle);
 				filLengthenSegment(fil,segment->index,len,endchar,'=');
 				filRotateVertex(fil,segment->index,angle,endchar,'=');
 				tryagain=1; }}}
@@ -2922,35 +4099,33 @@ int filAddOneRandomSegment(simptr sim,filamentptr fil,const double *x,double thi
 
 /* filTreadmill */
 int filTreadmill(simptr sim,filamentptr fil,char endchar) {
+    if(endchar=='b') endchar='p';else if(endchar=='f') endchar='m';
 	int er;
 
 	er=0;
 	if(fil->nseg<1) return 2;
-	er=filAddOneRandomSegment(sim,fil,NULL,fil->segments[(endchar=='b')?fil->nseg-1:0]->thk,endchar,1);
-	if(!er && fil->filtype->stericgrowth && fil->filtype->stericradius>0 && filStericSegmentBlocked(sim,fil->segments[endchar=='b'?fil->nseg-1:0])) {
-		filRemoveSegment(fil,endchar);er=2;
-		if(!sim->filss->steric) filStericPrepare(sim);
-		if(sim->filss->steric) sim->filss->steric->blockedgrowth++; }
-	if(!er && !fil->filtype->stericgrowth && filStericRegisterSegment(sim,fil->segments[endchar=='b'?fil->nseg-1:0])) {
-		filRemoveSegment(fil,endchar);er=2; }
+	er=filAddOneRandomSegment(sim,fil,NULL,fil->segments[(endchar=='p')?fil->nseg-1:0]->thk,endchar,1);
 	if(!er)
-		filRemoveSegment(fil,(endchar=='b')?'f':'b');
+		filRemoveSegment(fil,(endchar=='p')?'m':'p');
 	return er; }
 
 
 
 /* filRemoveSegment */
 int filRemoveSegment(filamentptr fil,char endchar) {
+    if(endchar=='b') endchar='p';else if(endchar=='f') endchar='m';
 	int seg;
 	segmentptr segment;
 	double zero[3]={0,0,0};
 
 	if(fil->nseg==0) return -1;
 
-	if(endchar=='b')
+	if(endchar=='p') {
 		fil->nseg--;
+		filNodeStateClear(fil,fil->nseg+1);					// the removed plus-end node's slot may be reused
+		filShiftJunctionNodes(fil,0,fil->nseg); }		// drop any junction on the removed plus-end node
 	else {
-		seg=1;					// new front segment
+		seg=1;					// new minus-end segment
 		segment=fil->segments[seg];
 		Sph_Qtn2Qtn(segment->qabs,segment->qrel);
 		Sph_Qtn2Ypr(segment->qrel,segment->ypr);
@@ -2971,9 +4146,9 @@ void filTranslate(filamentptr fil,const double *vect,char func) {
 
 	if(func=='=') {
 		segment=fil->segments[0];
-		shift[0]=vect[0]-segment->xyzfront[0];
-		shift[1]=vect[1]-segment->xyzfront[1];
-		shift[2]=vect[2]-segment->xyzfront[2]; }
+		shift[0]=vect[0]-segment->xyzminus[0];
+		shift[1]=vect[1]-segment->xyzminus[1];
+		shift[2]=vect[2]-segment->xyzminus[2]; }
 	else if(func=='-') {
 		shift[0]=-vect[0];
 		shift[1]=-vect[1];
@@ -3020,6 +4195,7 @@ void filTranslateNode(filamentptr fil,int node,const double *vect,char func) {
 
 /* filLengthenSegment */
 int filLengthenSegment(filamentptr fil,int seg,double length,char endchar,char func) {
+    if(endchar=='b') endchar='p';else if(endchar=='f') endchar='m';
 	int i;
 	double lenold,lendelta,xdelta[3],**nodes,zero[3]={0,0,0};
 	segmentptr segment;
@@ -3034,7 +4210,7 @@ int filLengthenSegment(filamentptr fil,int seg,double length,char endchar,char f
 
 	Sph_QtniRotateUnitx(segment->qabs,xdelta,zero,lendelta);			// rotate to lab frame. Delta Delta x = Delta l * b_i xhat b_iT
 	nodes=fil->nodes;
-	if(endchar=='b') {
+	if(endchar=='p') {
 		for(i=seg+1;i<=fil->nseg;i++) {
 			nodes[i][0]+=xdelta[0];
 			nodes[i][1]+=xdelta[1];
@@ -3066,6 +4242,7 @@ int filChangeThickness(filamentptr fil,int seg,double thick,char func) {
 
 /* filRotateVertex */
 void filRotateVertex(filamentptr fil,int seg,const double *angle,char endchar,char func) {
+    if(endchar=='b') endchar='p';else if(endchar=='f') endchar='m';
 	int i;
 	double qtndelta[4],zero[3]={0,0,0};
 	segmentptr segment,segmentm1,segmentp1;
@@ -3079,7 +4256,7 @@ void filRotateVertex(filamentptr fil,int seg,const double *angle,char endchar,ch
 	else {
 		Sph_QtnxQtni(segment->qrel,qtndelta,segment->qrel); }
 
-	if(endchar=='b') {
+	if(endchar=='p') {
 		for(i=seg;i<fil->nseg;i++) {
 			segment=fil->segments[i];
 			if(i==0) {
@@ -3089,7 +4266,7 @@ void filRotateVertex(filamentptr fil,int seg,const double *angle,char endchar,ch
 				segmentm1=fil->segments[i-1];
 				Sph_QtnxQtn(segmentm1->qabs,segment->qrel,segment->qabs); }			// b_i = b_{i-1} a_i
 			Sph_Qtn2Ypr(segment->qrel,segment->ypr);
-			Sph_QtniRotateUnitx(segment->qabs,segment->xyzback,segment->xyzfront,segment->len);
+			Sph_QtniRotateUnitx(segment->qabs,segment->xyzplus,segment->xyzminus,segment->len);
 			}}
 	else {
 		for(i=seg;i>=0;i--) {
@@ -3099,7 +4276,7 @@ void filRotateVertex(filamentptr fil,int seg,const double *angle,char endchar,ch
 				segmentp1=fil->segments[i+1];
 				Sph_QtnxQtni(segmentp1->qabs,segmentp1->qrel,segment->qabs); }		// b_i = b_i a_{i+1)T
 			Sph_Qtn2Ypr(segment->qrel,segment->ypr);
-			Sph_QtniRotateUnitx(segment->qabs,segment->xyzfront,segment->xyzback,-segment->len); }
+			Sph_QtniRotateUnitx(segment->qabs,segment->xyzminus,segment->xyzplus,-segment->len); }
 		Sph_QtniRotateUnitz(segment->qabs,fil->seg0up,zero,1); }
 
 	return; }
@@ -3114,37 +4291,56 @@ int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamentty
 
 	filto->filtype=filtype?filtype:filfrom->filtype;
 
+	filRemoveFilJunctions(filto);										// the copy starts unattached
 	filto->nseg=0;
-	filto->nbranch=0;
 	filto->nsequence=0;
-	filto=filAlloc(filto,filfrom->nseg,filfrom->nbranch,filfrom->nsequence);
+	filto=filAlloc(filto,filfrom->nseg,0,filfrom->nsequence);
 	if(!filto) return 1;
 
 	for(i=0;i<filfrom->nseg;i++) {
 		segmentfrom=filfrom->segments[i];
-		filAddSegment(filto,segmentfrom->xyzfront,segmentfrom->len,segmentfrom->ypr,segmentfrom->thk,'b'); }
+		filAddSegment(filto,segmentfrom->xyzminus,segmentfrom->len,segmentfrom->ypr,segmentfrom->thk,'p'); }
 
 	filto->seg0up[0]=filfrom->seg0up[0];
 	filto->seg0up[1]=filfrom->seg0up[1];
 	filto->seg0up[2]=filfrom->seg0up[2];
 
-	filto->frontend=filfrom->frontend;
-	filto->backend=filfrom->backend;
-
-	for(i=0;i<filfrom->nbranch;i++) {
-		filto->branchspots[i]=filfrom->branchspots[i];
-		filto->branches[i]=filfrom->branches[i];
-		filto->branchazim0[i]=filfrom->branchazim0[i]; }
-	filto->nbranch=filfrom->nbranch;
-
 	for(i=0;i<filfrom->nsequence;i++)
 		filto->sequence[i]=filfrom->sequence[i];
 	filto->nsequence=filfrom->nsequence;
 
-	filto->growbank=filfrom->growbank;
-	filto->capped=filfrom->capped;
+	for(i=0;i<2;i++) {
+		filto->endstate[i]=filfrom->endstate[i];
+		filto->lenbank[i]=filfrom->lenbank[i]; }
 
 	return 0; }
+
+
+/* filReset */
+// Return fil to the state of a newly allocated filament, keeping its allocated memory, its
+// filament type, and its name. filAddFilament calls this because it may be reusing a
+// removed filament. Segment and node values are not cleared, since they are set as
+// segments are added; per-node mobility factors, adsorption states, and roll values are,
+// since they persist.
+void filReset(filamentptr fil) {
+	int seg;
+
+	fil->nseg=0;
+	if(fil->maxseg>0) {															// nothing is allocated yet for a never-used filament
+		for(seg=0;seg<=fil->maxseg;seg++) filNodeStateClear(fil,seg);
+		for(seg=0;seg<fil->maxseg;seg++) fil->roll[seg]=0; }
+	fil->seg0up[0]=fil->seg0up[1]=0;
+	fil->seg0up[2]=1;
+	for(seg=0;seg<2;seg++)
+		fil->endcontact[seg][0]=fil->endcontact[seg][1]=fil->endcontact[seg][2]=0;
+	fil->ncontact=0;
+	fil->endjunct[0]=fil->endjunct[1]=NULL;
+	fil->njunct=0;
+	fil->nsequence=0;
+	fil->endstate[0]=fil->filtype->endstate0[0];		// new filaments start in the type's initial end states
+	fil->endstate[1]=fil->filtype->endstate0[1];
+	fil->lenbank[0]=fil->lenbank[1]=0;
+	return; }
 
 
 /* filAddFilament */
@@ -3168,15 +4364,46 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 	filtype->filnames[f][STRCHAR-1]='\0';
 	fil=filtype->fillist[f];
 	fil->filtype=filtype;
-	fil->nseg=0;
-	fil->frontend=fil->backend=NULL;
-	fil->nbranch=0;
-	fil->nsequence=0;
-	fil->growbank=0;																// reused list slots must not inherit growth state
-	fil->capped=0;
+	filReset(fil);																	// the slot may hold a removed filament
 	filSetCondition(filtype->filss,SClists,0);
 
 	return fil; }
+
+
+/* filRemoveFilament */
+// Remove filament fil from the simulation, keeping its memory for reuse. All junctions
+// that involve fil are removed first, because its memory will be reused for an
+// unrelated filament: fil's own ends are detached, and every filament end attached to
+// fil is released. Then the filaments after fil in fillist shift down one place, which
+// keeps creation order, and fil and its name string move to position nfil-1, at the
+// front of the unused filaments that filAddFilament takes next. fil is also removed
+// from the surface lists of filaments with adsorbed nodes. Returns 0 for success or 1
+// if fil is not in its type's list.
+int filRemoveFilament(filamentptr fil) {
+	filamenttypeptr filtype;
+	surfacessptr srfss;
+	char *name;
+	int f,f2,s;
+
+	filtype=fil->filtype;
+	for(f=0;f<filtype->nfil && filtype->fillist[f]!=fil;f++);
+	if(f==filtype->nfil) return 1;
+
+	filRemoveFilJunctions(fil);
+	srfss=filtype->filss->sim->srfss;
+	if(srfss)
+		for(s=0;s<srfss->nsrf;s++)
+			surfremovefilament(srfss->srflist[s],fil);
+
+	name=filtype->filnames[f];											// shift later filaments down, keeping creation order
+	for(f2=f;f2<filtype->nfil-1;f2++) {
+		filtype->fillist[f2]=filtype->fillist[f2+1];
+		filtype->filnames[f2]=filtype->filnames[f2+1]; }
+	filtype->fillist[f2]=fil;
+	filtype->filnames[f2]=name;
+	filtype->nfil--;
+	filSetCondition(filtype->filss,SClists,0);
+	return 0; }
 
 
 /******************************************************************************/
@@ -3185,31 +4412,222 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 
 
 #define FILJUNCTSINMIN 1e-9			// junctions with sin(theta) below this are degenerate; filBranchAzimuth and filJunctionGeometry must agree on it
-#define FILJUNCTSINBOUND 0.1		// floor on each sin(theta) factor in the azimuthal denominator; force fades at parallel/antiparallel poles
+#define FILJUNCTSINBOUND 0.1		// floor on sin(theta) in the azimuthal force denominator, capping the 1/sin(theta) divergence near-parallel geometry
+
+/* filBranchJunctionNodes */
+// Daughter nodes at a junction, for a daughter that attaches by its end end ('m' or
+// 'p'). *nearptr is the daughter end node that is pinned to the mother and *farptr is
+// the next node along the daughter, so nodes[far]-nodes[near] points away from the
+// mother. Using these nodes for both ends keeps the branch angle and azimuth defined
+// the same way whichever end attaches.
+void filBranchJunctionNodes(const filamentptr daughter,char end,int *nearptr,int *farptr) {
+	if(end=='p') {
+		*nearptr=daughter->nseg;
+		*farptr=daughter->nseg-1; }
+	else {
+		*nearptr=0;
+		*farptr=1; }
+	return; }
+
+
+/* filRigidParent */
+// The junction that rigidly pins fil, which is fil's parent edge in the spanning forest
+// of rigid junctions, or NULL if fil is the root of its tree. filClassifyJunctions
+// ensures that a filament has at most one.
+filjunctionptr filRigidParent(const filamentptr fil) {
+	if(fil->endjunct[0] && fil->endjunct[0]->rigid) return fil->endjunct[0];
+	if(fil->endjunct[1] && fil->endjunct[1]->rigid) return fil->endjunct[1];
+	return NULL; }
+
+
+/* filTreeRoot */
+// The root of the tree of rigid junctions that contains fil.
+filamentptr filTreeRoot(filamentptr fil) {
+	filjunctionptr junct;
+
+	while((junct=filRigidParent(fil))) fil=junct->target;
+	return fil; }
+
+
+/* filInSubtree */
+// Returns 1 if fil is top or is attached to top through a chain of rigid junctions, so
+// that it is in the subtree of rigid junctions below top, and 0 otherwise.
+int filInSubtree(filamentptr fil,const filamentptr top) {
+	filjunctionptr junct;
+
+	while(fil!=top && (junct=filRigidParent(fil))) fil=junct->target;
+	return fil==top; }
+
+
+/* filClassifyJunctions */
+// Decide which junctions are rigid, going through them in creation order. A junction is
+// rigid, meaning that it is an edge of the spanning forest and is held by translating its
+// filament, if its filament is not already rigidly pinned by its other end and the
+// target is not in its filament's own tree; otherwise it closes a loop and is held by a
+// spring. Every junction of a dendritic network is rigid. Assigning greedily in creation
+// order keeps the result deterministic and the rigid junctions acyclic, with at most one
+// rigid parent per filament. Called whenever a junction is added or removed.
+void filClassifyJunctions(filamentssptr filss) {
+	int j;
+	filjunctionptr junct;
+
+	for(j=0;j<filss->njunct;j++)
+		filss->junctlist[j]->rigid=0;
+	filss->nspring=0;
+	for(j=0;j<filss->njunct;j++) {
+		junct=filss->junctlist[j];
+		if(!filRigidParent(junct->fil) && filTreeRoot(junct->target)!=junct->fil)
+			junct->rigid=1;
+		else
+			filss->nspring++; }
+	return; }
+
+
+/* filAddJunction */
+// Attach end end ('m' or 'p') of filament fil to node node of filament target, which may
+// be fil itself. bend is 1 for an end-to-end join, whose angle is held by the bending
+// spring, and 0 for a junction whose angle is held by the branch-angle spring. This only
+// records the junction and classifies it as rigid or loop-closing; it does not move any
+// filament. Returns the junction, or NULL if that end is already attached or memory
+// could not be allocated.
+filjunctionptr filAddJunction(filamentptr fil,char end,filamentptr target,int node,int bend) {
+	filamentssptr filss;
+	filjunctionptr junct,*newlist;
+	int j,e,newmax;
+
+	filss=fil->filtype->filss;
+	e=(end=='p')?1:0;
+	if(fil->endjunct[e]) return NULL;
+
+	if(filss->njunct==filss->maxjunct) {						// grow the junction list
+		newmax=2*filss->maxjunct+1;
+		newlist=(filjunctionptr*) calloc(newmax,sizeof(filjunctionptr));
+		if(!newlist) return NULL;
+		for(j=0;j<filss->maxjunct;j++) newlist[j]=filss->junctlist[j];
+		for(;j<newmax;j++) {
+			newlist[j]=(filjunctionptr) malloc(sizeof(struct filjunctionstruct));
+			if(!newlist[j]) return NULL;
+			newlist[j]->fil=newlist[j]->target=NULL; }
+		free(filss->junctlist);
+		filss->junctlist=newlist;
+		filss->maxjunct=newmax; }
+
+	if(target->njunct==target->maxjunct)
+		if(!filAlloc(target,0,target->maxjunct*2+1,0)) return NULL;
+
+	junct=filss->junctlist[filss->njunct++];
+	junct->fil=fil;
+	junct->end=end;
+	junct->target=target;
+	junct->node=node;
+	junct->rigid=0;
+	junct->bend=bend;
+	junct->azim0=-1;
+	target->juncts[target->njunct++]=junct;
+	fil->endjunct[e]=junct;
+	filClassifyJunctions(filss);
+	return junct; }
+
+
+/* filRemoveJunction */
+// Remove junction junct, which releases the attached filament end. The other entries
+// keep their order, and the junction's memory moves to the unused end of the list for
+// reuse. Junctions are reclassified, so a loop-closing junction may become rigid.
+void filRemoveJunction(filjunctionptr junct) {
+	filamentssptr filss;
+	filamentptr target;
+	int j;
+
+	filss=junct->fil->filtype->filss;
+	target=junct->target;
+	for(j=0;j<target->njunct && target->juncts[j]!=junct;j++);
+	if(j<target->njunct) {
+		for(;j<target->njunct-1;j++) target->juncts[j]=target->juncts[j+1];
+		target->njunct--; }
+	if(junct->fil->endjunct[0]==junct) junct->fil->endjunct[0]=NULL;
+	if(junct->fil->endjunct[1]==junct) junct->fil->endjunct[1]=NULL;
+	for(j=0;j<filss->njunct && filss->junctlist[j]!=junct;j++);
+	if(j<filss->njunct) {
+		for(;j<filss->njunct-1;j++) filss->junctlist[j]=filss->junctlist[j+1];
+		filss->junctlist[j]=junct;
+		filss->njunct--; }
+	junct->fil=junct->target=NULL;
+	filClassifyJunctions(filss);
+	return; }
+
+
+/* filRemoveFilJunctions */
+// Remove every junction that involves fil, either as the attached filament or as the
+// target.
+void filRemoveFilJunctions(filamentptr fil) {
+	filamentssptr filss;
+	filjunctionptr junct;
+	int j;
+
+	filss=fil->filtype->filss;
+	if(!filss) return;
+	for(j=filss->njunct-1;j>=0;j--) {								// backward, since a removal shifts later entries down
+		junct=filss->junctlist[j];
+		if(junct->fil==fil || junct->target==fil) filRemoveJunction(junct); }
+	return; }
+
+
+/* filAttachEnd */
+// Attach end end ('m' or 'p') of fil, which needs to be free, to node node of target,
+// which may be fil itself. Attaching at an end node of the target is an end-to-end join,
+// whose angle is held by the bending spring; attaching elsewhere uses the branch-angle
+// spring. If the junction is rigid, fil is translated so its end sits at the target node,
+// and the rest of fil's tree follows; if it closes a loop, only fil's end node is moved
+// onto the target node, which stretches its end segment until the springs relax it.
+// The current azimuth is recorded for the azimuthal spring. Returns 0 for success or 1
+// if the end is already attached or memory could not be allocated.
+int filAttachEnd(filamentptr fil,char end,filamentptr target,int node) {
+	filjunctionptr junct;
+	int jnear,jfar,d;
+
+	junct=filAddJunction(fil,end,target,node,(node==0 || node==target->nseg)?1:0);
+	if(!junct) return 1;
+	if(junct->rigid) {
+		filPinJunction(junct);
+		filPinTree(fil); }
+	else {
+		filBranchJunctionNodes(fil,end,&jnear,&jfar);
+		for(d=0;d<3;d++) fil->nodes[jnear][d]=target->nodes[node][d];
+		filNodes2Angles(fil,-1,-1); }
+	if(!junct->bend) junct->azim0=filBranchAzimuth(junct);
+	return 0; }
+
 
 /* filBranchAzimuth */
-// Azimuth of a daughter about its mother: the angle of the daughter's first segment
-// around the mother segment's axis, measured in that segment's material frame (from
-// the frame's y axis toward its z axis), in [0,2*PI). This is the quantity that
-// branch_azimuth_fix holds; it is recorded at birth by filAddBranch and re-measured
-// by filPinBranches, so the two are consistent by construction whatever the frame
-// conventions. Returns -1 where azimuth is undefined: 2D systems, an invalid branch
-// spot, or a daughter parallel to its mother.
+// Azimuth of a junction's attached filament about its target: the angle of the attached
+// filament's junction segment around the axis of the target's reference segment (the one
+// that ends at the junction node, or segment 0 for node 0), measured in that segment's
+// material frame (from the frame's y axis toward its z axis), in [0,2*PI). This is the
+// quantity that branch_azimuth_fix holds; it is recorded at birth by filAddBranch and
+// re-measured by filPinJunction, so the two are consistent by construction whatever the
+// frame conventions. Returns -1 where azimuth is undefined: 2D systems, an invalid node,
+// or an attached filament parallel to the target.
 // SIGN CONTRACT: with this definition, rotating the daughter about +tm (right-handed)
 // raises phi, which is what makes filAddJunctionForces' azimuthal gradient
 // (tm x td)/(lend*sinth^2) restoring; both rely on Sph_QtnRotate being the lab-to-frame
 // map of a proper rotation. If either convention changes, the spring flips sign to
 // anti-restoring -- the T6 validation (azimuth drift on a pinned mother) catches it.
-double filBranchAzimuth(const filamentptr mother,int spot,const filamentptr daughter) {
+double filBranchAzimuth(const filjunctionptr junct) {
 	double td[3],v[3],phi;
 	segmentptr mseg;
+	filamentptr mother,daughter;
+	int node,jnear,jfar;
 
+	mother=junct->target;
+	daughter=junct->fil;
+	node=junct->node;
 	if(mother->filtype->filss->sim->dim!=3) return -1;
-	if(spot<0 || spot>=mother->nseg || daughter->nseg<1) return -1;
-	mseg=mother->segments[spot];
-	td[0]=daughter->nodes[1][0]-daughter->nodes[0][0];
-	td[1]=daughter->nodes[1][1]-daughter->nodes[0][1];
-	td[2]=daughter->nodes[1][2]-daughter->nodes[0][2];
+	if(node<FILJUNCTMINNODE || node>mother->nseg || daughter->nseg<1) return -1;
+	mseg=mother->segments[node>0?node-1:0];
+	filBranchJunctionNodes(daughter,junct->end,&jnear,&jfar);
+	td[0]=daughter->nodes[jfar][0]-daughter->nodes[jnear][0];
+	td[1]=daughter->nodes[jfar][1]-daughter->nodes[jnear][1];
+	td[2]=daughter->nodes[jfar][2]-daughter->nodes[jnear][2];
 	Sph_QtnRotate(mseg->qabs,td,v);								// daughter direction in the mother segment frame; x is the mother axis
 	if(v[1]*v[1]+v[2]*v[2]<=FILJUNCTSINMIN*FILJUNCTSINMIN*(v[0]*v[0]+v[1]*v[1]+v[2]*v[2])) return -1;
 	phi=atan2(v[2],v[1]);
@@ -3218,19 +4636,16 @@ double filBranchAzimuth(const filamentptr mother,int spot,const filamentptr daug
 
 
 /* filBranchDazim */
-// Signed deviation of branch br of mother from its recorded birth azimuth, wrapped to
-// (-PI,PI]. Returns 1 and sets *dphiptr when defined; 0 when the birth azimuth was
-// never recorded or the current azimuth is undefined (2D, degenerate geometry). The
-// single definition of the sentinel and wrap conventions that the rigid azimuth pin
-// and the azimuthal spring share.
-int filBranchDazim(const filamentptr mother,int br,double *dphiptr) {
+// Signed deviation of a junction from its recorded azimuth, wrapped to (-PI,PI]. Returns
+// 1 and sets *dphiptr when defined; 0 when the azimuth was never recorded or the current
+// azimuth is undefined (2D, degenerate geometry). The single definition of the sentinel
+// and wrap conventions that the rigid azimuth pin and the azimuthal spring share.
+int filBranchDazim(const filjunctionptr junct,double *dphiptr) {
 	double phi0,dphi;
-	filamentptr daughter;
 
-	phi0=mother->branchazim0[br];
-	daughter=mother->branches[br];
-	if(phi0<0 || !daughter) return 0;
-	dphi=filBranchAzimuth(mother,mother->branchspots[br],daughter);
+	phi0=junct->azim0;
+	if(phi0<0) return 0;
+	dphi=filBranchAzimuth(junct);
 	if(dphi<0) return 0;
 	dphi-=phi0;
 	if(dphi>PI) dphi-=2*PI;
@@ -3240,58 +4655,63 @@ int filBranchDazim(const filamentptr mother,int br,double *dphiptr) {
 
 
 /* filAddBranch */
-// Nucleate a daughter filament off mother segment seg. angle is the daughter's ypr
-// relative to that segment's absolute frame. Returns the daughter, or NULL on error.
-filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thickness,const char *daughtername) {
+// Nucleate a daughter filament off mother node node, which must be from 1 to nseg. The
+// daughter attaches by its end end: 'm' puts its minus end (node 0) at the mother node
+// and 'p' puts its plus end (node nseg) there. angle is the direction of the daughter
+// away from the mother, as ypr relative to the absolute frame of mother segment node-1,
+// the segment that ends at node. length0 is the length of the daughter's segment 0, or
+// <=0 for a random length. Returns the daughter, or NULL on error.
+filamentptr filAddBranch(simptr sim,filamentptr mother,int node,char end,double length0,const double *angle,double thickness,const char *daughtername) {
 	filamenttypeptr mothertype;
 	filamentptr daughter;
+	filjunctionptr junct;
 	segmentptr mseg;
-	double branchpos[3],qbranch[4],qdaughter[4],daughterypr[3],len,straight[3]={0,0,0};
-	int br,s,nseg;
+	double branchpos[3],qbranch[4],qdaughter[4],qflip[4],daughterypr[3],len,straight[3]={0,0,0},flip[3]={PI,0,0},shift[3];
+	int s,nseg;
 	(void) sim;
 
 	if(!mother || mother->nseg==0) return NULL;						// need a real mother
-	if(seg<0 || seg>=mother->nseg) return NULL;						// branch spot must be a real segment
+	if(node<0 || node>mother->nseg) return NULL;						// branch node must be a real node
 	mothertype=mother->filtype;
-	/* A rejected birth must only roll back the new slot, never an existing
-	   named filament. Branch creation cannot append to an existing daughter. */
-	if(mothertype->stericradius>0 && daughtername && stringfind(mothertype->filnames,mothertype->nfil,daughtername)>=0) return NULL;
 	nseg=mothertype->branchsegments;							// daughter length in segments (parser enforces >=1)
 
 	daughter=filAddFilament(mothertype,daughtername);		// daughters share the mother's type; auto-named if NULL
 	if(!daughter) return NULL;
 
-	mseg=mother->segments[seg];											// branch point = back node of chosen segment
-	branchpos[0]=mseg->xyzback[0];
-	branchpos[1]=mseg->xyzback[1];
-	branchpos[2]=mseg->xyzback[2];
+	mseg=mother->segments[node>0?node-1:0];					// reference frame = segment that ends at the branch node, or segment 0
+	branchpos[0]=mother->nodes[node][0];
+	branchpos[1]=mother->nodes[node][1];
+	branchpos[2]=mother->nodes[node][2];
 
 	Sph_Ypr2Qtn(angle,qbranch);											// branch rotation in mother's frame
 	Sph_QtnxQtn(mseg->qabs,qbranch,qdaughter);				// compose onto mother-segment absolute orientation
+	if(end=='p') {																// segments point toward the mother, so turn the daughter around
+		Sph_Ypr2Qtn(flip,qflip);
+		Sph_QtnxQtn(qdaughter,qflip,qdaughter); }
 	Sph_Qtn2Ypr(qdaughter,daughterypr);							// filAddSegment (seg 0) expects a lab-frame ypr
 
-	len=filRandomLength(mothertype,thickness,1);
-	if(filAddSegment(daughter,branchpos,len,daughterypr,thickness,'b')) return NULL;
+	len=(length0>0)?length0:filRandomLength(mothertype,thickness,1);
+	if(filAddSegment(daughter,branchpos,len,daughterypr,thickness,'p')) return NULL;
 	for(s=1;s<nseg;s++) {													// extend the daughter straight from the branch
 		len=filRandomLength(mothertype,thickness,1);
-		if(filAddSegment(daughter,NULL,len,straight,thickness,'b')) return NULL; }
+		if(filAddSegment(daughter,NULL,len,straight,thickness,'p')) return NULL; }
+	if(end=='p') {																// built from the branch point toward the mother; slide it out so its plus end is at the branch point
+		shift[0]=branchpos[0]-daughter->nodes[daughter->nseg][0];
+		shift[1]=branchpos[1]-daughter->nodes[daughter->nseg][1];
+		shift[2]=branchpos[2]-daughter->nodes[daughter->nseg][2];
+		filTranslate(daughter,shift,'+'); }
 
-	if(mother->nbranch==mother->maxbranch) {					// grow the branch arrays if needed
-		mother=filAlloc(mother,0,mother->maxbranch*2+1,0);
-		if(!mother) return NULL; }
-	br=mother->nbranch++;
-	mother->branchspots[br]=seg;
-	mother->branches[br]=daughter;
-	mother->branchazim0[br]=filBranchAzimuth(mother,seg,daughter);	// realized birth azimuth, for branch_azimuth_fix
-	daughter->frontend=mother;											// filPinBranches anchors the daughter's front (node 0), which is its pointed end
+	junct=filAddJunction(daughter,end,mother,node,0);	// a new daughter is unattached, so this is a rigid junction
+	if(!junct) return NULL;
+	junct->azim0=filBranchAzimuth(junct);						// realized birth azimuth, for branch_azimuth_fix
 
-	if(mothertype->stericradius>0) {
-		for(s=0;s<daughter->nseg;s++) if(filStericSegmentBlocked(sim,daughter->segments[s])) break;
-		if(s<daughter->nseg) {
-			mother->nbranch--;daughter->frontend=NULL;daughter->nseg=0;mothertype->nfil--;
-			if(!sim->filss->steric) filStericPrepare(sim);
-			if(sim->filss->steric) sim->filss->steric->blockedbranches++;
-			return NULL; }}
+    if(mothertype->stericradius>0) {
+        for(int q=0;q<daughter->nseg;q++) if(filStericSegmentBlocked(sim,daughter->segments[q])) {
+            filRemoveFilament(daughter);if(!daughtername) mothertype->autonamenum--;
+            if(sim->filss->steric) sim->filss->steric->blockedbranches++;
+            return NULL;
+        }
+    }
 	return daughter; }
 
 
@@ -3313,23 +4733,96 @@ int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos)
 	return dist>=0 && dist<=filtype->branchsrfdist; }		// -1 means a panel-less surface: gate closed
 
 
+/* filBranchNodeSpaced */
+// Spacing test for branch nucleation: returns 1 if no branch on mother is closer than
+// spacing to mother node node, measured along the mother's contour with its current
+// segment lengths, and 0 otherwise. Branches are the junctions that target mother other
+// than end-to-end joins, so this includes daughters made by branch dynamics, the branch
+// statement, and attach to an interior node; junction skip is ignored, or none if NULL.
+// Junctions whose node is no longer on the mother are ignored. Distances below spacing
+// fail, so any positive spacing keeps two branches off the same node.
+int filBranchNodeSpaced(const filamentptr mother,int node,double spacing,const filjunctionptr skip) {
+	int j,n,n1,n2;
+	double dist;
+	filjunctionptr junct;
+
+	if(spacing<=0) return 1;
+	for(j=0;j<mother->njunct;j++) {
+		junct=mother->juncts[j];
+		if(junct==skip || junct->bend) continue;
+		if(junct->node<FILJUNCTMINNODE || junct->node>mother->nseg) continue;
+		n1=(junct->node<node)?junct->node:node;
+		n2=(junct->node<node)?node:junct->node;
+		dist=0;
+		for(n=n1;n<n2 && dist<spacing;n++) dist+=mother->segments[n]->len;
+		if(dist<spacing) return 0; }
+	return 1; }
+
+
+/* filBranchAtNode */
+// Creates a branch off node node of filament fil, using the filament type's branch
+// parameters: the daughter attaches by end branchend, has the thickness of the mother
+// segment that ends at the node (or segment 0 for node 0), and leaves at angle
+// branchangle, with jitter from branchspread, on a random side in 2D or at a random or
+// fixed azimuth in 3D. If the type has reflect interactions with surfaces and one of
+// them stops the new branch, the branch is removed and tried again with new random
+// angles, up to FILMAXTRIES times. Doesn't check the branch location gate or the
+// minimum spacing. Returns the daughter, or NULL if it couldn't be made or every try
+// was blocked.
+filamentptr filBranchAtNode(simptr sim,filamentptr fil,int node) {
+	filamenttypeptr filtype;
+	filamentptr daughter;
+	double angle[3],thick,theta,phi,dvec[3];
+	int dim,reflect,tries;
+
+	filtype=fil->filtype;
+	dim=sim->dim;
+	reflect=filSurfReflectOn(filtype);
+	daughter=NULL;
+	thick=fil->segments[node>0?node-1:0]->thk;		// the daughter has the thickness of the mother segment that ends at the branch node
+	for(tries=0;tries<(reflect?FILMAXTRIES:1);tries++) {	// a branch that a reflecting surface stops is tried again with new random angles
+		theta=filtype->branchangle;
+		if(filtype->branchspread>0)								// jitter the branch angle; a spread derived from the spring is its equilibrium spread for this thickness
+			theta=gaussrandtruncOCD(theta,filtype->branchspreadderived?filtype->branchspread/sqrt(thick):filtype->branchspread,-PI,PI);
+		if(dim==2) {															// in-plane +/- branch angle
+			angle[0]=theta*(coinrandD(0.5)?1:-1);
+			angle[1]=angle[2]=0; }
+		else {																		// 3D dendritic cone: fixed polar angle theta; uniform azimuth unless branch_azimuth is set
+			phi=(filtype->branchazimuth>=0)?filtype->branchazimuth:unirandCOD(0,2*PI);
+			dvec[0]=cos(theta);											// daughter direction in the mother segment frame; azimuth from +y toward +z, matching filBranchAzimuth
+			dvec[1]=sin(theta)*cos(phi);
+			dvec[2]=sin(theta)*sin(phi);
+			angle[0]=atan2(dvec[1],dvec[0]);				// yaw-pitch that realize dvec under the segment convention (cos y cos p, sin y cos p, -sin p); filNodes2Angles applies the same inverse
+			angle[1]=-asin(dvec[2]);
+			angle[2]=0; }														// roll 0: the daughter frame about its own axis is deterministic; anisotropic-bending or intrinsic-twist types get a fixed material-frame orientation per daughter where a random roll would decorrelate it
+
+		daughter=filAddBranch(sim,fil,node,filtype->branchend,0,angle,thick,NULL);		// realloc-safe: fillist grows, fil ptrs stable
+		if(!reflect || !daughter || !filSurfBlocksBranch(daughter,filtype->branchend)) break;
+		filRemoveFilament(daughter);						// blocked: discard it and reuse its name
+		filtype->autonamenum--;
+		daughter=NULL; }
+	return daughter; }
+
+
 /* filBranchDynamics */
 // Poisson branch nucleation for one filament type, at rate branchrate*length*dt, with
-// each daughter attached at a uniformly random segment of its mother. If a location
+// each daughter attached at the plus-end node of a uniformly random segment of its mother. If a location
 // gate is set (branch_surface / branch_compartment), drawn events are thinned: an
 // event whose branch point falls outside the gated region is discarded, which realizes
 // an inhomogeneous Poisson process with density branchrate per unit mother length
 // inside the region and zero outside (exact when segment lengths are equal, since the
-// spot draw is uniform per segment -- the same sampling as the ungated draw). The
+// node draw is uniform per segment -- the same sampling as the ungated draw). The
 // accept test draws no random numbers, so a rejected event consumes only its segment
-// draw.
+// draw. With branch_min_spacing, events are also thinned by the spacing test, so
+// branch_rate is the rate per unit of mother length that is far enough from existing
+// branches; this draws no random numbers either. The branches are made by
+// filBranchAtNode.
 void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
-	int f,nfil0,seg,nbr,i,dim;
-	double totallen,angle[3],thick,theta,ratedt,phi,dvec[3];
+	int f,nfil0,node,nbr,i;
+	double totallen,ratedt;
 	filamentptr fil;
 
 	if(filtype->branchrate<=0) return;
-	dim=sim->dim;
 	ratedt=filtype->branchrate*sim->dt;					// same for every filament this step
 	nfil0=filtype->nfil;												// snapshot: don't branch off daughters born this step
 
@@ -3340,91 +4833,157 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 
 		nbr=poisrandD(ratedt*totallen);
 		for(i=0;i<nbr;i++) {
-			seg=intrand(fil->nseg);											// uniform random branch spot
-			if(!filBranchPointInRegion(sim,filtype,fil->segments[seg]->xyzback)) continue;		// interim location gate; accepts everything when no gate is set
-
-			theta=filtype->branchangle;
-			if(filtype->branchspread>0)								// jitter the branch angle
-				theta=gaussrandtruncOCD(theta,filtype->branchspread,-PI,PI);
-			if(dim==2) {															// in-plane +/- branch angle
-				angle[0]=theta*(coinrandD(0.5)?1:-1);
-				angle[1]=angle[2]=0; }
-			else {																		// 3D dendritic cone: fixed polar angle theta; uniform azimuth unless branch_azimuth is set
-				phi=(filtype->branchazimuth>=0)?filtype->branchazimuth:unirandCOD(0,2*PI);
-				dvec[0]=cos(theta);											// daughter direction in the mother segment frame; azimuth from +y toward +z, matching filBranchAzimuth
-				dvec[1]=sin(theta)*cos(phi);
-				dvec[2]=sin(theta)*sin(phi);
-				angle[0]=atan2(dvec[1],dvec[0]);				// yaw-pitch that realize dvec under the segment convention (cos y cos p, sin y cos p, -sin p); filNodes2Angles applies the same inverse
-				angle[1]=-asin(dvec[2]);
-				angle[2]=0; }														// roll 0: the daughter frame about its own axis is deterministic; anisotropic-bending or intrinsic-twist types get a fixed material-frame orientation per daughter where a random roll would decorrelate it
-
-			thick=fil->segments[seg]->thk;
-			filAddBranch(sim,fil,seg,angle,thick,NULL); }}		// realloc-safe: fillist grows, fil ptrs stable
+			node=intrand(fil->nseg)+1;									// uniform random branch node, from 1 to nseg
+			if(!filBranchPointInRegion(sim,filtype,fil->nodes[node])) continue;		// interim location gate; accepts everything when no gate is set
+			if(!filBranchNodeSpaced(fil,node,filtype->branchminspacing,NULL)) continue;	// too close to an existing branch, including ones born this step
+			filBranchAtNode(sim,fil,node); }}
 
 	return; }
 
 
-/* filPinBranches */
-// Constrain each daughter to its junction after the mechanical step. Always: translate
-// the daughter so its front node tracks the mother's (moving) branch point -- a
-// position constraint, not a force. With branch_azimuth_fix on (3D): additionally
-// rotate the daughter rigidly about the mother segment's axis so its azimuth returns
-// to the value recorded at birth; the Arp2/3 slot is stereospecific, so the branch
-// direction around the mother is a constraint rather than a measured compliance. The
-// rotation axis passes through the branch point, so the rotation preserves both the
-// pinned position and the mother-daughter angle theta, composing cleanly with the
-// branch_force_angle spring. The daughter's seg0up vector co-rotates so its own
-// material frame stays consistent and grand-daughter junctions remain valid; filaments
-// are created mothers-first, so the caller's creation-order sweep settles branched
-// trees root-first.
-void filPinBranches(filamentptr fil) {
-	int br,seg,node,dim;
-	double branchpos[3],axis[3],dphi,vect[3];
-	filamentptr daughter;
+/* filSurfBranchOn */
+// Returns 1 if filament type filtype has any branch interactions with surfaces that
+// have positive rates, and 0 if not.
+int filSurfBranchOn(const filamenttypeptr filtype) {
+	int i;
+
+	for(i=0;i<filtype->nsurfint;i++)
+		if(filtype->surfint[i]->action==FSAbranch && filtype->surfint[i]->rate>0) return 1;
+	return 0; }
+
+
+/* filSurfBranchDynamics */
+// Branching from the branch interactions of filament type filtype with surfaces, for
+// one time step. Each node of the listed parts, including end nodes, that is within
+// the interaction's distance (capdist) of its surface, on the interaction's face or
+// either face for both, branches with probability 1-exp(-rate*dt), using
+// filBranchAtNode. An end that is attached to another filament by a junction doesn't
+// branch, since it sits at the other filament's node, which can branch itself. Nodes
+// that are too close to an existing branch for branch_min_spacing don't branch, and
+// each node branches at most once per time step.
+// Daughters born in this time step don't branch until the next one. The branch_surface
+// and branch_compartment gates don't apply. Random numbers are only drawn for nodes
+// that can branch. Returns the number of branches made.
+int filSurfBranchDynamics(simptr sim,filamenttypeptr filtype) {
+	filamentptr fil;
+	filsurfinteractptr fsi;
+	panelptr pnl;
+	enum PanelFace side;
+	double pnlpt[3],dist;
+	int f,nfil0,node,part,i,dim,nbranch;
+
+	dim=sim->dim;
+	nbranch=0;
+	nfil0=filtype->nfil;												// snapshot: don't branch off daughters born this step
+	for(f=0;f<nfil0;f++) {
+		fil=filtype->fillist[f];
+		for(node=0;node<=fil->nseg && fil->nseg>0;node++) {
+			part=(node==0)?FPminus:((node==fil->nseg)?FPplus:FPside);
+			if((node==0 && fil->endjunct[0]) || (node==fil->nseg && fil->endjunct[1])) continue;	// attached end: the node it's attached to branches instead
+			for(i=0;i<filtype->nsurfint;i++) {
+				fsi=filtype->surfint[i];
+				if(fsi->action!=FSAbranch || fsi->rate<=0 || !filSurfInteractApplies(fsi,fil,part)) continue;
+				dist=closestsurfacept(fsi->othersurf,dim,fil->nodes[node],pnlpt,&pnl,NULL);
+				if(dist<0 || dist>fsi->capdist) continue;
+				side=panelside(fil->nodes[node],pnl,dim,NULL,1,0);
+				if(side==PFnone) side=(fsi->surfface==PFback)?PFback:PFfront;		// exactly on the panel
+				if(fsi->surfface!=PFboth && side!=fsi->surfface) continue;
+				if(!filBranchNodeSpaced(fil,node,filtype->branchminspacing,NULL)) break;
+				if(!coinrandD(1.0-exp(-fsi->rate*sim->dt))) continue;
+				if(filBranchAtNode(sim,fil,node)) nbranch++;
+				break; }}}
+	return nbranch; }
+
+
+/* filPinJunction */
+// Hold a rigid junction after the mechanical step by translating its attached filament
+// so that its attached end node sits at the target node -- a position constraint, not a
+// force. With branch_azimuth_fix on (3D, and not for end-to-end joins): additionally
+// rotate the attached filament rigidly about the target's reference segment axis so its
+// azimuth returns to the value recorded at birth; the Arp2/3 slot is stereospecific, so
+// the branch direction around the mother is a constraint rather than a measured
+// compliance. The rotation axis passes through the branch point, so the rotation
+// preserves both the pinned position and the mother-daughter angle theta, composing
+// cleanly with the branch_force_angle spring. The daughter's seg0up vector co-rotates so
+// its own material frame stays consistent and grand-daughter junctions remain valid.
+void filPinJunction(filjunctionptr junct) {
+	int bnode,node,dim,jnear,jfar;
+	double branchpos[3],axis[3],dphi,vect[3],shift[3];
+	filamentptr mother,daughter;
 	segmentptr mseg;
 
-	dim=fil->filtype->filss->sim->dim;
-	for(br=0;br<fil->nbranch;br++) {
-		daughter=fil->branches[br];
-		if(!daughter || daughter->nseg==0) continue;
-		seg=fil->branchspots[br];
-		if(seg<0 || seg>=fil->nseg) continue;						// mother may have shrunk (treadmilling)
-		mseg=fil->segments[seg];
-		branchpos[0]=mseg->xyzback[0];
-		branchpos[1]=mseg->xyzback[1];
-		branchpos[2]=mseg->xyzback[2];
-		filTranslate(daughter,branchpos,'=');						// move daughter so seg-0 front sits at branch point
+	mother=junct->target;
+	daughter=junct->fil;
+	dim=daughter->filtype->filss->sim->dim;
+	if(daughter->nseg==0) return;
+	bnode=junct->node;
+	if(bnode<FILJUNCTMINNODE || bnode>mother->nseg) return;	// mother may have shrunk (treadmilling)
+	mseg=mother->segments[bnode>0?bnode-1:0];				// reference segment
+	branchpos[0]=mother->nodes[bnode][0];
+	branchpos[1]=mother->nodes[bnode][1];
+	branchpos[2]=mother->nodes[bnode][2];
+	filBranchJunctionNodes(daughter,junct->end,&jnear,&jfar);
+	shift[0]=branchpos[0]-daughter->nodes[jnear][0];
+	shift[1]=branchpos[1]-daughter->nodes[jnear][1];
+	shift[2]=branchpos[2]-daughter->nodes[jnear][2];
+	filTranslate(daughter,shift,'+');								// move daughter so its attached end sits at branch point
 
-		if(fil->filtype->branchazimuthfix && dim==3 && daughter->frontend==fil && filBranchDazim(fil,br,&dphi) && dphi!=0) {	// restore the recorded birth azimuth; skip stale entries whose daughter belongs to another mother
-			axis[0]=mseg->xyzback[0]-mseg->xyzfront[0];
-			axis[1]=mseg->xyzback[1]-mseg->xyzfront[1];
-			axis[2]=mseg->xyzback[2]-mseg->xyzfront[2];
-			if(axis[0]==0 && axis[1]==0 && axis[2]==0) continue;
-			for(node=1;node<=daughter->nseg;node++) {			// node 0 is the branch point, on the axis
-				vect[0]=daughter->nodes[node][0]-branchpos[0];
-				vect[1]=daughter->nodes[node][1]-branchpos[1];
-				vect[2]=daughter->nodes[node][2]-branchpos[2];
-				Sph_RotateVectorAxisAngle(vect,axis,-dphi,vect);
-				daughter->nodes[node][0]=branchpos[0]+vect[0];
-				daughter->nodes[node][1]=branchpos[1]+vect[1];
-				daughter->nodes[node][2]=branchpos[2]+vect[2]; }
-			Sph_RotateVectorAxisAngle(daughter->seg0up,axis,-dphi,daughter->seg0up);
-			filNodes2Angles(daughter,-1,-1); }}
+	if(daughter->filtype->branchazimuthfix && dim==3 && !junct->bend && filBranchDazim(junct,&dphi) && dphi!=0) {	// restore the recorded birth azimuth
+		axis[0]=mseg->xyzplus[0]-mseg->xyzminus[0];
+		axis[1]=mseg->xyzplus[1]-mseg->xyzminus[1];
+		axis[2]=mseg->xyzplus[2]-mseg->xyzminus[2];
+		if(axis[0]==0 && axis[1]==0 && axis[2]==0) return;
+		for(node=0;node<=daughter->nseg;node++) {
+			if(node==jnear) continue;										// the attached node is the branch point, on the axis
+			vect[0]=daughter->nodes[node][0]-branchpos[0];
+			vect[1]=daughter->nodes[node][1]-branchpos[1];
+			vect[2]=daughter->nodes[node][2]-branchpos[2];
+			Sph_RotateVectorAxisAngle(vect,axis,-dphi,vect);
+			daughter->nodes[node][0]=branchpos[0]+vect[0];
+			daughter->nodes[node][1]=branchpos[1]+vect[1];
+			daughter->nodes[node][2]=branchpos[2]+vect[2]; }
+		Sph_RotateVectorAxisAngle(daughter->seg0up,axis,-dphi,daughter->seg0up);
+		filNodes2Angles(daughter,-1,-1); }
 
 	return; }
 
 
-/******************************************************************************/
-/************************ filament elongation and capping *********************/
-/******************************************************************************/
+/* filPinTree */
+// Pin every rigid junction in the tree below fil, parents before children, so each
+// filament is pinned to its parent's final position.
+void filPinTree(filamentptr fil) {
+	int j;
+	filjunctionptr junct;
+
+	for(j=0;j<fil->njunct;j++) {
+		junct=fil->juncts[j];
+		if(junct->rigid) {
+			filPinJunction(junct);
+			filPinTree(junct->fil); }}
+	return; }
 
 
-/* filEndIsCapped */
-// Is geometric end 'b' or 'f' capped? The only place an end character is mapped onto the
-// capped bitmask, which is stored relative to polarity.
-int filEndIsCapped(const filamentptr fil,char endchar) {
-	if(endchar==fil->filtype->plusend) return fil->capped;
-	return 0; }
+/* filPinJunctions */
+// Pin all rigid junctions after all motion in a time step, starting from the root of
+// each tree, across all filament types. Loop-closing junctions are held by springs
+// instead (filAddJunctionForces).
+void filPinJunctions(filamentssptr filss) {
+	int ft,f;
+	filamenttypeptr filtype;
+	filamentptr fil;
+
+	if(filss->njunct==0) return;
+	for(ft=0;ft<filss->ntype;ft++) {
+		filtype=filss->filtypes[ft];
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			if(!filRigidParent(fil)) filPinTree(fil); }}
+	return; }
+
+
+/******************************************************************************/
+/************************ filament end dynamics *******************************/
+/******************************************************************************/
 
 
 /* filContourLength */
@@ -3438,16 +4997,19 @@ double filContourLength(const filamentptr fil) {
 	return total; }
 
 
-/* filElongate */
-// Grow the plus end by dlength of contour length. Segments are added whole, so growbank
-// carries the remainder forward; debiting the length actually drawn keeps total length
-// tracking rate*time with bounded rather than accumulating error. A blocked end drops the
-// growth it was denied rather than banking it, so it stalls at zero instead of surging
-// when it clears. In overlap mode no collision veto is applied: insert the geometry
-// and let existing capsule/confinement forces act in the mechanical phase. This is
-// prescribed growth, without a load-dependent rate or chemical-work/stall limit.
-// Returns segments added, or -1 on a configuration error.
-int filElongate(simptr sim,filamentptr fil,double dlength) {
+/* filEndLengthChange */
+// Change the length of end end (0 = minus, 1 = plus) of fil by dlength of contour length:
+// grow for dlength>0 and shrink for dlength<0. Segments are added or removed whole, so
+// lenbank carries the remainder forward. Growth debits the length actually drawn, which
+// keeps total length tracking rate*time with bounded rather than accumulating error; a
+// blocked end drops the growth it was denied rather than banking it, so it stalls at zero
+// instead of surging when it clears. Shrinking removes the end segment once the bank
+// covers that segment's actual length, for the same exact accounting. When the bank
+// covers the length of a filament's only remaining segment, the filament has shrunk away;
+// this returns FILREMOVED without changing the filament, and the caller removes it.
+// Otherwise, returns the number of segments added (positive) or removed (negative), or
+// -1000 for a configuration error.
+int filEndLengthChange(simptr sim,filamentptr fil,int end,double dlength) {
 	filamenttypeptr filtype;
 	char endchar;
 	double stdlen,maxlen,newlen,curlen;
@@ -3455,134 +5017,378 @@ int filElongate(simptr sim,filamentptr fil,double dlength) {
 
 	filtype=fil->filtype;
 	if(fil->nseg<1) return 0;												// nothing to grow from
-	if(filtype->elongmodel) return filMechanochemicalElongate(sim,fil,dlength);
-	endchar=filtype->plusend;
-	if(filEndIsCapped(fil,endchar)) return 0;				// a capped plus end accepts no monomer
+	endchar=filend2char(end);
+	if(filtype->elongmodel && end==1 && dlength>0) {er=filMechanochemicalElongate(sim,fil,dlength);if(er<0 && sim->filss->steric) sim->filss->steric->queryerror=1;return er<0?-1000:er;}
+
+	if(dlength<0) {																	// shrinking
+		fil->lenbank[end]+=dlength;
+		nadd=0;
+		while(-fil->lenbank[end]>=fil->segments[(endchar=='p')?fil->nseg-1:0]->len) {
+			if(fil->nseg==1) return FILREMOVED;						// the last segment is gone
+			fil->lenbank[end]+=fil->segments[(endchar=='p')?fil->nseg-1:0]->len;
+			filRemoveSegment(fil,endchar);
+			nadd--; }
+		return nadd; }
+
 	stdlen=filtype->stdlen;
-	if(stdlen<=0) return -1;												// filCheckParams errors on this; guard the loop anyway
+	if(stdlen<=0) return -1000;											// filCheckParams errors on this; guard the loop anyway
 
 	maxlen=filtype->elongmaxlen;
 	curlen=maxlen>0?filContourLength(fil):0;				// only needed to test the ceiling
 	if(maxlen>0 && curlen>=maxlen) return 0;				// at the ceiling: no growth, and nothing banked
 
-	fil->growbank+=dlength;
+	fil->lenbank[end]+=dlength;
 	nadd=0;
-	while(fil->growbank>=stdlen) {
+	while(fil->lenbank[end]>=stdlen) {
 		if(nadd>=FILMAXGROW) {
 			simLog(sim,5,"WARNING: filament %s hit the %i segment per step elongation limit; check elongation_rate against dt\n",fil->filname,FILMAXGROW);
 			break; }
 		if(maxlen>0 && curlen>=maxlen) {								// crossed the ceiling partway through this step
-			if(fil->growbank>stdlen) fil->growbank=stdlen;
+			if(fil->lenbank[end]>stdlen) fil->lenbank[end]=stdlen;
 			break; }
 
-		er=filAddOneRandomSegment(sim,fil,NULL,fil->segments[(endchar=='b')?fil->nseg-1:0]->thk,endchar,filtype->elongoverlap?0:1);
-		if(!er && !filtype->elongoverlap && filtype->stericgrowth && filtype->stericradius>0 && filStericSegmentBlocked(sim,fil->segments[endchar=='b'?fil->nseg-1:0])) {
-			filRemoveSegment(fil,endchar);er=2;
-			if(!sim->filss->steric) filStericPrepare(sim);
-			if(sim->filss->steric) sim->filss->steric->blockedgrowth++; }
-		/* Checked growth registers itself. Unchecked growth must also be visible
-		   to later tips/branch births before the normal mechanical index rebuild. */
-		if(!er && (filtype->elongoverlap || !filtype->stericgrowth) && filStericRegisterSegment(sim,fil->segments[endchar=='b'?fil->nseg-1:0])) {
-			filRemoveSegment(fil,endchar);er=2; }
-		if(er) {																						// blocked plus end
-			fil->growbank-=dlength;														// this step's growth did not happen
-			if(fil->growbank>stdlen) fil->growbank=stdlen;		// and never hold more than one segment in reserve
-			if(fil->growbank<0) fil->growbank=0;
+		er=filAddOneRandomSegment(sim,fil,NULL,fil->segments[(endchar=='p')?fil->nseg-1:0]->thk,endchar,filtype->elongoverlap?0:1);
+        if(!er && !filtype->elongoverlap && filtype->confinesrf) {
+            segmentptr added=fil->segments[end?fil->nseg-1:0];
+            int blocked=0;double hit[3],cross;enum PanelFace f1,f2;
+            for(int ps=0;ps<PSMAX && !blocked;ps++) for(int q=0;q<filtype->confinesrf->npanel[ps] && !blocked;q++)
+                blocked=lineXpanel(added->xyzminus,added->xyzplus,filtype->confinesrf->panels[ps][q],sim->dim,hit,&f1,&f2,&cross,NULL,NULL,1);
+            if(blocked) {filRemoveSegment(fil,endchar);er=2;}
+        }
+		if(!er && !filtype->elongoverlap && filtype->stericgrowth && filtype->stericradius>0 && filStericSegmentBlocked(sim,fil->segments[end?fil->nseg-1:0])) {
+			filRemoveSegment(fil,endchar);er=2;if(sim->filss->steric) sim->filss->steric->blockedgrowth++;}
+		if(!er && (filtype->elongoverlap || !filtype->stericgrowth) && filStericRegisterSegment(sim,fil->segments[end?fil->nseg-1:0])) {filRemoveSegment(fil,endchar);er=2;}
+		if(er) {																						// blocked end
+			fil->lenbank[end]-=dlength;												// this step's growth did not happen
+			if(fil->lenbank[end]>stdlen) fil->lenbank[end]=stdlen;	// and never hold more than one segment in reserve
+			if(fil->lenbank[end]<0) fil->lenbank[end]=0;
 			break; }
 
-		newlen=fil->segments[(endchar=='b')?fil->nseg-1:0]->len;
-		fil->growbank-=newlen;														// pay for the segment actually emitted
+		newlen=fil->segments[(endchar=='p')?fil->nseg-1:0]->len;
+		fil->lenbank[end]-=newlen;												// pay for the segment actually emitted
 		curlen+=newlen;
 		nadd++; }
 
 	return nadd; }
 
 
-/* filElongationDynamics */
-// Plus-end elongation for one filament type: each filament grows by rate*dt of contour
-// length. Deterministic; the only length noise is the random segment length.
-void filElongationDynamics(simptr sim,filamenttypeptr filtype) {
-	int f,workers;
-	unsigned char *ready;
-	double dlength;
-
-	if(filtype->elongrate<=0) return;
-	dlength=filtype->elongrate*sim->dt;
-	workers=filWorkWorkers(sim,filtype->nfil,2048);
-	if(workers>4) workers=4;
-	ready=workers>1?filChemWork(sim,filtype->nfil):NULL;
-	if(ready) {
-		/* Most calls only advance a private contour-length bank. Segment births
-		   retain their original order: their RNG draws, surface retries and
-		   accepted growth must be visible to the next filament's collision test. */
-#ifdef _OPENMP
-#pragma omp parallel for num_threads(workers) schedule(static)
-#endif
-		for(f=0;f<filtype->nfil;f++) {
-			filamentptr fil=filtype->fillist[f];
-			ready[f]=0;
-			if(fil->nseg<1 || filEndIsCapped(fil,filtype->plusend) || filtype->stdlen<=0) continue;
-			if(filtype->elongmaxlen>0 && filContourLength(fil)>=filtype->elongmaxlen) continue;
-			if(fil->growbank+dlength<filtype->stdlen) fil->growbank+=dlength;
-			else ready[f]=1;
-		}
-		for(f=0;f<filtype->nfil;f++) if(ready[f]) filElongate(sim,filtype->fillist[f],dlength);
-		return; }
-
-	for(f=0;f<filtype->nfil;f++)
-		filElongate(sim,filtype->fillist[f],dlength);
-
-	return; }
-
-
-/* filCappingDynamics */
-// Stochastic plus-end capping and uncapping. The per-step probability is 1-exp(-rate*dt),
-// matching the unimolecular convention in smolreact.c rather than a linearized rate*dt,
-// which is what makes the measured rate independent of dt. Capping blocks monomer
-// addition; it does not shrink the filament, as there is no segment-removal path.
-void filCappingDynamics(simptr sim,filamenttypeptr filtype) {
-	int f,workers;
-	unsigned char *decision;
-	double pcap,puncap;
+/* filEndTransitions */
+// Stochastic end state transitions for one filament type. An end in a state with total
+// exit rate R leaves it with per-step probability 1-exp(-R*dt), matching the unimolecular
+// convention in smolreact.c rather than a linearized R*dt, which is what makes the
+// measured rates independent of dt. The destination is chosen in proportion to the
+// individual rates. Random numbers are drawn only for ends that can leave their state,
+// and the destination is drawn only when there is more than one, so a type that only caps
+// and uncaps its plus end draws exactly the random numbers that capping alone did.
+void filEndTransitions(simptr sim,filamenttypeptr filtype) {
+	int f,end,fes2,ndest;
+	double rtot,r;
 	filamentptr fil;
+	enum FilEndState fes,dest;
 
-	if(filtype->caprate<=0 && filtype->uncaprate<=0) return;
-	pcap=filtype->caprate>0?1.0-exp(-filtype->caprate*sim->dt):0;
-	puncap=filtype->uncaprate>0?1.0-exp(-filtype->uncaprate*sim->dt):0;
-	/* Capping is very cheap: smaller populations measured faster serially. */
-	workers=filWorkWorkers(sim,filtype->nfil,16384);
-	decision=workers>1?filChemWork(sim,filtype->nfil):NULL;
-	if(decision) {
-		/* Inspect scattered filament records in parallel, then consume RNG in
-		   the original order using only this compact eligibility array.
-		   Codes: 1 cap draw, 2 uncap draw, 3 cap event, 4 uncap event. */
-#ifdef _OPENMP
-#pragma omp parallel for num_threads(workers) schedule(static)
-#endif
-		for(f=0;f<filtype->nfil;f++) {
-			filamentptr current=filtype->fillist[f];
-			decision[f]=current->nseg<1?0:(current->capped?(puncap>0?2:0):(pcap>0?1:0));
-		}
-		for(f=0;f<filtype->nfil;f++)
-			decision[f]=decision[f]==1?(coinrandD(pcap)?3:0):decision[f]==2?(coinrandD(puncap)?4:0):0;
-#ifdef _OPENMP
-#pragma omp parallel for num_threads(workers) schedule(static)
-#endif
-		for(f=0;f<filtype->nfil;f++) {
-			if(decision[f]==3) filtype->fillist[f]->capped=1;
-			else if(decision[f]==4) filtype->fillist[f]->capped=0;
-		}
-		return; }
+    if(filParallelEndTransitions(sim,filtype)) return;
 
 	for(f=0;f<filtype->nfil;f++) {
 		fil=filtype->fillist[f];
 		if(fil->nseg<1) continue;
-		if(fil->capped) {
-			if(puncap>0 && coinrandD(puncap)) fil->capped=0; }
-		else {
-			if(pcap>0 && coinrandD(pcap)) fil->capped=1; }}
+		for(end=0;end<2;end++) {
+			fes=fil->endstate[end];
+			rtot=0;
+			ndest=0;
+			dest=fes;
+			for(fes2=0;fes2<FESMAX;fes2++)
+				if(filtype->endtrans[end][fes][fes2]>0) {
+					rtot+=filtype->endtrans[end][fes][fes2];
+					ndest++;
+					dest=(enum FilEndState)fes2; }
+			if(rtot<=0 || !coinrandD(1.0-exp(-rtot*sim->dt))) continue;
+			if(ndest>1) {																	// pick a destination in proportion to its rate
+				r=unirandCOD(0,rtot);
+				for(fes2=0;fes2<FESMAX;fes2++)
+					if(filtype->endtrans[end][fes][fes2]>0) {
+						dest=(enum FilEndState)fes2;
+						r-=filtype->endtrans[end][fes][fes2];
+						if(r<0) break; }}
+			fil->endstate[end]=dest; }}
 
 	return; }
+
+
+/* filEndPushForce */
+// Returns the force that pushes against end end (0 = minus, 1 = plus) of filament fil,
+// which is the component of the softwall and repel surface forces on the end node, plus
+// the contact force from other filaments, that is parallel to the end segment. The
+// contact force is from the previous time step, because end dynamics come before the
+// contact force pass. It is positive if the force pushes the end node back
+// toward the filament, and negative if it pulls the node outward. Only these forces are
+// included because, in these overdamped dynamics, the total force on a node that is
+// pressed against a surface is close to zero, since the stretching force balances the
+// surface force, and because the total includes thermal noise. Draws no random numbers.
+double filEndPushForce(const filamentptr fil,int end) {
+	double fsum[3],seg[3],len,dot;
+	int node,node2,d,dim;
+
+	if(fil->nseg<1) return 0;
+	dim=fil->filtype->filss->sim->dim;
+	node=end?fil->nseg:0;
+	node2=end?fil->nseg-1:1;
+	for(d=0;d<3;d++) fsum[d]=fil->endcontact[end][d];
+	filSurfInteractForces(fil,node,node,0,fsum);
+	filLegacyConfineNodeForce(fil,node,fsum);
+	len=dot=0;
+	for(d=0;d<dim;d++) {
+		seg[d]=fil->nodes[node][d]-fil->nodes[node2][d];		// outward along the end segment
+		len+=seg[d]*seg[d];
+		dot+=fsum[d]*seg[d]; }
+	if(len<=0) return 0;
+	return -dot/sqrt(len); }
+
+
+/* filEndVelocity */
+// Returns the rate of length change of end end (0 = minus, 1 = plus) of filament fil,
+// which is the type's endrate value for the end's current state. For the barbed state,
+// this is a*min(exp(-k*F),2)-b, where a is the endrate value, k and b are the type's
+// barbedparameters values for the end, and F is from filEndPushForce. The exponential
+// factor is capped at 2, so stretching forces can at most double a. Draws no random numbers.
+double filEndVelocity(const filamentptr fil,int end) {
+	filamenttypeptr filtype;
+	double v,k,factor;
+
+	filtype=fil->filtype;
+	v=filtype->endrate[end][fil->endstate[end]];
+	if(fil->endstate[end]==FESbarbed) {
+		k=filtype->barbedparameters[end][0];
+		if(v>0 && k>0 && !filtype->elongoverlap) {
+			factor=exp(-k*filEndPushForce(fil,end));
+			if(factor>2) factor=2;
+			v*=factor; }
+		v-=filtype->barbedparameters[end][1]; }
+	return v; }
+
+
+/* filEndDynamics */
+// Length changes at both ends of every filament of one filament type, minus end first,
+// each by its current state's velocity times dt. Deterministic; the only length noise is
+// the random segment length. A filament that shrinks away is removed.
+void filEndDynamics(simptr sim,filamenttypeptr filtype) {
+	int f,end;
+	double v;
+	filamentptr fil;
+
+    if(filParallelEndDynamics(sim,filtype)) return;
+
+	for(f=0;f<filtype->nfil;f++) {
+		fil=filtype->fillist[f];
+		for(end=0;end<2;end++) {
+			v=filEndVelocity(fil,end);
+			if(v!=0 && filEndLengthChange(sim,fil,end,v*sim->dt)==FILREMOVED) {
+				filRemoveFilament(fil);
+				f--;																					// the next filament has moved into position f
+				break; }}}
+
+	return; }
+
+
+/******************************************************************************/
+/****************************** filaments in boxes ****************************/
+/******************************************************************************/
+
+
+#define FILBOXEPS 1e-9				// relative box margin for the geometric tests in filBoxesCheck
+
+/* filSetBoxLists */
+// Turns the filament lists of the virtual boxes on (on=1) or off (on=0). Code that
+// uses these lists, such as future filament-molecule or filament-filament
+// interactions, calls this to turn them on, so that they aren't maintained otherwise;
+// maintaining them costs about as much per time step as the number of segments. Turning
+// them on builds them right away, and turning them off empties them. Returns 0 for
+// success or 1 for out of memory.
+int filSetBoxLists(simptr sim,int on) {
+	boxssptr boxs;
+	int b;
+
+	if(!sim->filss) return 0;
+	sim->filss->boxlists=on?1:0;
+	if(on) return filBoxesUpdate(sim);
+	boxs=sim->boxs;
+	if(boxs && boxs->blist)
+		for(b=0;b<boxs->nbox;b++) {
+			boxs->blist[b]->nfilseg=0;
+			boxs->blist[b]->nfilend=0; }
+	if(boxs) boxs->nsegmentbox=0;
+	return 0; }
+
+
+/* Track occupied upstream payloads without allocating a second segment list. */
+static int filBoxActivate(simptr sim,boxptr box) {
+ boxssptr bs=sim->boxs;
+ if(box->nfilseg || box->nfilend) return 0;
+ if(bs->nsegmentbox==bs->maxsegmentbox) {
+  int cap=bs->maxsegmentbox?2*bs->maxsegmentbox:32;
+  boxptr *p=(boxptr*)realloc(bs->segmentbox,(size_t)cap*sizeof(*p));if(!p) return 1;
+  bs->segmentbox=p;bs->maxsegmentbox=cap;
+ }
+ bs->segmentbox[bs->nsegmentbox++]=box;return 0;
+}
+static int filBoxListSegment(simptr sim,boxptr box,segmentptr segment) {return filBoxActivate(sim,box) || boxaddfilseg(box,segment);}
+static int filBoxListEnd(simptr sim,boxptr box,filamentptr fil,char end) {return filBoxActivate(sim,box) || boxaddfilend(box,fil,end);}
+
+/* filBoxesUpdate */
+// Rebuilds the filament segment and end lists of every virtual box. Each segment is
+// listed in every box that its centerline passes through, found by walking from the
+// box of its minus end toward its plus end with line2nextbox when its two nodes are in
+// different boxes, and each filament end is listed in the box that contains its end
+// node. Each node's box is found once, and with a single box, everything is simply
+// listed in it. As for panels, edge boxes extend to
+// infinity, so filament parts outside the system are listed in the edge boxes.
+// Filament thickness is ignored. This only does anything if the lists are turned on
+// (filss->boxlists, see filSetBoxLists), or always when Smoldyn is compiled with
+// FILBOXCHECK defined. This is called at the end of filDynamics, so the lists describe
+// the filaments at the end of each time step, and at the end of filUpdate, so they are
+// refilled after the boxes are rebuilt. Returns 0 for success or 1 for out of memory.
+int filBoxesUpdate(simptr sim) {
+	filamentssptr filss;
+	filamenttypeptr filtype;
+	filamentptr fil;
+	segmentptr segment;
+	boxssptr boxs;
+	boxptr bptr,bminus,bplus,bnode0;
+	int b,ft,f,seg,nstep;
+
+	filss=sim->filss;
+	boxs=sim->boxs;
+	if(!filss || !boxs || !boxs->blist) return 0;
+#ifdef FILBOXCHECK
+	filss->boxlists=1;																	// always maintain the lists, to test them
+#endif
+	if(!filss->boxlists) return 0;
+
+	for(b=0;b<boxs->nsegmentbox;b++) {boxs->segmentbox[b]->nfilseg=0;boxs->segmentbox[b]->nfilend=0;}
+    boxs->nsegmentbox=0;
+
+	for(ft=0;ft<filss->ntype;ft++) {
+		filtype=filss->filtypes[ft];
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			if(fil->nseg<1) continue;
+			if(boxs->nbox==1) {																// everything is in the one box
+				bptr=boxs->blist[0];
+				for(seg=0;seg<fil->nseg;seg++)
+					if(filBoxListSegment(sim,bptr,fil->segments[seg])) return 1;
+				if(filBoxListEnd(sim,bptr,fil,'m') || filBoxListEnd(sim,bptr,fil,'p')) return 1;
+				continue; }
+			bnode0=bminus=pos2box(sim,fil->nodes[0]);
+			for(seg=0;seg<fil->nseg;seg++) {
+				segment=fil->segments[seg];
+				bplus=pos2box(sim,segment->xyzplus);					// each node's box is found once
+				if(bplus==bminus) {
+					if(filBoxListSegment(sim,bminus,segment)) return 1; }
+				else {
+					bptr=bminus;
+					nstep=0;
+					while(bptr && nstep<=boxs->nbox) {							// a segment can't pass through more boxes than exist
+						if(filBoxListSegment(sim,bptr,segment)) return 1;
+						bptr=line2nextbox(sim,segment->xyzminus,segment->xyzplus,bptr);
+						nstep++; }}
+				bminus=bplus; }
+			if(filBoxListEnd(sim,bnode0,fil,'m')) return 1;
+			if(filBoxListEnd(sim,bminus,fil,'p')) return 1; }}
+
+#ifdef FILBOXCHECK
+	if(filBoxesCheck(sim)) simLog(sim,10,"BUG: filament box lists are inconsistent at time %g\n",sim->time);
+#endif
+	return 0; }
+
+
+/* filBoxesCheck */
+// Debugging check of the filament lists in the virtual boxes, which is slow. For every
+// filament segment, it checks that the segment is listed in every box whose interior
+// (shrunk by FILBOXEPS of the box size) its centerline crosses, and is only listed in
+// boxes that its centerline touches (with the box grown by FILBOXEPS), at most once
+// per box. Edge boxes extend to infinity. It checks that every listed segment belongs
+// to a current filament, and that each end of each filament is listed exactly once, in
+// the box that contains its end node. Errors are written to the log. Returns the
+// number of errors, or 0 if the lists are consistent. This is called at the end of
+// filBoxesUpdate when Smoldyn is compiled with FILBOXCHECK defined.
+int filBoxesCheck(simptr sim) {
+	filamentssptr filss;
+	filamenttypeptr filtype;
+	filamentptr fil;
+	segmentptr segment;
+	boxssptr boxs;
+	boxptr bptr;
+	int b,ft,f,seg,i,j,d,dim,count,inner,outer,end,nerr,nsegtot,nendtot,nseglist,nendlist;
+	double lo[DIMMAX],hi[DIMMAX],lo2[DIMMAX],hi2[DIMMAX],eps;
+	char endchar;
+
+	filss=sim->filss;
+	boxs=sim->boxs;
+	if(!filss || !boxs || !boxs->blist || !filss->boxlists) return 0;
+	dim=sim->dim;
+	nerr=0;
+
+	nseglist=nendlist=0;
+	for(b=0;b<boxs->nbox;b++) {													// listed segments are current, with no duplicates
+		bptr=boxs->blist[b];
+		nseglist+=bptr->nfilseg;
+		nendlist+=bptr->nfilend;
+		for(i=0;i<bptr->nfilseg;i++) {
+			segment=bptr->filseg[i];
+			fil=segment->fil;
+			if(segment->index<0 || segment->index>=fil->nseg || fil->segments[segment->index]!=segment) {
+				nerr++;simLog(sim,10,"BUG: box %i lists a segment that isn't in its filament\n",b);}
+			for(j=0;j<i;j++)
+				if(bptr->filseg[j]==segment) {
+					nerr++;simLog(sim,10,"BUG: box %i lists segment %i of filament %s twice\n",b,segment->index,fil->filname);}}}
+
+	nsegtot=nendtot=0;
+	for(ft=0;ft<filss->ntype;ft++) {
+		filtype=filss->filtypes[ft];
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			if(fil->nseg<1) continue;
+			nsegtot+=fil->nseg;
+			nendtot+=2;
+			for(seg=0;seg<fil->nseg;seg++) {											// segments are listed where they should be
+				segment=fil->segments[seg];
+				for(b=0;b<boxs->nbox;b++) {
+					bptr=boxs->blist[b];
+					for(d=0;d<dim;d++) {
+						lo[d]=boxs->min[d]+bptr->indx[d]*boxs->size[d];
+						hi[d]=lo[d]+boxs->size[d];
+						eps=FILBOXEPS*boxs->size[d];
+						lo2[d]=(bptr->indx[d]==0)?-VERYLARGE:lo[d]-eps;
+						hi2[d]=(bptr->indx[d]==boxs->side[d]-1)?VERYLARGE:hi[d]+eps;
+						lo[d]=(bptr->indx[d]==0)?-VERYLARGE:lo[d]+eps;
+						hi[d]=(bptr->indx[d]==boxs->side[d]-1)?VERYLARGE:hi[d]-eps; }
+					inner=Geo_LineXaabb(segment->xyzminus,segment->xyzplus,lo,hi,dim,0);
+					outer=Geo_LineXaabb(segment->xyzminus,segment->xyzplus,lo2,hi2,dim,0);
+					count=0;
+					for(i=0;i<bptr->nfilseg;i++)
+						if(bptr->filseg[i]==segment) count++;
+					if(inner && !count) {
+						nerr++;simLog(sim,10,"BUG: segment %i of filament %s crosses box %i but isn't listed there\n",seg,fil->filname,b);}
+					if(count && !outer) {
+						nerr++;simLog(sim,10,"BUG: segment %i of filament %s is listed in box %i but doesn't touch it\n",seg,fil->filname,b);}}}
+
+			for(end=0;end<2;end++) {															// ends are listed once, in their box
+				endchar=filend2char(end);
+				bptr=pos2box(sim,fil->nodes[end?fil->nseg:0]);
+				count=0;
+				for(b=0;b<boxs->nbox;b++)
+					for(i=0;i<boxs->blist[b]->nfilend;i++)
+						if(boxs->blist[b]->filendfil[i]==fil && boxs->blist[b]->filendchar[i]==endchar) {
+							count++;
+							if(boxs->blist[b]!=bptr) {
+								nerr++;simLog(sim,10,"BUG: the %s end of filament %s is listed in box %i, which doesn't contain it\n",end?"plus":"minus",fil->filname,b);}}
+				if(count!=1) {
+					nerr++;simLog(sim,10,"BUG: the %s end of filament %s is listed %i times\n",end?"plus":"minus",fil->filname,count);}}}}
+
+	if(nendlist!=nendtot) {
+		nerr++;simLog(sim,10,"BUG: boxes list %i filament ends but filaments have %i\n",nendlist,nendtot);}
+	if(nseglist<nsegtot) {
+		nerr++;simLog(sim,10,"BUG: boxes list %i filament segments but filaments have %i\n",nseglist,nsegtot);}
+	return nerr; }
 
 
 /******************************************************************************/
@@ -3590,81 +5396,415 @@ void filCappingDynamics(simptr sim,filamenttypeptr filtype) {
 /******************************************************************************/
 
 
-/* filSegmentXSurface */
-int filSegmentXSurface(const simptr sim,const segmentptr segment,panelptr *pnlptr) {
-	int s,p,cross;
+/* filSurfBlocksSegment */
+// Returns 1 if a reflect interaction of the filament type stops segment segment, which
+// was just added at end endchar ('m' or 'p') of filament fil, and 0 if not. A reflect
+// interaction applies if it lists that end. It stops the segment if the segment
+// crosses a panel of the interaction's surface from the interaction's face, meaning
+// that the existing end node is on that side of the panel, or from either side if the
+// face is both. Without reflect interactions, surfaces do not stop growing ends. This
+// only tests the panels in the virtual boxes that the segment passes through, which
+// include every panel that it could cross, or all panels if boxes aren't set up yet.
+int filSurfBlocksSegment(const filamentptr fil,const segmentptr segment,char endchar) {
+	simptr sim;
+	filamenttypeptr filtype;
+	filsurfinteractptr fsi;
 	surfaceptr srf;
 	panelptr pnl;
-	double *pt1,*pt2,crosspt[3];
+	boxptr bptr;
 	enum PanelShape ps;
+	enum PanelFace face1,face2;
+	double *pt1,*pt2,crosspt[3];
+	int i,p,part,dim,useboxes,nstep;
 
-	if(!sim->srfss) return 0;
-	pt1=segment->xyzfront;
-	pt2=segment->xyzback;
+	filtype=fil->filtype;
+	sim=filtype->filss->sim;
+	dim=sim->dim;
+	part=(endchar=='p')?FPplus:FPminus;
+	pt1=(endchar=='p')?segment->xyzminus:segment->xyzplus;		// existing end node
+	pt2=(endchar=='p')?segment->xyzplus:segment->xyzminus;		// new end node
+	useboxes=(sim->boxs && sim->boxs->blist);
+	for(i=0;i<filtype->nsurfint;i++) {
+		fsi=filtype->surfint[i];
+		if(fsi->action!=FSAreflect || !filSurfInteractApplies(fsi,fil,part)) continue;
+		srf=fsi->othersurf;
+		if(useboxes) {
+			bptr=pos2box(sim,pt1);
+			nstep=0;
+			while(bptr && nstep<=sim->boxs->nbox) {
+				for(p=0;p<bptr->npanel;p++) {
+					pnl=bptr->panel[p];
+					if(pnl->srf==srf && lineXpanel(pt1,pt2,pnl,dim,crosspt,&face1,&face2,NULL,NULL,NULL,0) && (fsi->surfface==PFboth || face1==fsi->surfface)) return 1; }
+				bptr=line2nextbox(sim,pt1,pt2,bptr);
+				nstep++; }}
+		else {
+			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+				for(p=0;p<srf->npanel[ps];p++)
+					if(lineXpanel(pt1,pt2,srf->panels[ps][p],dim,crosspt,&face1,&face2,NULL,NULL,NULL,0) && (fsi->surfface==PFboth || face1==fsi->surfface)) return 1; }}
+	return 0; }
 
-	cross=0;
-	for(s=0;s<sim->srfss->nsrf && !cross;s++) {
-		srf=sim->srfss->srflist[s];
-		for(ps=(enum PanelShape)0;ps<PSMAX && !cross;ps=(enum PanelShape)(ps+1))
-			for(p=0;p<srf->npanel[ps] && !cross;p++) {
-				pnl=srf->panels[ps][p];
-				cross=lineXpanel(pt1,pt2,pnl,sim->dim,crosspt,NULL,NULL,NULL,NULL,NULL,0); }}
-	if(cross && pnlptr) *pnlptr=pnl;
-	return cross; }
+
+#define FILREFLECTMAXITER 20		// maximum reflections of one node off reflecting surfaces per time step
+
+/* filSurfReflectOn */
+// Returns 1 if filament type filtype has any reflect interactions with surfaces, and 0
+// if not.
+int filSurfReflectOn(const filamenttypeptr filtype) {
+	int i;
+
+	for(i=0;i<filtype->nsurfint;i++)
+		if(filtype->surfint[i]->action==FSAreflect) return 1;
+	return 0; }
+
+
+/* filSaveStartNodes */
+// Copies the node positions of filament fil to its startnodes work array, so that
+// filSurfReflectNodes can find the paths that the nodes moved along.
+void filSaveStartNodes(filamentptr fil) {
+	int node;
+	double **startnodes;
+
+	startnodes=fil->filwork->startnodes;
+	for(node=0;node<=fil->nseg;node++) {
+		startnodes[node][0]=fil->nodes[node][0];
+		startnodes[node][1]=fil->nodes[node][1];
+		startnodes[node][2]=fil->nodes[node][2]; }
+	return; }
+
+
+/* filSurfReflectCrossing */
+// Finds the first place where the line from pt1 to pt2 crosses a panel that reflects
+// filament part part (FPplus, FPminus, or FPside) of filament fil, meaning a panel of
+// a surface that the filament type has a reflect interaction with, for that part, where
+// the line crosses from the interaction's face, or from either face if the face is
+// both. Panel exclude is ignored, or none if it is NULL. Returns the crossed panel
+// and puts the crossing point in crsspt, or returns NULL if the line doesn't cross a
+// reflecting panel. This tests the panels in the virtual boxes that the line passes
+// through, or all panels of the reflecting surfaces if boxes aren't set up yet.
+panelptr filSurfReflectCrossing(const filamentptr fil,int part,double *pt1,double *pt2,const panelptr exclude,double *crsspt) {
+	simptr sim;
+	filamenttypeptr filtype;
+	filsurfinteractptr fsi;
+	surfaceptr srf;
+	panelptr pnl,pnlbest;
+	boxptr bptr;
+	enum PanelShape ps;
+	enum PanelFace face1,face2;
+	double testpt[3],cross,crossbest;
+	int i,p,d,dim,nstep;
+
+	filtype=fil->filtype;
+	sim=filtype->filss->sim;
+	dim=sim->dim;
+	pnlbest=NULL;
+	crossbest=2;
+	if(sim->boxs && sim->boxs->blist) {
+		bptr=pos2box(sim,pt1);
+		nstep=0;
+		while(bptr && nstep<=sim->boxs->nbox) {
+			for(p=0;p<bptr->npanel;p++) {
+				pnl=bptr->panel[p];
+				if(pnl==exclude) continue;
+				for(i=0;i<filtype->nsurfint;i++) {
+					fsi=filtype->surfint[i];
+					if(fsi->action!=FSAreflect || !filSurfInteractApplies(fsi,fil,part) || fsi->othersurf!=pnl->srf) continue;
+					if(lineXpanel(pt1,pt2,pnl,dim,testpt,&face1,&face2,&cross,NULL,NULL,0) && (fsi->surfface==PFboth || face1==fsi->surfface) && cross<crossbest) {
+						crossbest=cross;
+						pnlbest=pnl;
+						for(d=0;d<dim;d++) crsspt[d]=testpt[d]; }}}
+			bptr=line2nextbox(sim,pt1,pt2,bptr);
+			nstep++; }}
+	else {
+		for(i=0;i<filtype->nsurfint;i++) {
+			fsi=filtype->surfint[i];
+			if(fsi->action!=FSAreflect || !filSurfInteractApplies(fsi,fil,part)) continue;
+			srf=fsi->othersurf;
+			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+				for(p=0;p<srf->npanel[ps];p++) {
+					pnl=srf->panels[ps][p];
+					if(pnl==exclude) continue;
+					if(lineXpanel(pt1,pt2,pnl,dim,testpt,&face1,&face2,&cross,NULL,NULL,0) && (fsi->surfface==PFboth || face1==fsi->surfface) && cross<crossbest) {
+						crossbest=cross;
+						pnlbest=pnl;
+						for(d=0;d<dim;d++) crsspt[d]=testpt[d]; }}}}
+	return pnlbest; }
+
+
+/* filSurfReflectNodes */
+// Makes surfaces that the filament type has reflect interactions with act as walls for
+// the filament mechanics. This is called after the integrator has moved the nodes of
+// filament fil and the junctions have been re-pinned, which can also move daughters
+// across a surface, with the node positions from before the integrator in startnodes
+// (see filSaveStartNodes). If a node's path, from its start position to its new position,
+// crosses a reflecting panel for that node's part (see filSurfReflectCrossing), then the
+// node is reflected back across the panel, so it ends up the same distance from the
+// panel as it had gone past it. Flat panels reflect across the panel plane, and
+// curved panels (spheres, hemispheres, and cylinders) reflect through the closest
+// point of the panel, because a reflection across the tangent plane at the crossing
+// point can leave the node outside a curved surface. The reflected path is tested again, ignoring the panel that it
+// was just reflected from, to handle corners where it crosses another panel. If this
+// doesn't settle after FILREFLECTMAXITER reflections, the node is put back at its start
+// position. The displaced nodes create forces in the filament that act in the next
+// time step. Returns the number of nodes that were moved, so that the caller can
+// update the segment lengths and angles. Only node positions are tested, so a segment
+// can still cut across the edge or corner of a surface while both of its nodes are on
+// the allowed side.
+int filSurfReflectNodes(filamentptr fil) {
+	double **startnodes,*nodept,pt1[3],crsspt[3],pnlpt[3],norm[3],dot;
+	panelptr pnl,exclude;
+	int node,part,d,dim,iter,nmoved;
+
+	dim=fil->filtype->filss->sim->dim;
+	startnodes=fil->filwork->startnodes;
+	nmoved=0;
+	for(node=0;node<=fil->nseg;node++) {
+		if(fil->nodepnl[node]) continue;									// adsorbed nodes stay on their surfaces instead
+		part=(node==0)?FPminus:((node==fil->nseg)?FPplus:FPside);
+		nodept=fil->nodes[node];
+		for(d=0;d<dim;d++) pt1[d]=startnodes[node][d];
+		exclude=NULL;
+		for(iter=0;iter<FILREFLECTMAXITER;iter++) {
+			pnl=filSurfReflectCrossing(fil,part,pt1,nodept,exclude,crsspt);
+			if(!pnl) break;
+			if(pnl->ps==PSsph || pnl->ps==PShemi || pnl->ps==PScyl) {		// curved panel: reflect through the closest panel point
+				closestpanelpt(pnl,dim,nodept,pnlpt,0);
+				for(d=0;d<dim;d++) nodept[d]=2*pnlpt[d]-nodept[d]; }
+			else {																					// flat panel: reflect across the panel plane
+				getpanelnormal(crsspt,pnl,dim,norm);
+				dot=0;
+				for(d=0;d<dim;d++) dot+=(nodept[d]-crsspt[d])*norm[d];
+				for(d=0;d<dim;d++) nodept[d]-=2*dot*norm[d]; }
+			for(d=0;d<dim;d++) pt1[d]=crsspt[d];
+			exclude=pnl; }
+		if(iter==FILREFLECTMAXITER)
+			for(d=0;d<dim;d++) nodept[d]=startnodes[node][d];
+		if(iter>0) nmoved++; }
+	return nmoved; }
+
+
+/* filSurfAdsorbedNodes */
+// Keeps the adsorbed nodes of filament fil on their surfaces after they have moved,
+// with their positions from before the move in the filament's startnodes work array
+// (see filSaveStartNodes). Each adsorbed node is moved back onto its surface, which
+// removes the part of its motion that is normal to the surface, and it walks across
+// panel edges onto neighboring panels, as for surface-bound molecules (see
+// movept2closepanel), which updates its panel. The new positions are copied to
+// startnodes, so that calling this again after other motion, such as re-pinning
+// junctions, starts from the projected positions. A node that walks onto a panel of
+// a different surface adds the filament to that surface's list of filaments with
+// adsorbed nodes; if that runs out of memory, the node stays adsorbed but doesn't move
+// with that surface. Returns the number of adsorbed nodes, so that the caller can
+// update the segment lengths and angles if it is positive.
+int filSurfAdsorbedNodes(filamentptr fil) {
+	simptr sim;
+	surfaceptr srf;
+	double **startnodes,*nodept,via[3];
+	int node,d,dim,n;
+
+	sim=fil->filtype->filss->sim;
+	dim=sim->dim;
+	startnodes=fil->filwork->startnodes;
+	n=0;
+	for(node=0;node<=fil->nseg;node++) {
+		if(!fil->nodepnl[node]) continue;
+		nodept=fil->nodes[node];
+		srf=fil->nodepnl[node]->srf;
+		movept2closepanel(sim,nodept,startnodes[node],fil->nodepnl[node],fil->nodeface[node],via,&fil->nodepnl[node]);
+		if(fil->nodepnl[node]->srf!=srf) surfaddfilament(fil->nodepnl[node]->srf,fil);
+		for(d=0;d<dim;d++) startnodes[node][d]=nodept[d];
+		n++; }
+	return n; }
+
+
+/* filSurfAdsorbOn */
+// Returns 1 if filament type filtype has any adsorb or desorb interactions with
+// surfaces that have positive rates, and 0 if not.
+int filSurfAdsorbOn(const filamenttypeptr filtype) {
+	int i;
+
+	for(i=0;i<filtype->nsurfint;i++)
+		if((filtype->surfint[i]->action==FSAadsorb || filtype->surfint[i]->action==FSAdesorb) && filtype->surfint[i]->rate>0) return 1;
+	return 0; }
+
+
+/* filSurfAdsorbDesorb */
+// Adsorption and desorption of the nodes of filaments of type filtype, from the adsorb
+// and desorb interactions of the type with surfaces, for one time step. Each node of
+// the listed parts that is adsorbed to an interaction's surface, on the interaction's
+// face (or either face if the face is both), desorbs with probability 1-exp(-rate*dt),
+// and is then placed at distance offset from the surface on the side that it was on.
+// Each free node of the listed parts that is within the capture distance of an
+// interaction's surface, on the interaction's face (or either face for both),
+// adsorbs with probability 1-exp(-rate*dt), using filNodeAdsorb, with the
+// interaction's lateral mobility factor. A node that desorbs in this time step doesn't
+// also adsorb in it, and the attached end of a filament that is rigidly pinned to its
+// mother doesn't adsorb. Random numbers are only drawn for nodes that can adsorb or
+// desorb. Returns the number of nodes that changed state.
+int filSurfAdsorbDesorb(simptr sim,filamenttypeptr filtype) {
+	filamentptr fil;
+	filsurfinteractptr fsi;
+	panelptr pnl;
+	enum PanelFace side;
+	double pnlpt[3],norm[3],*nodept,dist;
+	int f,node,part,i,d,dim,e,pinned,changed,nchanged;
+
+	dim=sim->dim;
+	nchanged=0;
+	for(f=0;f<filtype->nfil;f++) {
+		fil=filtype->fillist[f];
+		changed=0;
+		for(node=0;node<=fil->nseg && fil->nseg>0;node++) {
+			part=(node==0)?FPminus:((node==fil->nseg)?FPplus:FPside);
+			nodept=fil->nodes[node];
+			pnl=fil->nodepnl[node];
+			if(pnl) {																			// adsorbed node: desorption
+				for(i=0;i<filtype->nsurfint;i++) {
+					fsi=filtype->surfint[i];
+					if(fsi->action!=FSAdesorb || fsi->rate<=0 || !filSurfInteractApplies(fsi,fil,part) || fsi->othersurf!=pnl->srf) continue;
+					if(fsi->surfface!=PFboth && fsi->surfface!=fil->nodeface[node]) continue;
+					if(!coinrandD(1.0-exp(-fsi->rate*sim->dt))) continue;
+					getpanelnormal(nodept,pnl,dim,norm);			// front-facing normal
+					for(d=0;d<dim;d++) nodept[d]+=(fil->nodeface[node]==PFback?-1:1)*fsi->offset*norm[d];
+					filNodeDesorb(fil,node);
+					changed=1;
+					nchanged++;
+					break; }
+				continue; }
+
+			pinned=0;																			// free node: adsorption
+			for(e=0;e<2;e++)
+				if(fil->endjunct[e] && fil->endjunct[e]->rigid && node==(e?fil->nseg:0)) pinned=1;
+			if(pinned) continue;
+			for(i=0;i<filtype->nsurfint;i++) {
+				fsi=filtype->surfint[i];
+				if(fsi->action!=FSAadsorb || fsi->rate<=0 || !filSurfInteractApplies(fsi,fil,part)) continue;
+				dist=closestsurfacept(fsi->othersurf,dim,nodept,pnlpt,&pnl,NULL);
+				if(dist<0 || dist>fsi->capdist) continue;
+				side=panelside(nodept,pnl,dim,NULL,1,0);
+				if(side==PFnone) side=(fsi->surfface==PFback)?PFback:PFfront;		// exactly on the panel
+				if(fsi->surfface!=PFboth && side!=fsi->surfface) continue;
+				if(!coinrandD(1.0-exp(-fsi->rate*sim->dt))) continue;
+				if(filNodeAdsorb(fil,node,fsi->othersurf,side,fsi->srfmob)==0) nchanged++;
+				break; }}
+		if(changed) filNodes2Angles(fil,-1,-1); }
+	return nchanged; }
+
+
+/* filSurfMove */
+// Moves filament nodes with surface srf, which has just been translated by translate,
+// with its prior panel positions in the panels' oldpoint elements (see surfmovebyforces).
+// Nodes that are adsorbed to srf move by translate, using the surface's list of
+// filaments with adsorbed nodes; filaments in the list that no longer have nodes
+// adsorbed to srf are removed from it. Free nodes of filament types that have
+// dynamics and a reflect interaction with srf are pushed along with it if it collides
+// with them, as surfsweepmols does for molecules: a node collides with srf if the line
+// from its position to its position minus translate, which is its motion in the
+// surface's frame of reference, crosses a panel of srf at its old position, from the
+// face of a reflect interaction for that node's part, and the node is then moved by
+// translate. Swept nodes aren't tested against other surfaces. Segment angles are
+// updated for each filament that changed. Call filSurfMoveDone after all surfaces have
+// moved if this returns a positive value. Returns the number of filaments that changed.
+int filSurfMove(simptr sim,surfaceptr srf,const double *translate) {
+	filamentssptr filss;
+	filamenttypeptr filtype;
+	filamentptr fil;
+	filsurfinteractptr fsi;
+	panelptr pnl;
+	enum PanelShape ps;
+	enum PanelFace face1,face2;
+	double newpt[3],crsspt[3],cross,*nodept;
+	int f,ft,i,node,d,dim,p,part,n,changed,nchanged,reflect,hit;
+
+	filss=sim->filss;
+	if(!filss) return 0;
+	dim=sim->dim;
+	nchanged=0;
+
+	for(f=srf->nfil-1;f>=0;f--) {										// adsorbed nodes move with the surface
+		fil=srf->fillist[f];
+		n=0;
+		for(node=0;node<=fil->nseg;node++)
+			if(fil->nodepnl[node] && fil->nodepnl[node]->srf==srf) {
+				for(d=0;d<dim;d++) fil->nodes[node][d]+=translate[d];
+				n++; }
+		if(n) {
+			filNodes2Angles(fil,-1,-1);
+			nchanged++; }
+		else
+			surfremovefilament(srf,fil); }
+
+	for(ft=0;ft<filss->ntype;ft++) {								// free nodes are pushed by reflecting surfaces
+		filtype=filss->filtypes[ft];
+		if(filtype->dynamics==FDnone) continue;
+		for(i=0,reflect=0;i<filtype->nsurfint;i++)
+			if(filtype->surfint[i]->action==FSAreflect && filtype->surfint[i]->othersurf==srf) reflect=1;
+		if(!reflect) continue;
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			changed=0;
+			for(node=0;node<=fil->nseg && fil->nseg>0;node++) {
+				if(fil->nodepnl[node]) continue;							// adsorbed nodes stay on their surfaces
+				part=(node==0)?FPminus:((node==fil->nseg)?FPplus:FPside);
+				nodept=fil->nodes[node];
+				for(d=0;d<dim;d++) newpt[d]=nodept[d]-translate[d];	// in frame of reference of moving surface
+				hit=0;
+				for(ps=(enum PanelShape)0;ps<PSMAX && !hit;ps=(enum PanelShape)(ps+1))
+					for(p=0;p<srf->npanel[ps] && !hit;p++) {
+						pnl=srf->panels[ps][p];
+						if(!lineXpanel(nodept,newpt,pnl,dim,crsspt,&face1,&face2,&cross,NULL,NULL,1)) continue;
+						for(i=0;i<filtype->nsurfint && !hit;i++) {
+							fsi=filtype->surfint[i];
+							if(fsi->action==FSAreflect && fsi->othersurf==srf && filSurfInteractApplies(fsi,fil,part) && (fsi->surfface==PFboth || face1==fsi->surfface)) hit=1; }}
+				if(hit) {
+					for(d=0;d<dim;d++) nodept[d]+=translate[d];
+					changed=1; }}
+			if(changed) {
+				filNodes2Angles(fil,-1,-1);
+				nchanged++; }}}
+
+	return nchanged; }
+
+
+/* filSurfMoveDone */
+// Finishes moving filaments with surfaces, after filSurfMove has moved the nodes of
+// some filaments for each moving surface. Rigid junctions are re-pinned, since nodes
+// that daughters attach to may have moved, and the filament box lists are updated.
+// Returns 0 for success or 1 for out of memory.
+int filSurfMoveDone(simptr sim) {
+	if(!sim->filss) return 0;
+	filPinJunctions(sim->filss);
+	if(filBoxesUpdate(sim)) {
+		simLog(sim,10,"Out of memory assigning filaments to boxes\n");
+		return 1; }
+	return 0; }
+
+
+/* filSurfBlocksBranch */
+// Returns 1 if a reflect interaction of the filament type stops the new branch
+// daughter, which attaches to its mother by its end end ('m' or 'p'), and 0 if not.
+// This walks along the daughter from the attached end node, which is on the mother,
+// and tests each segment for crossing a reflecting panel for the part of the node that
+// the segment leads to (see filSurfReflectCrossing), so a side node is tested with the
+// interaction's side part and the free end node with its end part.
+int filSurfBlocksBranch(const filamentptr daughter,char end) {
+	double crsspt[3];
+	int node,next,step,part;
+
+	node=(end=='p')?daughter->nseg:0;
+	step=(end=='p')?-1:1;
+	for(next=node+step;next>=0 && next<=daughter->nseg;next+=step) {
+		part=(next==0)?FPminus:((next==daughter->nseg)?FPplus:FPside);
+		if(filSurfReflectCrossing(daughter,part,daughter->nodes[next-step],daughter->nodes[next],NULL,crsspt)) return 1; }
+	return 0; }
 
 
 /* filSegmentXFilament */
-segmentptr filPointInFilament(simptr sim,const double *point,double *distance,segmentptr *nearest) {
-	return filStericQuery(sim,point,point,0,NULL,distance,nearest); }
 
-segmentptr filLineXFilament(simptr sim,const double *a,const double *b,double radius,double *distance,segmentptr *nearest) {
-	return filStericQuery(sim,a,b,radius,NULL,distance,nearest); }
-
-int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr) {
-	int f,i,ft,cross;
-	double thk,*ptf,*ptb,dist;
-	filamentssptr filss;
-	filamenttypeptr filtype;
-	filamentptr fil,fil2;
-	segmentptr segmentm1,segmentp1,segment2;
-	if(filptr) *filptr=NULL;
-	if(filStericEnabled(sim)) {
-		segmentptr hit=filStericQuery(sim,segment->xyzfront,segment->xyzback,segment->fil->filtype->stericradius,segment,NULL,NULL);
-		if(hit && filptr) *filptr=hit->fil;
-		return hit!=NULL; }
-
-	fil=segment->fil;
-	ptf=segment->xyzfront;
-	ptb=segment->xyzback;
-	thk=segment->thk;
-	segmentm1=(segment->index==0) ? NULL:fil->segments[segment->index-1];
-	segmentp1=(segment->index==fil->nseg-1) ? NULL:fil->segments[segment->index+1];
-
-	cross=0;
-	filss=sim->filss;
-	for(ft=0;ft<filss->ntype && !cross;ft++) {
-		filtype=filss->filtypes[ft];
-		for(f=0;f<filtype->nfil && !cross;f++) {
-			fil2=filtype->fillist[f];
-			for(i=0;i<fil2->nseg && !cross;i++) {
-				segment2=fil2->segments[i];
-				if(!(segment2==segment || segment2==segmentm1 || segment2==segmentp1)) {
-					dist=Geo_NearestSeg2SegDist(ptf,ptb,segment2->xyzfront,segment2->xyzback);
-					if(dist<thk+segment2->thk) cross=1; }}}}
-	if(cross && filptr)
-		*filptr=fil2;
-	return cross; }
 
 
 /******************************************************************************/
 /**************************** Force computation *************************/
 /******************************************************************************/
-
-
-/* Add network-wide soft capsule forces once, after ordinary forces are cleared
-   and computed for every filament. Both contacting filaments receive a force. */
-int filAddFilamentForce(simptr sim) {
-	return filStericForces(sim); }
 
 
 /* filAddStretchForces */
@@ -3677,8 +5817,8 @@ void filAddStretchForces(filamentptr fil,int nodemin,int nodemax) {
 	klen=fil->filtype->klen;
 	stdlen=fil->filtype->stdlen;
 	dim=fil->filtype->filss->sim->dim;
-	if(klen<=0 && !fil->filtype->elongmodel) return; // constrained interiors; optional growing tip remains compliant
 
+	if(klen<=0 && !fil->filtype->elongmodel) return;															// a negative constant is a constraint (filProjectConstraints)
 	if(nodemin<0) nodemin=0;
 	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
 
@@ -3687,7 +5827,7 @@ void filAddStretchForces(filamentptr fil,int nodemin,int nodemax) {
 			xvect[0]=nodes[node+1][0]-nodes[node][0];
 			xvect[1]=nodes[node+1][1]-nodes[node][1];
 			len=sqrt(xvect[0]*xvect[0]+xvect[1]*xvect[1]);
-			sforce=fil->filtype->elongmodel?-filSegmentStiffness(fil,node)*(len-filSegmentRestLength(fil,node))/len:-klen*(len-stdlen)/len;
+			sforce=fil->filtype->elongmodel?-filSegmentStiffness(fil,node)*(len-filSegmentRestLength(fil,node))/len:-fil->segments[node]->thk*klen*(len-stdlen)/len;			// this is force/length; the force constant scales with segment thickness
 			fdx=sforce*xvect[0];
 			forces[node][0]-=fdx;
 			forces[node+1][0]+=fdx;
@@ -3700,7 +5840,7 @@ void filAddStretchForces(filamentptr fil,int nodemin,int nodemax) {
 			xvect[1]=nodes[node+1][1]-nodes[node][1];
 			xvect[2]=nodes[node+1][2]-nodes[node][2];
 			len=sqrt(xvect[0]*xvect[0]+xvect[1]*xvect[1]+xvect[2]*xvect[2]);
-			sforce=fil->filtype->elongmodel?-filSegmentStiffness(fil,node)*(len-filSegmentRestLength(fil,node))/len:-klen*(len-stdlen)/len;
+			sforce=fil->filtype->elongmodel?-filSegmentStiffness(fil,node)*(len-filSegmentRestLength(fil,node))/len:-fil->segments[node]->thk*klen*(len-stdlen)/len;			// this is force/length; the force constant scales with segment thickness
 			fdx=sforce*xvect[0];
 			forces[node][0]-=fdx;
 			forces[node+1][0]+=fdx;
@@ -3724,14 +5864,14 @@ void filAddStretchForceMat(filamentptr fil) {
 	klen=fil->filtype->klen;
 	stdlen=fil->filtype->stdlen;
 	dim=fil->filtype->filss->sim->dim;
-	if(klen<=0 && !fil->filtype->elongmodel) return;
+	if(klen<=0) return;															// a negative constant is a constraint (filProjectConstraints)
 
 	if(dim==2) {
 		for(node=0;node<fil->nseg;node++) {
 			xvect[0]=nodes[node+1][0]-nodes[node][0];
 			xvect[1]=nodes[node+1][1]-nodes[node][1];
 			len=sqrt(xvect[0]*xvect[0]+xvect[1]*xvect[1]);
-			sforce=fil->filtype->elongmodel?-filSegmentStiffness(fil,node)*(len-filSegmentRestLength(fil,node))/len:-klen*(len-stdlen)/len;
+			sforce=-fil->segments[node]->thk*klen*(len-stdlen)/len;			// this is force/length; the force constant scales with segment thickness
 			sparseAddToM(forcemat,2*node+0,2*node+0,sforce);
 			sparseAddToM(forcemat,2*node+1,2*node+1,sforce);
 			sparseAddToM(forcemat,2*node+0,2*(node+1)+0,-sforce);
@@ -3746,7 +5886,7 @@ void filAddStretchForceMat(filamentptr fil) {
 			xvect[1]=nodes[node+1][1]-nodes[node][1];
 			xvect[2]=nodes[node+1][2]-nodes[node][2];
 			len=sqrt(xvect[0]*xvect[0]+xvect[1]*xvect[1]+xvect[2]*xvect[2]);
-			sforce=fil->filtype->elongmodel?-filSegmentStiffness(fil,node)*(len-filSegmentRestLength(fil,node))/len:-klen*(len-stdlen)/len;
+			sforce=-fil->segments[node]->thk*klen*(len-stdlen)/len;			// this is force/length; the force constant scales with segment thickness
 			sparseAddToM(forcemat,4*node+0,4*node+0,sforce);
 			sparseAddToM(forcemat,4*node+1,4*node+1,sforce);
 			sparseAddToM(forcemat,4*node+2,4*node+2,sforce);
@@ -3762,7 +5902,7 @@ void filAddStretchForceMat(filamentptr fil) {
 	return; }
 
 
-/* filAddThermalForces */
+/* filDrawThermalForces */
 // Thermal force amplitude from the fluctuation-dissipation theorem for the overdamped
 // update x += dt*mobility*nodemobility*F used by filStepDynamics: each Cartesian
 // component of each node's thermal force is Gaussian with rms
@@ -3771,15 +5911,29 @@ void filAddStretchForceMat(filamentptr fil) {
 // once per time step and reused across sub-step force evaluations (Runge-Kutta stages
 // and Jacobian calls). Random numbers are always drawn and the amplitude multiplies
 // the draw, so the draw sequence is independent of kT and mobility values; immobile
-// nodes (nodemobility 0) correctly receive no thermal force.
-/* Generate thermal noise in the original serial filament/node order before
-   a worker force pass. The existing Gaussian generator stays on one thread. */
-void filPrepareThermalForces(filamentptr fil) {
+// nodes (nodemobility 0) correctly receive no thermal force. In 3D, each segment also
+// receives a thermal torque about its own axis, with rms sqrt(2*kT/(mobility*m*dt)),
+// where m is the segment's roll mobility factor relative to mobility (filSegRollMobility),
+// so this is sqrt(2*kT/(rotmobility*m'*dt)) for node factor average m', and twist samples
+// the same ensemble. These are drawn after
+// the node forces.
+void filDrawThermalForces(filamentptr fil) {
 	double kT,dt,mobility,famp,nodemob,frms;
-	filamenttypeptr filtype=fil->filtype;
-	filamentworkptr filwork=fil->filwork;
-	simptr sim=filtype->filss->sim;
-	int dim=sim->dim,node;
+	filamenttypeptr filtype;
+	filamentworkptr filwork;
+	int dim,node,seg;
+	simptr sim;
+
+	filtype=fil->filtype;
+	filwork=fil->filwork;
+	sim=filtype->filss->sim;
+	dim=sim->dim;
+
+    if(!filtype->brownian) {
+        for(node=0;node<=fil->nseg;node++) for(int d=0;d<3;d++) filwork->thermforce[node][d]=0;
+        for(seg=0;seg<fil->nseg;seg++) filwork->thermtorque[seg]=0;
+        filwork->thermtime=sim->time;return;
+    }
 	if(sim->time>filwork->thermtime) {				// compute random forces on each node
 		kT=filtype->brownian?filtype->kT:0;
 		dt=sim->dt;
@@ -3787,30 +5941,42 @@ void filPrepareThermalForces(filamentptr fil) {
 		famp=(dt>0 && mobility>0)?2*kT/(mobility*dt):0;			// loop-invariant part; per-node frms = sqrt(famp/nodemobility)
 		if(dim==2)
 			for(node=0;node<=fil->nseg;node++) {
-				nodemob=fil->nodemobility[node];
+				nodemob=filNodeMobility(fil,node);
 				frms=(famp>0 && nodemob>0)?sqrt(famp/nodemob):0;
 				filwork->thermforce[node][0]=frms*gaussrandD();
 				filwork->thermforce[node][1]=frms*gaussrandD(); }
 		else
 			for(node=0;node<=fil->nseg;node++) {
-				nodemob=fil->nodemobility[node];
+				nodemob=filNodeMobility(fil,node);
 				frms=(famp>0 && nodemob>0)?sqrt(famp/nodemob):0;
 				filwork->thermforce[node][0]=frms*gaussrandD();
 				filwork->thermforce[node][1]=frms*gaussrandD();
 				filwork->thermforce[node][2]=frms*gaussrandD(); }
+		if(dim==3)
+			for(seg=0;seg<fil->nseg;seg++) {
+				nodemob=filSegRollMobility(fil,seg);		// segment roll mobility factor, relative to mobility, so rms torque is sqrt(2*kT/(rotmobility*m*dt))
+				frms=(famp>0 && nodemob>0)?sqrt(famp/nodemob):0;
+				filwork->thermtorque[seg]=frms*gaussrandD(); }
 		filwork->thermtime=sim->time; }
-
 	return; }
 
+
+/* filAddThermalForces */
+// Adds the thermal forces, and in 3D the thermal torques, for this time step (see
+// filDrawThermalForces) to the filament's forces and torques, for nodes nodemin to
+// nodemax and the segments between them.
 void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces;
-	filamentworkptr filwork=fil->filwork;
-	int dim=fil->filtype->filss->sim->dim,node;
+	double **forces,*torques;
+	filamentworkptr filwork;
+	int dim,node,seg;
+
+	filwork=fil->filwork;
+	dim=fil->filtype->filss->sim->dim;
+
 	if(nodemin<0) nodemin=0;
 	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
-	filPrepareThermalForces(fil);
 
-//??	torques=fil->torques;
+	filDrawThermalForces(fil);
 	forces=filwork->forces;										// report forces
 	if(dim==2)
 		for(node=nodemin;node<=nodemax;node++) {
@@ -3821,7 +5987,50 @@ void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
 			forces[node][0]+=filwork->thermforce[node][0];
 			forces[node][1]+=filwork->thermforce[node][1];
 			forces[node][2]+=filwork->thermforce[node][2]; }
+	if(dim==3) {
+		torques=filwork->torques;
+		for(seg=nodemin;seg<nodemax;seg++)
+			torques[seg]+=filwork->thermtorque[seg]; }
 
+	return; }
+
+
+/* filAddMatrixForceStep */
+// Adds the displacements for one time step from the forces that the matrix integrators'
+// force matrix doesn't include, which are the thermal, junction, and confinement forces,
+// to flattened state flatvect (see filFlattenNodes): dtmu times the node mobility factor
+// times the force for each node coordinate, and in 3D, dtmu times the segment roll
+// mobility factor times the torque for each absolute segment roll. These are the same
+// displacements that filStepDynamics makes for these forces. This overwrites the
+// filament's forces and torques.
+void filAddMatrixForceStep(filamentptr fil,double dtmu,double *flatvect) {
+	filamentworkptr filwork;
+	double nodemob,**forces,*torques;
+	int dim,node,d;
+
+	filwork=fil->filwork;
+	forces=filwork->forces;
+	torques=filwork->torques;
+	dim=fil->filtype->filss->sim->dim;
+	for(node=0;node<=fil->nseg;node++)
+		forces[node][0]=forces[node][1]=forces[node][2]=0;
+	for(node=0;node<fil->nseg;node++)
+		torques[node]=0;
+	filAddThermalForces(fil,-1,-1);
+	filAddJunctionForces(fil,-1,-1);
+	filAddSurfForces(fil,-1,-1);
+	filAddContactForces(fil,-1,-1);
+	if(dim==2) {
+		for(node=0;node<=fil->nseg;node++)
+			for(d=0;d<2;d++)
+				flatvect[2*node+d]+=dtmu*filNodeMobility(fil,node)*forces[node][d]; }
+	else {
+		for(node=0;node<=fil->nseg;node++) {
+			for(d=0;d<3;d++)
+				flatvect[4*node+d]+=dtmu*filNodeMobility(fil,node)*forces[node][d];
+			if(node<fil->nseg) {
+				nodemob=filSegRollMobility(fil,node);
+				flatvect[4*node+3]+=dtmu*nodemob*torques[node]; }}}
 	return; }
 
 
@@ -3928,11 +6137,14 @@ void filAddBendForceMat(filamentptr fil) {
 	if(dim==2) {
 		for(node=0;node<=fil->nseg;node++) {
 			filBendTorque(fil,node+1,bendtorqueip1);									// tau_{i+1}
-			xvect[0]=nodes[node+1][0]-nodes[node][0];									// Delta x_i
-			xvect[1]=nodes[node+1][1]-nodes[node][1];
-			len2=xvect[0]*xvect[0]+xvect[1]*xvect[1];									// length of segment i
-			len2inv=1.0/len2;
-			bvecti[2]=len2inv*(bendtorqueip1[2]-bendtorquei[2]);			// b_i
+			if(node<fil->nseg) {
+				xvect[0]=nodes[node+1][0]-nodes[node][0];								// Delta x_i
+				xvect[1]=nodes[node+1][1]-nodes[node][1];
+				len2=xvect[0]*xvect[0]+xvect[1]*xvect[1];								// length of segment i
+				len2inv=1.0/len2;
+				bvecti[2]=len2inv*(bendtorqueip1[2]-bendtorquei[2]); }		// b_i
+			else
+				bvecti[2]=0;																						// there is no segment past the plus end node
 			if(node>0) {
 				sparseAddToM(forcemat,2*node+0,2*(node-1)+1,-bvectim1[2]);
 				sparseAddToM(forcemat,2*node+1,2*(node-1)+0,bvectim1[2]); }
@@ -3946,15 +6158,18 @@ void filAddBendForceMat(filamentptr fil) {
 	else {
 		for(node=0;node<=fil->nseg;node++) {
 			filBendTorque(fil,node+1,bendtorqueip1);									// tau_{i+1}
-			xvect[0]=nodes[node+1][0]-nodes[node][0];									// Delta x_i
-			xvect[1]=nodes[node+1][1]-nodes[node][1];
-			xvect[2]=nodes[node+1][2]-nodes[node][2];
-			len2=xvect[0]*xvect[0]+xvect[1]*xvect[1]+xvect[2]*xvect[2];			// length of segment i
-			len2inv=1.0/len2;
-			len=sqrt(len2);
-			bvecti[0]=len2inv*(bendtorqueip1[0]-bendtorquei[2]);
-			bvecti[1]=len2inv*(bendtorqueip1[1]-bendtorquei[1]);
-			bvecti[2]=len2inv*(bendtorqueip1[2]-bendtorquei[2]);			// b_i
+			if(node<fil->nseg) {
+				xvect[0]=nodes[node+1][0]-nodes[node][0];								// Delta x_i
+				xvect[1]=nodes[node+1][1]-nodes[node][1];
+				xvect[2]=nodes[node+1][2]-nodes[node][2];
+				len2=xvect[0]*xvect[0]+xvect[1]*xvect[1]+xvect[2]*xvect[2];		// length of segment i
+				len2inv=1.0/len2;
+				len=sqrt(len2);
+				bvecti[0]=len2inv*(bendtorqueip1[0]-bendtorquei[0]);
+				bvecti[1]=len2inv*(bendtorqueip1[1]-bendtorquei[1]);
+				bvecti[2]=len2inv*(bendtorqueip1[2]-bendtorquei[2]); }		// b_i
+			else
+				bvecti[0]=bvecti[1]=bvecti[2]=len=0;										// there is no segment past the plus end node
 			bpvecti[0]=bvecti[0]*len;
 			bpvecti[1]=bvecti[1]*len;
 			bpvecti[2]=bvecti[2]*len;
@@ -3993,25 +6208,69 @@ void filAddBendForceMat(filamentptr fil) {
 	return; }
 
 
-/* filJunctionGeometry */
-// Shared geometry for the junction spring: unit tangents of the mother segment at
-// spot and of the daughter's first segment, their cosine and sine, and the two
-// segment lengths. Returns 1 when the junction force is well defined, 0 when it is
-// degenerate (zero-length segment, or theta at 0 or pi where the angle plane is
-// undefined -- >5 sigma from any realistic branch angle, so skipping is safe).
-int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daughter,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr) {
-	double lenm,lend,costh,sinth;
-	segmentptr mseg;
-	int d;
+/* filJunctionParams */
+// Spring parameters for junction junct, from the attached filament's type. For a
+// branch-angle junction: kappa and theta0 are branch_force_angle and branch_angle, and
+// kaz is branch_force_azimuth, with kappa and kaz times the average thickness of the
+// attached filament's end segment and the target's reference segment (see
+// filJunctionGeometry). For an end-to-end join (bend): kappa is the yaw bending
+// force constant, times the average thickness of the two joined segments, and theta0 is
+// the standard bending angle, so the join bends like any other node, and there is no
+// azimuthal spring. kj is the spring constant that holds a loop-closing junction's two
+// nodes together: junction_force, or force_length if that is unset, times the thickness
+// of the attached filament's end segment, as for the segments' own force constants.
+void filJunctionParams(const filjunctionptr junct,int dim,double *kappaptr,double *theta0ptr,double *kazptr,double *kjptr) {
+	filamenttypeptr jtype;
+	filamentptr fil;
+	double thk,tthk;
 
-	mseg=mother->segments[spot];
+	jtype=junct->fil->filtype;
+	fil=junct->fil;
+	thk=(fil->nseg>0)?fil->segments[junct->end=='m'?0:fil->nseg-1]->thk:1;	// thickness of the attached filament's end segment
+	if(junct->bend) {																// like any other node, the force constant scales with the average thickness of the two segments
+		tthk=(junct->target->nseg>0)?junct->target->segments[junct->node==0?0:junct->target->nseg-1]->thk:1;
+		*kappaptr=jtype->kypr[0]>0?0.5*(thk+tthk)*jtype->kypr[0]:0;
+		*theta0ptr=(dim==3)?sqrt(jtype->stdypr[0]*jtype->stdypr[0]+jtype->stdypr[1]*jtype->stdypr[1]):fabs(jtype->stdypr[0]);
+		*kazptr=0; }
+	else {																					// branch springs scale with the average thickness of the attached segment and the target's reference segment
+		tthk=(junct->target->nseg>0)?junct->target->segments[junct->node>0?junct->node-1:0]->thk:1;
+		*kappaptr=0.5*(thk+tthk)*jtype->branchforceangle;
+		*theta0ptr=jtype->branchangle;
+		*kazptr=0.5*(thk+tthk)*jtype->branchforceazimuth; }
+	*kjptr=thk*(jtype->junctforce>0?jtype->junctforce:(jtype->klen>0?jtype->klen:0));
+	return; }
+
+
+/* filJunctionGeometry */
+// Shared geometry for the junction angle springs. tm is the unit tangent of the target's
+// reference segment, from its node ma to its node mb: for a branch-angle junction, this is
+// the segment that ends at the junction node (segment 0 for node 0), pointing toward the
+// plus end; for an end-to-end join, it is the target's end segment pointing into the
+// junction, so that a straight join has theta = 0. td is the unit tangent of the attached
+// filament's junction segment, pointing away from the junction. Also returns their
+// cosine and sine and the two segment lengths. Returns 1 when the junction force is well
+// defined, 0 when it is degenerate (zero-length segment, or theta at 0 or pi where the
+// angle plane is undefined -- >5 sigma from any realistic branch angle, so skipping is
+// safe).
+int filJunctionGeometry(const filjunctionptr junct,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr,int *maptr,int *mbptr) {
+	double lenm,lend,costh,sinth;
+	filamentptr mother,daughter;
+	int d,node,ma,mb,jnear,jfar;
+
+	mother=junct->target;
+	daughter=junct->fil;
+	node=junct->node;
+	if(junct->bend && node==0) {ma=1;mb=0;}
+	else if(node==0) {ma=0;mb=1;}
+	else {ma=node-1;mb=node;}
 	lenm=0;
 	for(d=0;d<dim;d++) {
-		tm[d]=mseg->xyzback[d]-mseg->xyzfront[d];
+		tm[d]=mother->nodes[mb][d]-mother->nodes[ma][d];
 		lenm+=tm[d]*tm[d]; }
+	filBranchJunctionNodes(daughter,junct->end,&jnear,&jfar);
 	lend=0;
 	for(d=0;d<dim;d++) {
-		td[d]=daughter->nodes[1][d]-daughter->nodes[0][d];
+		td[d]=daughter->nodes[jfar][d]-daughter->nodes[jnear][d];
 		lend+=td[d]*td[d]; }
 	if(lenm<=0 || lend<=0) return 0;
 	lenm=sqrt(lenm);
@@ -4031,152 +6290,660 @@ int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daug
 	*lendptr=lend;
 	*costhptr=costh;
 	*sinthptr=sinth;
+	*maptr=ma;
+	*mbptr=mb;
 	return 1; }
 
 
-/* filAddJunctionForces */
-// Torsional spring at the branch junction: energy 0.5*k*(theta-theta0)^2, where theta
-// is the angle between the mother segment holding the branch and the daughter's first
-// segment, theta0 is the type's branch_angle, and k is branch_force_angle. Each
-// filament applies the exact gradient with respect to its OWN nodes during its own
-// force evaluation, reading the partner's current geometry as an external field: a
-// daughter applies a couple on its nodes 0 and 1, and a mother applies the reaction
-// couple on nodes spot and spot+1 for each of its branches. Both couples are pure
-// torques about the branch point and sum to zero total torque at any one
-// configuration (the sequential per-filament integrator sweep evaluates the two
-// halves at states one substep apart, so cancellation over a step is O(dt)), so the
-// pair potential enters both partners' dynamics and the junction angle equilibrates
-// at Boltzmann --
-// a one-way version was measured to overheat the angle by (1 + mobility ratio) when
-// the mother is free. The optional azimuthal spring (branch_force_azimuth) restores
-// the daughter's azimuth about the mother axis toward its recorded birth value with
-// energy 0.5*kaz*(phi-phi0)^2 away from parallel/antiparallel tangents, with its
-// azimuthal couple faded to zero near these poles where phi is undefined. It is
-// applied on daughter nodes 0 and 1 only
-// (one-way: a clean mother-side gradient would require differentiating the material
-// frame, and the bounded spring torque cannot pump energy the way the rigid azimuth
-// pin can). No cross-filament force writes occur, per-filament force clearing stays
-// safe, and integrators that differentiate forces numerically see everything
-// automatically. Draws no random numbers; returns immediately when off.
-void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces,kappa,kaz,theta0,tm[3],td[3],lenm,lend,costh,sinth,sinbound,fscale,fvect[3],dphi,cross[3];
-	filamentptr mother,daughter;
-	int br,brfound,spot,d,dim;
+/* filSubtreeSpringForce */
+// Adds to sum the net force that the springs of loop-closing junctions exert on fil and
+// on the filaments that are rigidly attached to it, directly or through others. A spring
+// with both ends in this subtree contributes equal and opposite forces, which cancel.
+// filAddJunctionForces transmits this sum through the rigid junction that pins fil.
+void filSubtreeSpringForce(filamentptr fil,int dim,double *sum) {
+	filjunctionptr junct;
+	filamentptr other;
+	double kappa,theta0,kaz,kj;
+	int e,j,d,jnear,jfar;
 
-	kappa=fil->filtype->branchforceangle;
-	kaz=fil->filtype->branchforceazimuth;
+	for(e=0;e<2;e++) {															// fil's own ends that close loops
+		junct=fil->endjunct[e];
+		if(!junct || junct->rigid || fil->nseg<1 || junct->node>junct->target->nseg) continue;
+		filJunctionParams(junct,dim,&kappa,&theta0,&kaz,&kj);
+		if(kj<=0) continue;
+		filBranchJunctionNodes(fil,junct->end,&jnear,&jfar);
+		for(d=0;d<dim;d++)
+			sum[d]+=kj*(junct->target->nodes[junct->node][d]-fil->nodes[jnear][d]); }
+
+	for(j=0;j<fil->njunct;j++) {										// junctions attached to fil's nodes
+		junct=fil->juncts[j];
+		other=junct->fil;
+		if(junct->rigid) {
+			if(other!=fil) filSubtreeSpringForce(other,dim,sum); }	// rigid junctions are acyclic, so this recursion ends
+		else if(other->nseg>=1 && junct->node<=fil->nseg) {
+			filJunctionParams(junct,dim,&kappa,&theta0,&kaz,&kj);
+			if(kj<=0) continue;
+			filBranchJunctionNodes(other,junct->end,&jnear,&jfar);
+			for(d=0;d<dim;d++)
+				sum[d]+=kj*(other->nodes[jnear][d]-fil->nodes[junct->node][d]); }}
+	return; }
+
+
+/* filAddJunctionForces */
+// Junction springs, for every junction that involves fil.
+// Angle spring: energy 0.5*k*(theta-theta0)^2, where theta is the angle between the
+// target's reference segment and the attached filament's junction segment (see
+// filJunctionGeometry and filJunctionParams). Each filament applies the exact gradient
+// with respect to its OWN nodes during its own force evaluation, reading the partner's
+// current geometry as an external field: an attached filament applies a couple on its
+// junction nodes, and a target applies the reaction couple on its reference segment
+// nodes for each junction attached to it. Both couples are pure torques about the
+// junction and sum to zero total torque at any one configuration (the sequential
+// per-filament integrator sweep evaluates the two halves at states one substep apart,
+// so cancellation over a step is O(dt)), so the pair potential enters both partners'
+// dynamics and the junction angle equilibrates at Boltzmann -- a one-way version was
+// measured to overheat the angle by (1 + mobility ratio) when the mother is free.
+// Azimuthal spring (branch_force_azimuth): restores the attached filament's azimuth
+// about the target's axis toward its recorded value with energy 0.5*kaz*(phi-phi0)^2,
+// applied as a couple on the attached filament's junction nodes only (one-way: a clean
+// mother-side gradient would require differentiating the material frame, and the
+// bounded spring torque cannot pump energy the way the rigid azimuth pin can).
+// Position spring: a loop-closing junction, which is not held by translation, is held
+// by energy 0.5*kj*d^2, where d is the distance between the attached end node and the
+// target node; each side applies kj times the separation to its own node. A rigid
+// junction transmits the net force of these springs on the attached subtree
+// (filSubtreeSpringForce) as a pair of joint forces: the target receives it at its
+// junction node, and the attached filament receives the opposite force at its pinned
+// node. Without this, pinning would discard the force, and a spring within one tree would
+// propel and rotate the tree; with it, the attached filament has no net spring force and
+// the spring torque on it acts about the junction.
+// No cross-filament force writes occur, per-filament force clearing stays safe, and
+// integrators that differentiate forces numerically see everything within a filament
+// automatically. Draws no random numbers.
+void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
+	double **forces,kappa,kaz,theta0,kj,tm[3],td[3],lenm,lend,costh,sinth,sinbound,fscale,fvect[3],dphi,cross[3],sum[3];
+	filamentptr other;
+	filjunctionptr junct;
+	int j,d,dim,e,jnear,jfar,ma,mb,node;
+
+	if(!fil->endjunct[0] && !fil->endjunct[1] && fil->njunct==0) return;
 	dim=fil->filtype->filss->sim->dim;
-	if(kappa<=0 && (kaz<=0 || dim!=3)) return;			// the azimuthal spring exists only in 3D
-	theta0=fil->filtype->branchangle;
 	forces=fil->filwork->forces;
 
 	if(nodemin<0) nodemin=0;
 	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
 
-	mother=fil->frontend;														// daughter side: couples on own nodes 0 and 1
-	if(mother && fil->nseg>=1 && nodemin<=1) {
-		brfound=-1;
-		for(br=0;br<mother->nbranch && brfound<0;br++)
-			if(mother->branches[br]==fil)
-				brfound=br;
-		spot=(brfound>=0)?mother->branchspots[brfound]:-1;
-		if(spot>=0 && spot<mother->nseg && filJunctionGeometry(mother,spot,fil,dim,tm,td,&lenm,&lend,&costh,&sinth)) {
+	for(e=0;e<2;e++) {															// attached side: forces on own junction nodes, for each attached end
+		junct=fil->endjunct[e];
+		if(!junct || fil->nseg<1) continue;
+		filBranchJunctionNodes(fil,junct->end,&jnear,&jfar);
+		if((jnear<nodemin || jnear>nodemax) && (jfar<nodemin || jfar>nodemax)) continue;	// junction outside the requested node window
+		node=junct->node;
+		if(node<FILJUNCTMINNODE || node>junct->target->nseg) continue;
+		filJunctionParams(junct,dim,&kappa,&theta0,&kaz,&kj);
+		if((kappa>0 || (kaz>0 && dim==3)) && filJunctionGeometry(junct,dim,tm,td,&lenm,&lend,&costh,&sinth,&ma,&mb)) {
 			if(kappa>0) {
 				fscale=kappa*(acos(costh)-theta0)/(lend*sinth);		// F1 = k*(theta-theta0)/lend * (tm-costh*td)/sinth; |tm-costh*td| = sinth, so |F1| = k*|theta-theta0|/lend, bounded
 				for(d=0;d<dim;d++) {
 					fvect[d]=fscale*(tm[d]-costh*td[d]);
-					if(nodemax>=1) forces[1][d]+=fvect[d];
-					if(nodemin<=0) forces[0][d]-=fvect[d]; }}		// couple: equal and opposite on the pinned node
-			if(kaz>0 && dim==3 && filBranchDazim(mother,brfound,&dphi)) {	// azimuthal spring toward the recorded birth azimuth
+					if(jfar>=nodemin && jfar<=nodemax) forces[jfar][d]+=fvect[d];
+					if(jnear>=nodemin && jnear<=nodemax) forces[jnear][d]-=fvect[d]; }}		// couple: equal and opposite on the pinned node
+			if(kaz>0 && dim==3 && filBranchDazim(junct,&dphi)) {	// azimuthal spring toward the recorded birth azimuth
 				cross[0]=tm[1]*td[2]-tm[2]*td[1];							// dphi/dr1 = (tm x td)/(lend*sinth^2); rotating about +tm raises phi -- this sign ties to the frame convention in filBranchAzimuth, see the contract comment there
 				cross[1]=tm[2]*td[0]-tm[0]*td[2];
 				cross[2]=tm[0]*td[1]-tm[1]*td[0];
-				sinbound=(sinth>FILJUNCTSINBOUND)?sinth:FILJUNCTSINBOUND;
-				// |cross|=sinth: fade the force to zero where azimuth is undefined.
-				// Bounding only one factor leaves a finite force jump across either pole.
-				// For sinth>=FILJUNCTSINBOUND this is the original azimuthal gradient.
-				fscale=-kaz*dphi/(lend*sinbound*sinbound);
+				sinbound=(sinth>FILJUNCTSINBOUND)?sinth:FILJUNCTSINBOUND;	// |cross| = sinth, so |F| = kaz*|dphi|/(lend*sinbound): the true azimuthal gradient diverges as 1/sinth near-parallel geometry, where azimuth stops being meaningful; bounding it keeps a wandering junction from blowing up the integrator
+				fscale=-kaz*dphi/(lend*(fil->filtype->dynamics==FDimplicitnetwork?sinbound*sinbound:sinth*sinbound));
 				for(d=0;d<3;d++) {
 					fvect[d]=fscale*cross[d];
-					if(nodemax>=1) forces[1][d]+=fvect[d];
-					if(nodemin<=0) forces[0][d]-=fvect[d]; }}}}
+					if(jfar>=nodemin && jfar<=nodemax) forces[jfar][d]+=fvect[d];
+					if(jnear>=nodemin && jnear<=nodemax) forces[jnear][d]-=fvect[d]; }}}
+		if(!junct->rigid && kj>0 && jnear>=nodemin && jnear<=nodemax)	// position spring for a loop-closing junction
+			for(d=0;d<dim;d++)
+				forces[jnear][d]+=kj*(junct->target->nodes[node][d]-fil->nodes[jnear][d]);
+		if(junct->rigid && fil->filtype->filss->nspring>0 && jnear>=nodemin && jnear<=nodemax) {	// reaction at the pinned node to the net spring force on this subtree
+			sum[0]=sum[1]=sum[2]=0;
+			filSubtreeSpringForce(fil,dim,sum);
+			for(d=0;d<dim;d++)
+				forces[jnear][d]-=sum[d]; }}
 
-	if(kappa>0)																			// mother side: reaction couple for the polar spring only (azimuth is one-way)
-		for(br=0;br<fil->nbranch;br++) {
-			daughter=fil->branches[br];
-			spot=fil->branchspots[br];
-			if(!daughter || daughter->nseg<1) continue;
-			if(daughter->frontend!=fil) continue;					// stale entry: the daughter belongs to another mother (copy_to, re-branch)
-			if(spot<0 || spot>=fil->nseg) continue;
-			if(spot+1<nodemin || spot>nodemax) continue;	// junction outside the requested node window
-			if(!filJunctionGeometry(fil,spot,daughter,dim,tm,td,&lenm,&lend,&costh,&sinth)) continue;
-			fscale=kappa*(acos(costh)-theta0)/(lenm*sinth);		// F_back = k*(theta-theta0)/lenm * (td-costh*tm)/sinth, bounded like the daughter side
+	for(j=0;j<fil->njunct;j++) {										// target side: reaction couple for the polar spring (azimuth is one-way), and the position spring
+		junct=fil->juncts[j];
+		other=junct->fil;
+		node=junct->node;
+		if(other->nseg<1) continue;
+		if(node<FILJUNCTMINNODE || node>fil->nseg) continue;
+		filJunctionParams(junct,dim,&kappa,&theta0,&kaz,&kj);
+		if(kappa>0 && filJunctionGeometry(junct,dim,tm,td,&lenm,&lend,&costh,&sinth,&ma,&mb) && !((ma<nodemin || ma>nodemax) && (mb<nodemin || mb>nodemax))) {
+			fscale=kappa*(acos(costh)-theta0)/(lenm*sinth);		// F_mother = k*(theta-theta0)/lenm * (td-costh*tm)/sinth, bounded like the attached side
 			for(d=0;d<dim;d++) {
 				fvect[d]=fscale*(td[d]-costh*tm[d]);
-				if(spot+1<=nodemax) forces[spot+1][d]+=fvect[d];
-				if(spot>=nodemin) forces[spot][d]-=fvect[d]; }}
+				if(mb>=nodemin && mb<=nodemax) forces[mb][d]+=fvect[d];
+				if(ma>=nodemin && ma<=nodemax) forces[ma][d]-=fvect[d]; }}
+		if(!junct->rigid && kj>0 && node>=nodemin && node<=nodemax) {
+			filBranchJunctionNodes(other,junct->end,&jnear,&jfar);
+			for(d=0;d<dim;d++)
+				forces[node][d]+=kj*(other->nodes[jnear][d]-fil->nodes[node][d]); }
+		if(junct->rigid && fil->filtype->filss->nspring>0 && node>=nodemin && node<=nodemax) {	// net spring force on the rigidly attached subtree acts here
+			sum[0]=sum[1]=sum[2]=0;
+			filSubtreeSpringForce(other,dim,sum);
+			for(d=0;d<dim;d++)
+				forces[node][d]+=sum[d]; }}
 
 	return; }
 
 
-/* filAddConfineForces */
-// Harmonic surface confinement, in the spirit of Cytosim's per-model-point
-// "confine" stiffness: each node on the penalized side of the confining surface
-// (the side opposite confine_face) feels a restoring force from every violated
-// panel. Rectangles use their supporting planes: k*max(radius-distance,0) along
-// the inward normal, including radius zero. Each box wall then pushes only along
-// its own normal, continuously at contact. Using a finite rectangle's nearest
-// edge instead would switch a tangential force on/off at a floor-wall corner.
-// Other shapes retain the nearest-panel-point force. The constant is per NODE,
-// like the other per-element force constants, so refining standard_length stiffens
-// the wall per unit contour length; the equilibrium penetration depth of a
-// fluctuating node is the half-Gaussian spread sqrt(kT/k). This is a soft steric
-// wall for filament mechanics only -- molecules do not see it, and richer
-// filament-surface interaction (hard collisions, Brownian-ratchet load feedback)
-// remains future work. Rectangular patches confine against their INFINITE plane,
-// even laterally beyond their edges; this is half-space confinement, not collision
-// with a finite obstacle. For tri and disk, panelside likewise uses the infinite
-// plane but the legacy nearest-point force can pull toward the patch edge.
-// Coplanar tessellations stack, since the constant is per violated panel, so a
-// node behind M coplanar panels feels up to M contributions. Draws no random
-// numbers; returns immediately when off.
-void filAddConfineForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces,k,pnlpt[3],*nodept,*fnode,radius,dist,sign=0,wallposition=0;
+/* filNodeThickness */
+// Returns the thickness of node node of filament fil, which is the average thickness of
+// the segments on either side of it, or the thickness of the one segment for an end
+// node, or 1 if the filament has no segments.
+double filNodeThickness(const filamentptr fil,int node) {
+	if(fil->nseg<1) return 1;
+	if(node<=0) return fil->segments[0]->thk;
+	if(node>=fil->nseg) return fil->segments[fil->nseg-1]->thk;
+	return 0.5*(fil->segments[node-1]->thk+fil->segments[node]->thk); }
+
+
+/* filNodeMobility */
+// Returns the effective mobility factor of node node of filament fil, which is its node
+// mobility factor, divided by its thickness (filNodeThickness) if the filament type's
+// thickdrag value is 1, so that thicker filaments have proportionally more drag, and
+// multiplied by its lateral mobility factor if it is adsorbed to a surface. The
+// mobility of node node is the filament type's mobility times this. Segment roll
+// mobility factors are from filSegRollMobility.
+double filNodeMobility(const filamentptr fil,int node) {
+	double mob;
+
+	mob=fil->nodemobility[node];
+	if(fil->nodepnl[node]) mob*=fil->nodesrfmob[node];				// adsorbed node: lateral mobility factor
+	if(fil->filtype->thickdrag) return mob/filNodeThickness(fil,node);
+	return mob; }
+
+
+/* filRotMobility */
+// Returns the rotational mobility of filament type filtype, for segment rotation about
+// its own axis. This is rotmobility if it was entered, or else it's computed from the
+// viscosity if that was entered (filViscousMobility), or else it's mobility divided by
+// the square of the filament radius. For a rod, the rotational drag per length is about
+// the translational drag per length times the radius squared, so this last case is
+// roughly correct, and it equals mobility for the default radius of 1.
+double filRotMobility(const filamenttypeptr filtype) {
+	double mob;
+
+	if(filtype->rotmobility>0) return filtype->rotmobility;
+	if(filtype->viscosity>0) {
+		mob=filViscousMobility(filtype->viscosity,filtype->stdlen,filtype->filradius,'r');
+		if(mob>0) return mob; }
+	return filtype->mobility/(filtype->filradius*filtype->filradius); }
+
+
+/* filSegRollMobility */
+// Returns the effective roll mobility factor of segment seg of filament fil, relative to
+// the filament type's (translational) mobility. This is the average of the effective
+// mobility factors of the segment's two nodes (filNodeMobility), times the ratio of the
+// rotational mobility (filRotMobility) to the mobility, so that a segment's roll rate is
+// dt*mobility times this times its torque. The ratio makes rotation independent of the
+// translational mobility, which has different units.
+double filSegRollMobility(const filamentptr fil,int seg) {
+	filamenttypeptr filtype;
+
+	filtype=fil->filtype;
+	if(filtype->mobility<=0) return 0;
+	return 0.5*(filNodeMobility(fil,seg)+filNodeMobility(fil,seg+1))*filRotMobility(filtype)/filtype->mobility; }
+
+
+/* filSurfForceOn */
+// Returns 1 if filament type filtype has any softwall or repel interactions with
+// surfaces that have positive force constants, and 0 if not.
+int filSurfForceOn(const filamenttypeptr filtype) {
+	int i;
+
+	for(i=0;i<filtype->nsurfint;i++)
+		if((filtype->surfint[i]->action==FSAsoftwall || filtype->surfint[i]->action==FSArepel) && filtype->surfint[i]->kforce>0) return 1;
+	return 0; }
+
+
+/* filAddSurfForces */
+// Forces from the softwall and repel interactions of the filament type with surfaces
+// (see surface_interaction and confine_surface), which are harmonic surface
+// confinement, in the spirit of Cytosim's per-model-point "confine" stiffness. Each
+// interaction applies to the filament parts that it lists, where the minus and plus
+// parts are nodes 0 and nseg and the side part is the interior nodes. For softwall,
+// each such node on the penalized side of the interaction's surface (the side
+// opposite the interaction's face, which is the side the filament is on) feels the
+// restoring force k*d toward the nearest point of the surface, from the gradient of
+// a penalty energy 0.5*k*d^2 in the penetration depth d. Only the closest panel of
+// the surface acts on each node, and if the node isn't on that panel's penalized
+// side, the surface exerts no force on it, even if the node is on the penalized side
+// of other panels' planes; this keeps coplanar tessellations from stacking and keeps
+// the far faces of convex obstacles from pulling on nodes. Ties go to the first
+// panel in the surface's panel lists. Repel is the same, except that the zero force
+// point is moved by the repel distance r away from the panel, toward the filament's
+// side, along the panel normal at the nearest panel point: a node whose signed
+// distance from the closest panel (positive on the filament's side, from panelside)
+// is less than r is pushed toward that point, which for a node over the panel is the
+// force k*(r-s) away from the panel, from the energy 0.5*k*(r-s)^2. With r=0, repel
+// is the same as softwall. In a concave corner, a node only feels the nearer wall. The
+// constant is per NODE, like the other per-element force constants, so refining
+// standard_length stiffens the wall per unit contour length, and it is the force
+// constant times the node's thickness, which is the average thickness of its adjacent
+// segments, as for the other filament force constants; the equilibrium penetration
+// depth of a fluctuating node is the half-Gaussian spread sqrt(kT/k). This is a soft
+// steric wall for filament mechanics only -- molecules do not see it. One geometric
+// caveat: the side test is panelside's, which for rect, tri, and disk panels
+// classifies against the panel's INFINITE plane, so a node laterally beyond the edge
+// of a partial patch, and behind its plane, is pulled toward the patch edge. Draws no
+// random numbers; returns immediately when off.
+void filAddSurfForces(filamentptr fil,int nodemin,int nodemax) {
+	filSurfInteractForces(fil,nodemin,nodemax,0,NULL);
+	return; }
+
+
+/* filSurfInteractForces */
+// Computes the forces of the softwall and repel interactions of the filament type with
+// surfaces, for nodes nodemin to nodemax of filament fil (negative values mean all
+// nodes), as described for filAddSurfForces. If reaction is 0, the forces are added
+// to the forces on the nodes, in fil->filwork->forces. If reaction is 1, the equal and
+// opposite forces are added to the force elements of the panels that exert them
+// instead, and the node forces aren't changed. If reaction is 0 and fsum isn't NULL, the
+// forces are added to the vector fsum instead, and neither the nodes nor the panels are
+// changed; this doesn't use the filament's work space.
+void filSurfInteractForces(filamentptr fil,int nodemin,int nodemax,int reaction,double *fsum) {
+	double **forces,k,kn,pnlpt[3],*nodept,*fnode,r,dist,norm[3];
+	filamenttypeptr filtype;
+	filsurfinteractptr fsi;
+	surfaceptr srf;
+	panelptr pnl;
+	enum PanelFace badface;
+	int i,node,d,dim,part,sign;
+
+	filtype=fil->filtype;
+	if(filtype->nsurfint==0 || fil->nseg<1) return;
+	if(nodemin<0) nodemin=0;
+	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
+	dim=filtype->filss->sim->dim;
+	forces=(reaction || fsum)?NULL:fil->filwork->forces;
+
+	for(i=0;i<filtype->nsurfint;i++) {
+		fsi=filtype->surfint[i];
+		k=fsi->kforce;
+		if((fsi->action!=FSAsoftwall && fsi->action!=FSArepel) || k<=0) continue;
+		srf=fsi->othersurf;
+		badface=(fsi->surfface==PFfront)?PFback:PFfront;
+		r=(fsi->action==FSArepel)?fsi->repeldist:0;
+		sign=(fsi->surfface==PFfront)?1:-1;
+		for(node=nodemin;node<=nodemax;node++) {
+			part=(node==0)?FPminus:((node==fil->nseg)?FPplus:FPside);
+			if(!filSurfInteractApplies(fsi,fil,part)) continue;
+			if(fil->nodepnl[node] && fil->nodepnl[node]->srf==srf) continue;	// adsorbed to this surface
+			nodept=fil->nodes[node];
+			if(closestsurfacept(srf,dim,nodept,pnlpt,&pnl,NULL)<0) continue;	// only the closest panel of the surface acts
+			if(fsi->action==FSAsoftwall) {
+				if(panelside(nodept,pnl,dim,NULL,0,0)!=badface) continue; }
+			else {																			// repel: the zero force point is r from the panel, on the filament's side
+				panelside(nodept,pnl,dim,&dist,0,0);
+				if(sign*dist>=r) continue;
+				getpanelnormal(pnlpt,pnl,dim,norm);			// front-facing normal
+				for(d=0;d<dim;d++) pnlpt[d]+=sign*r*norm[d]; }
+			kn=k*filNodeThickness(fil,node);
+			if(reaction)
+				for(d=0;d<dim;d++)
+					pnl->force[d]-=kn*(pnlpt[d]-nodept[d]);			// equal and opposite force on the panel
+			else {
+				fnode=fsum?fsum:forces[node];
+				for(d=0;d<dim;d++)
+					fnode[d]+=kn*(pnlpt[d]-nodept[d]); }}}
+	return; }
+
+
+/* filContactKforce */
+// Returns the force constant of the softwall contact interaction between filament types
+// type1 and type2, or 0 if they don't have one.
+double filContactKforce(const filamenttypeptr type1,const filamenttypeptr type2) {
+	int i;
+
+	for(i=0;i<type1->nfilint;i++)
+		if(type1->filint[i]->action==FFAsoftwall && type1->filint[i]->otherfiltype==type2) return type1->filint[i]->kforce;
+	for(i=0;i<type2->nfilint;i++)
+		if(type2->filint[i]->action==FFAsoftwall && type2->filint[i]->otherfiltype==type1) return type2->filint[i]->kforce;
+	return 0; }
+
+
+/* filContactTypeOn */
+// Returns 1 if filament type filtype has a contact interaction with a positive force
+// constant with any filament type, and 0 if not.
+int filContactTypeOn(const filamenttypeptr filtype) {
+	int ft;
+
+	for(ft=0;ft<filtype->filss->ntype;ft++)
+		if(filContactKforce(filtype,filtype->filss->filtypes[ft])>0) return 1;
+	return 0; }
+
+
+/* filContactOn */
+// Returns 1 if any filament types have a contact interaction with a positive force
+// constant, and 0 if not.
+int filContactOn(const filamentssptr filss) {
+	int ft,i;
+
+	for(ft=0;ft<filss->ntype;ft++)
+		for(i=0;i<filss->filtypes[ft]->nfilint;i++)
+			if(filss->filtypes[ft]->filint[i]->action==FFAsoftwall && filss->filtypes[ft]->filint[i]->kforce>0) return 1;
+	return 0; }
+
+
+/* filContourPosition */
+// Returns the contour distance from the minus end of filament fil to the point at
+// fraction frac along segment seg. Use seg equal to nseg and frac 0 for the plus end.
+double filContourPosition(const filamentptr fil,int seg,double frac) {
+	double pos;
+	int s;
+
+	pos=0;
+	for(s=0;s<seg;s++) pos+=fil->segments[s]->len;
+	if(seg<fil->nseg) pos+=frac*fil->segments[seg]->len;
+	return pos; }
+
+
+/* filContactGap */
+// Returns the shortest contour distance between a point on filament fil1, at fraction
+// frac1 along segment seg1, and a point on filament fil2, at fraction frac2 along
+// segment seg2, or DBL_MAX if the filaments aren't connected. Besides the distance along
+// a single filament, this follows paths through one junction, between an attached end
+// and its target, and through two junctions, between two ends with the same target.
+double filContactGap(const filamentptr fil1,int seg1,double frac1,const filamentptr fil2,int seg2,double frac2) {
+	filjunctionptr j1,j2;
+	double pos1,pos2,end1,end2,target1,target2,gap,g;
+	int e1,e2;
+
+	pos1=filContourPosition(fil1,seg1,frac1);
+	pos2=filContourPosition(fil2,seg2,frac2);
+	gap=(fil1==fil2)?fabs(pos1-pos2):DBL_MAX;
+	for(e1=0;e1<2;e1++) {
+		j1=fil1->endjunct[e1];
+		if(j1) {
+			end1=e1?filContourPosition(fil1,fil1->nseg,0):0;
+			if(j1->target==fil2) {
+				g=fabs(pos1-end1)+fabs(pos2-filContourPosition(fil2,j1->node,0));
+				if(g<gap) gap=g; }
+			for(e2=0;e2<2;e2++) {
+				j2=fil2->endjunct[e2];
+				if(j2 && j2->target==j1->target) {
+					end2=e2?filContourPosition(fil2,fil2->nseg,0):0;
+					target1=filContourPosition(j1->target,j1->node,0);
+					target2=filContourPosition(j1->target,j2->node,0);
+					g=fabs(pos1-end1)+fabs(target1-target2)+fabs(pos2-end2);
+					if(g<gap) gap=g; }}}
+		j2=fil2->endjunct[e1];
+		if(j2 && j2->target==fil1) {
+			end2=e1?filContourPosition(fil2,fil2->nseg,0):0;
+			g=fabs(pos2-end2)+fabs(pos1-filContourPosition(fil1,j2->node,0));
+			if(g<gap) gap=g; }}
+	return gap; }
+
+
+#define FILCONTACTMIN 1e-9			// centerlines closer than this, relative to the contact distance, are touching
+
+/* filContactMobility */
+// Returns the mobility of the point at fraction frac along segment seg of filament fil,
+// which is how fast that point moves per unit force on it, given that the force is split
+// between the segment's two nodes. Filaments without dynamics have mobility 0.
+double filContactMobility(const filamentptr fil,int seg,double frac) {
+	filamenttypeptr filtype;
+
+	filtype=fil->filtype;
+	if(filtype->dynamics==FDnone) return 0;
+	return filtype->mobility*((1-frac)*(1-frac)*filNodeMobility(fil,seg)+frac*frac*filNodeMobility(fil,seg+1)); }
+
+
+/* filContactAdd */
+// Adds a contact to the contacts list of filament fil, for filComputeDerivForceMat, at
+// fraction frac along segment seg, with unit normal norm and stiffness kjac. Returns 0
+// for success or 1 for out of memory.
+int filContactAdd(filamentptr fil,int seg,double frac,const double *norm,double kjac) {
+	filcontactptr newlist,con;
+	int newmax,d;
+
+	if(fil->ncontact==fil->maxcontact) {
+		newmax=2*fil->maxcontact+1;
+		newlist=(filcontactptr) realloc(fil->contacts,newmax*sizeof(struct filcontactstruct));
+		if(!newlist) return 1;
+		fil->contacts=newlist;
+		fil->maxcontact=newmax; }
+	con=&fil->contacts[fil->ncontact++];
+	con->seg=seg;
+	con->frac=frac;
+	for(d=0;d<3;d++) con->norm[d]=norm[d];
+	con->kjac=kjac;
+	return 0; }
+
+
+/* filContactPair */
+// Adds the softwall contact force between filament segments seg1 and seg2, if they are in
+// contact, to the contactforce arrays of their filaments. k is the force constant and
+// contact is the sum of their radii. The force comes from the energy
+// 0.5*keff*(contact-d)^2, where d is the distance between the closest points of the two
+// centerlines and keff is k times the harmonic mean of the segment thicknesses. It acts
+// along the line between the closest points, and is split between the two nodes of each
+// segment in proportion to how close the point is to them, which conserves force and
+// torque. There is no force for centerlines that touch, including crossed segments in
+// 2D, since the direction would only be from round-off error (see FILCONTACTMIN).
+// Pairs are skipped if they are closer along the filaments than a tight hairpin, with
+// contour distance pi/2*contact, since they aren't in contact in any real sense; this
+// keeps a filament from pushing on itself near each point. A contact that's at a node
+// that's shared by two segments is close to both of them, so a pair is also skipped if its
+// closest point is at such a node and the next segment along is closer, or equally
+// close for the lower numbered of the two, which gives one force per contact. For
+// filaments with Implicit dynamics, the contact is also saved for filComputeDerivForceMat.
+// Each filament is solved with the other one held fixed, so that filament's contact
+// stiffness is keff*(m1+m2)/m, where m1 and m2 are the mobilities of the contact points
+// and m is its own; this has each side close its share of the gap, whereas both would
+// close all of it, and overshoot, with stiffness keff. Returns 0 for success or 1 for out
+// of memory.
+int filContactPair(segmentptr seg1,segmentptr seg2,double k,double contact,int dim) {
+	filamentptr fil1,fil2;
+	segmentptr next;
+	double frac1,frac2,fa,fb,dist,keff,f,vect[3],*cf1,*cf2,norm[3],m1,m2;
+	int d,i1,i2;
+
+	dist=Geo_NearestSeg2SegPts(seg1->xyzminus,seg1->xyzplus,seg2->xyzminus,seg2->xyzplus,&frac1,&frac2);
+	if(dist>=contact || dist<=FILCONTACTMIN*contact) return 0;
+	fil1=seg1->fil;
+	fil2=seg2->fil;
+	i1=seg1->index;
+	i2=seg2->index;
+	if(filContactGap(fil1,i1,frac1,fil2,i2,frac2)<PI/2*contact) return 0;
+
+	if(frac1>=1 && i1<fil1->nseg-1) {									// a contact at a shared node is counted once
+		next=fil1->segments[i1+1];
+		if(next!=seg2 && Geo_NearestSeg2SegPts(next->xyzminus,next->xyzplus,seg2->xyzminus,seg2->xyzplus,&fa,&fb)<=dist) return 0; }
+	else if(frac1<=0 && i1>0) {
+		next=fil1->segments[i1-1];
+		if(next!=seg2 && Geo_NearestSeg2SegPts(next->xyzminus,next->xyzplus,seg2->xyzminus,seg2->xyzplus,&fa,&fb)<dist) return 0; }
+	if(frac2>=1 && i2<fil2->nseg-1) {
+		next=fil2->segments[i2+1];
+		if(next!=seg1 && Geo_NearestSeg2SegPts(seg1->xyzminus,seg1->xyzplus,next->xyzminus,next->xyzplus,&fa,&fb)<=dist) return 0; }
+	else if(frac2<=0 && i2>0) {
+		next=fil2->segments[i2-1];
+		if(next!=seg1 && Geo_NearestSeg2SegPts(seg1->xyzminus,seg1->xyzplus,next->xyzminus,next->xyzplus,&fa,&fb)<dist) return 0; }
+
+	keff=k*2*seg1->thk*seg2->thk/(seg1->thk+seg2->thk);
+	f=keff*(contact-dist)/dist;
+	for(d=0;d<dim;d++)
+		vect[d]=f*(seg1->xyzminus[d]+frac1*(seg1->xyzplus[d]-seg1->xyzminus[d])-seg2->xyzminus[d]-frac2*(seg2->xyzplus[d]-seg2->xyzminus[d]));
+	cf1=fil1->contactforce;
+	cf2=fil2->contactforce;
+	for(d=0;d<dim;d++) {
+		cf1[3*i1+d]+=(1-frac1)*vect[d];
+		cf1[3*(i1+1)+d]+=frac1*vect[d];
+		cf2[3*i2+d]-=(1-frac2)*vect[d];
+		cf2[3*(i2+1)+d]-=frac2*vect[d]; }
+
+	if(fil1->filtype->dynamics==FDimplicit || fil2->filtype->dynamics==FDimplicit) {
+		norm[0]=norm[1]=norm[2]=0;
+		for(d=0;d<dim;d++) norm[d]=vect[d]/(f*dist);
+		m1=filContactMobility(fil1,i1,frac1);
+		m2=filContactMobility(fil2,i2,frac2);
+		if(fil1->filtype->dynamics==FDimplicit && m1>0 && filContactAdd(fil1,i1,frac1,norm,keff*(m1+m2)/m1)) return 1;
+		if(fil2->filtype->dynamics==FDimplicit && m2>0 && filContactAdd(fil2,i2,frac2,norm,keff*(m1+m2)/m2)) return 1; }
+	return 0; }
+
+
+/* filContactForces */
+// Computes the contact forces between all filaments, including between a filament and
+// itself, for the current node positions, and saves them in the filaments' contactforce
+// and endcontact elements. filDynamics calls this once per time step, after end dynamics
+// and before the integrators, which all use these forces for the whole step (see
+// filAddContactForces). This way, forces are exactly equal and opposite and don't depend
+// on the order of the filaments, whereas computing them within the integrators wouldn't
+// allow either, because integrators step filaments one at a time and forces are cleared
+// one filament at a time. If there are no contact interactions, this just clears the
+// forces. Each segment tests the segments in the boxes that overlap its bounding box
+// plus its largest contact distance, which includes all that it could touch; each
+// pair is tested once, in order of contactid, with contactmark avoiding repeats of
+// segments that are in several boxes. Contacts aren't found across periodic boundaries.
+// Returns 0 for success or 1 for out of memory. Draws no random numbers.
+int filContactForces(simptr sim) {
+	filamentssptr filss;
+	filamenttypeptr filtype,filtype2;
+	filamentptr fil;
+	segmentptr segment,segment2;
+	boxssptr boxs;
+	boxptr bptr;
+	double reach,rmax,k,lo,hi;
+	int ft,ft2,f,seg,node,d,dim,on,id,b,s,indx[DIMMAX],low[DIMMAX],high[DIMMAX],carry;
+
+	filss=sim->filss;
+	boxs=sim->boxs;
+	dim=sim->dim;
+	on=filContactOn(filss) && boxs && boxs->blist;
+	id=0;
+	for(ft=0;ft<filss->ntype;ft++) {									// clear forces and number the segments
+		filtype=filss->filtypes[ft];
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			for(node=0;node<3*(fil->nseg+1) && fil->contactforce;node++) fil->contactforce[node]=0;
+			fil->ncontact=0;
+			for(seg=0;seg<fil->nseg;seg++) {
+				fil->segments[seg]->contactid=++id;
+				fil->segments[seg]->contactmark=0; }
+			fil->endcontact[0][0]=fil->endcontact[0][1]=fil->endcontact[0][2]=0;
+			fil->endcontact[1][0]=fil->endcontact[1][1]=fil->endcontact[1][2]=0; }}
+	filss->contacton=on;
+	if(!on) return 0;
+
+	if(!filss->boxlists) {
+		if(filSetBoxLists(sim,1)) return 1; }
+	else if(filBoxesUpdate(sim)) return 1;
+
+	for(ft=0;ft<filss->ntype;ft++) {
+		filtype=filss->filtypes[ft];
+		rmax=-1;																				// largest radius that this type contacts
+		for(ft2=0;ft2<filss->ntype;ft2++) {
+			filtype2=filss->filtypes[ft2];
+			if(filtype2->filradius>rmax && filContactKforce(filtype,filtype2)>0) rmax=filtype2->filradius; }
+		if(rmax<0) continue;
+		reach=filtype->filradius+rmax;
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			for(seg=0;seg<fil->nseg;seg++) {
+				segment=fil->segments[seg];
+				for(d=0;d<dim;d++) {												// boxes that this segment could reach
+					lo=(segment->xyzminus[d]<segment->xyzplus[d]?segment->xyzminus[d]:segment->xyzplus[d])-reach;
+					hi=(segment->xyzminus[d]>segment->xyzplus[d]?segment->xyzminus[d]:segment->xyzplus[d])+reach;
+					low[d]=(int)floor((lo-boxs->min[d])/boxs->size[d]);
+					high[d]=(int)floor((hi-boxs->min[d])/boxs->size[d]);
+					if(low[d]<0) low[d]=0;
+					else if(low[d]>=boxs->side[d]) low[d]=boxs->side[d]-1;
+					if(high[d]<0) high[d]=0;
+					else if(high[d]>=boxs->side[d]) high[d]=boxs->side[d]-1;
+					indx[d]=low[d]; }
+				for(carry=0;!carry;) {
+					b=0;
+					for(d=0;d<dim;d++) b=boxs->side[d]*b+indx[d];
+					bptr=boxs->blist[b];
+					for(s=0;s<bptr->nfilseg;s++) {
+						segment2=bptr->filseg[s];
+						if(segment2->contactid<=segment->contactid || segment2->contactmark==segment->contactid) continue;
+						segment2->contactmark=segment->contactid;
+						filtype2=segment2->fil->filtype;
+						k=filContactKforce(filtype,filtype2);
+						if(k>0 && filContactPair(segment,segment2,k,filtype->filradius+filtype2->filradius,dim)) return 1; }
+					for(d=dim-1,carry=1;d>=0 && carry;d--) {		// next box in this range
+						if(++indx[d]>high[d]) indx[d]=low[d];
+						else carry=0; }}}}}
+
+	for(ft=0;ft<filss->ntype;ft++) {									// end forces, for barbed ends
+		filtype=filss->filtypes[ft];
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			if(fil->nseg<1) continue;
+			for(d=0;d<3;d++) {
+				fil->endcontact[0][d]=fil->contactforce[d];
+				fil->endcontact[1][d]=fil->contactforce[3*fil->nseg+d]; }}}
+	return 0; }
+
+
+/* filAddContactForces */
+// Adds the contact forces from filContactForces to the forces on nodes nodemin to nodemax
+// of filament fil (negative values mean all nodes), in fil->filwork->forces. These stay
+// the same for all force evaluations in a time step. Draws no random numbers; returns
+// immediately when there aren't any contact forces.
+void filAddContactForces(filamentptr fil,int nodemin,int nodemax) {
+	double **forces;
+	int node,d;
+
+	if(!fil->filtype->filss->contacton) return;
+	if(nodemin<0) nodemin=0;
+	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
+	forces=fil->filwork->forces;
+	for(node=nodemin;node<=nodemax;node++)
+		for(d=0;d<3;d++)
+			forces[node][d]+=fil->contactforce[3*node+d];
+	return; }
+
+
+/* filSurfReactionForces */
+// Sets the force elements of all panels and surfaces to the forces that filaments
+// exert on them, which are equal and opposite to the forces of the softwall and
+// repel interactions on the filaments, for the current node positions. Only filament
+// types with dynamics are included, since the forces on filaments without dynamics
+// aren't applied. Each surface's force element is the sum of its panels' force
+// elements. filDynamics calls this at the end of each time step, after all motion,
+// so these are the forces at the end of the step, which are also the forces that
+// act on the filaments at the start of the next step. Draws no random numbers.
+void filSurfReactionForces(simptr sim) {
+	filamentssptr filss;
+	filamenttypeptr filtype;
 	surfaceptr srf;
 	panelptr pnl;
 	enum PanelShape ps;
-	enum PanelFace badface;
-	int node,p,d=0,dim;
+	int s,p,d,ft,f;
 
-	k=fil->filtype->confineforce;
-	srf=fil->filtype->confinesrf;
-	if(k<=0 || !srf) return;
-	if(nodemin<0) nodemin=0;
-	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
-	dim=fil->filtype->filss->sim->dim;
-	forces=fil->filwork->forces;
-	badface=(fil->filtype->confineface==PFfront)?PFback:PFfront;
-	radius=fil->filtype->stericradius;
+	filss=sim->filss;
+	if(!filss || !sim->srfss) return;
 
-	for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
-		for(p=0;p<srf->npanel[ps];p++) {
-			pnl=srf->panels[ps][p];
-            if(ps==PSrect) {
-                d=(int)pnl->front[1];sign=(badface==PFback?1:-1)*pnl->front[0];
-                wallposition=pnl->forceclamp && pnl->forceclamp->intrial?
-                    pnl->forceclamp->trialposition:pnl->point[0][d];
-            }											// panel-outer: fetch each panel once per node sweep
-			for(node=nodemin;node<=nodemax;node++) {
-				nodept=fil->nodes[node];
-				if(ps==PSrect) {
-					dist=sign*(nodept[d]-wallposition);
-					if(dist<radius) forces[node][d]+=k*(radius-dist)*sign;
-					continue; }
-				if(panelside(nodept,pnl,dim,NULL,0,0)!=badface) continue;
-				closestpanelpt(pnl,dim,nodept,pnlpt,0);
-				fnode=forces[node];
-				for(d=0;d<dim;d++)
-					fnode[d]+=k*(pnlpt[d]-nodept[d]); }}
+	for(s=0;s<sim->srfss->nsrf;s++) {								// clear the forces
+		srf=sim->srfss->srflist[s];
+		for(d=0;d<DIMMAX;d++) srf->force[d]=0;
+		for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+			for(p=0;p<srf->npanel[ps];p++)
+				for(d=0;d<DIMMAX;d++) srf->panels[ps][p]->force[d]=0; }
+
+	for(ft=0;ft<filss->ntype;ft++) {								// panel forces from the filaments
+		filtype=filss->filtypes[ft];
+		if(filtype->dynamics==FDnone || !filSurfForceOn(filtype)) continue;
+		for(f=0;f<filtype->nfil;f++)
+			filSurfInteractForces(filtype->fillist[f],-1,-1,1,NULL); }
+
+    filLegacySurfaceReaction(sim);
+
+	for(s=0;s<sim->srfss->nsrf;s++) {								// surface forces are sums of panel forces
+		srf=sim->srfss->srflist[s];
+		for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+			for(p=0;p<srf->npanel[ps];p++) {
+				pnl=srf->panels[ps][p];
+				for(d=0;d<DIMMAX;d++) srf->force[d]+=pnl->force[d]; }}
 	return; }
 
 
@@ -4201,11 +6968,13 @@ void filComputeForces(filamentptr fil,int nodemin,int nodemax) {
 		for(node=0;node<fil->nseg;node++)								// clear all torques
 			torques[node]=0; }
 
-	SMOL_PROFILE_FINE(SP_STRETCH,filAddStretchForces(fil,nodemin,nodemax));
-	SMOL_PROFILE_FINE(SP_BEND,filAddBendForces(fil,nodemin-1,nodemax+1));
-	SMOL_PROFILE_FINE(SP_THERMAL,filAddThermalForces(fil,nodemin,nodemax));
-	SMOL_PROFILE_FINE(SP_JUNCTION,filAddJunctionForces(fil,nodemin,nodemax));
-	SMOL_PROFILE_FINE(SP_CONFINE,filAddConfineForces(fil,nodemin,nodemax));
+	filAddStretchForces(fil,nodemin,nodemax);
+	filAddBendForces(fil,nodemin-1,nodemax+1);
+	filAddThermalForces(fil,nodemin,nodemax);
+	filAddJunctionForces(fil,nodemin,nodemax);
+	filAddSurfForces(fil,nodemin,nodemax);
+	filAddConfineForces(fil,nodemin,nodemax);
+	filAddContactForces(fil,nodemin,nodemax);
 	return; }
 
 
@@ -4226,70 +6995,173 @@ void filComputeForceMatrix(filamentptr fil) {
 
 
 /* filComputeDerivForceMat */
+// Computes an approximate Jacobian of the forces and segment torques on filament fil, for
+// filImplicitDynamics, putting it in filwork->forcemat. The stretching, bending, and
+// twisting parts are computed analytically in Gauss-Newton form, which is symmetric and
+// negative semidefinite, so the implicit step stays stable; the junction and confinement
+// parts are computed by finite differences. It also leaves the flattened state in
+// flatnodes[0] and the forces at that state in flatforces[0].
+#define FILDERIVDXMIN 1e-7			// smallest finite-difference perturbation, relative to standard_length
 void filComputeDerivForceMat(filamentptr fil,double dtmu) {
-	int dim,node,node2,d,flatsize,node2first,node2last;
-	double **nodes,**flatnodes,**flatforces;
-	double dx,dxinv;
+	int dim,stride,flatsize,node,seg,d,d2,a,i,j,ng,gidx[11],nmin,nmax,side,nrow;
+	double **nodes,**flatnodes,**flatforces,**forces,*extforce0;
+	double klen,stdlen,*kypr,k,len,u[3],kperp,blk,xm[3],xp[3],lm2,lp2,lm,lp,e[3][3],unit[3],cm[3],cp3[3],g[11];
+	double cy,sy,cp,sp,w[3][3],thkavg,wnode[2];
+	filcontactptr con;
+	double dx,dxinv,dxmin,col[2][15],colnorm[2];
+	filamenttypeptr filtype;
 	sparsematrix forcemat;
 
-	dim=fil->filtype->filss->sim->dim;
+	filtype=fil->filtype;
+	dim=filtype->filss->sim->dim;
+	stride=(dim==2)?2:4;
 	flatsize= (dim==2) ? 2*(fil->nseg+1) : 4*(fil->nseg+1)-1;
 	forcemat=fil->filwork->forcemat;
 	sparseSetSizeM(forcemat,flatsize,flatsize);
 	sparseClearM(forcemat);
 
 	nodes=fil->nodes;
+	forces=fil->filwork->forces;
 	flatforces=fil->filwork->flatforces;
 	flatnodes=fil->filwork->flatnodes;
+	klen=filtype->klen;
+	stdlen=filtype->stdlen;
+	kypr=filtype->kypr;
 
 	filFlattenNodes(fil,0,0);																		// flatnodes[0] is original node positions
 	filComputeForces(fil,-1,-1);
-	filFlattenForces(fil,0,-1,-1);															// flatforces[0] is original forces.
-	multKVD(dtmu/1000,flatforces[0],flatnodes[1],flatsize);			// flatnodes[1] is 1/1000 of forward Euler step
+	filFlattenForces(fil,0,-1,-1);															// flatforces[0] is original forces
 
-	if(dim==2) {
-		for(node=0;node<=fil->nseg;node++) {
+	if(klen>0)																									// stretching: Hessian of 0.5*thk*klen*(len-stdlen)^2, without its transverse part for a compressed segment, where that part is destabilizing
+		for(seg=0;seg<fil->nseg;seg++) {
+			len=0;
+			for(d=0;d<dim;d++) {
+				u[d]=nodes[seg+1][d]-nodes[seg][d];
+				len+=u[d]*u[d]; }
+			len=sqrt(len);
+			for(d=0;d<dim;d++) u[d]/=len;
+			k=fil->segments[seg]->thk*klen;													// the force constant scales with segment thickness
+			kperp=(len>stdlen)?k*(1-stdlen/len):0;
+			for(d=0;d<dim;d++)
+				for(d2=0;d2<dim;d2++) {
+					blk=(k-kperp)*u[d]*u[d2]+(d==d2?kperp:0);
+					sparseAddToM(forcemat,stride*seg+d,stride*seg+d2,-blk);
+					sparseAddToM(forcemat,stride*(seg+1)+d,stride*(seg+1)+d2,-blk);
+					sparseAddToM(forcemat,stride*seg+d,stride*(seg+1)+d2,blk);
+					sparseAddToM(forcemat,stride*(seg+1)+d,stride*seg+d2,blk); }}
+
+	for(node=1;node<fil->nseg;node++) {													// bending and twisting: Gauss-Newton -k.g.g^T for each angle, with g its gradient
+		lm2=lp2=0;
+		for(d=0;d<dim;d++) {
+			xm[d]=nodes[node][d]-nodes[node-1][d];									// segment node-1
+			xp[d]=nodes[node+1][d]-nodes[node][d];									// segment node
+			lm2+=xm[d]*xm[d];
+			lp2+=xp[d]*xp[d]; }
+		thkavg=0.5*(fil->segments[node-1]->thk+fil->segments[node]->thk);	// bending force constants scale with the average thickness of the two segments
+		if(dim==2) {
+			k=thkavg*kypr[0];
+			if(k<=0) continue;
+			cm[0]=-xm[1]/lm2;																				// gradient of the bend angle with respect to node-1
+			cm[1]=xm[0]/lm2;
+			cp3[0]=-xp[1]/lp2;																				// gradient with respect to node+1
+			cp3[1]=xp[0]/lp2;
 			for(d=0;d<2;d++) {
-				dx=flatnodes[1][2*node+d];
-				if(dx==0) break;
-				dxinv=1.0/dx;
-				nodes[node][d]+=dx;
-				filNodes2Angles(fil,(d==0)?node-2:node-1,node+1);			// update for new change and fix prior change
-				filComputeForces(fil,node-2,node+2);
-				filFlattenForces(fil,1,node-2,node+2);								// flatforces[1] is modified forces
-				nodes[node][d]=flatnodes[0][2*node+d];
-				node2first=(node<2)?0:node-2;
-				node2last=(node+2>fil->nseg)?fil->nseg:node+2;
-				for(node2=node2first;node2<=node2last;node2++) {			// row block is node2, column block is node
-					sparseAddToM(forcemat,2*node2,2*node+d,dxinv*(flatforces[1][2*node2]-flatforces[0][2*node2]));
-					sparseAddToM(forcemat,2*node2+1,2*node+d,dxinv*(flatforces[1][2*node2+1]-flatforces[0][2*node2+1])); }}}}
-	else {
+				g[d]=cm[d];
+				g[2+d]=-cm[d]-cp3[d];
+				g[4+d]=cp3[d]; }
+			ng=6;
+			for(i=0;i<ng;i++) gidx[i]=2*(node-1)+i;
+			for(i=0;i<ng;i++)
+				for(j=0;j<ng;j++)
+					sparseAddToM(forcemat,gidx[i],gidx[j],-k*g[i]*g[j]); }
+		else {																										// 3D: yaw, pitch, and roll of segment node relative to segment node-1
+			lm=sqrt(lm2);
+			lp=sqrt(lp2);
+			for(a=0;a<3;a++) {
+				unit[0]=unit[1]=unit[2]=0;
+				unit[a]=1;
+				Sph_QtniRotate(fil->segments[node-1]->qabs,unit,e[a]); }	// axes of segment node-1 in the system frame
+			cy=cos(fil->segments[node]->ypr[0]);
+			sy=sin(fil->segments[node]->ypr[0]);
+			cp=cos(fil->segments[node]->ypr[1]);
+			sp=sin(fil->segments[node]->ypr[1]);
+			if(cp<FILCOSPMIN) cp=FILCOSPMIN;										// bound the gradient near gimbal lock, where yaw is undefined
+			for(d=0;d<3;d++) {																			// yaw, pitch, and roll change by w[a].omega, for relative rotation omega (inverse Euler-rate relations, as in filBendTorque)
+				w[0][d]=e[2][d]+sp/cp*(cy*e[0][d]+sy*e[1][d]);
+				w[1][d]=-sy*e[0][d]+cy*e[1][d];
+				w[2][d]=(cy*e[0][d]+sy*e[1][d])/cp; }
+			ng=11;
+			for(d=0;d<3;d++) {
+				gidx[d]=4*(node-1)+d;
+				gidx[3+d]=4*node+d;
+				gidx[6+d]=4*(node+1)+d; }
+			gidx[9]=4*(node-1)+3;																		// absolute roll of segment node-1
+			gidx[10]=4*node+3;																			// absolute roll of segment node
+			for(a=0;a<3;a++) {
+				k=thkavg*kypr[a];
+				if(k<=0) continue;
+				cm[0]=(w[a][1]*xm[2]-w[a][2]*xm[1])/lm2;								// relative rotation is (xp x dxp)/lp^2+up.dphip-(xm x dxm)/lm^2-um.dphim
+				cm[1]=(w[a][2]*xm[0]-w[a][0]*xm[2])/lm2;
+				cm[2]=(w[a][0]*xm[1]-w[a][1]*xm[0])/lm2;
+				cp3[0]=(w[a][1]*xp[2]-w[a][2]*xp[1])/lp2;
+				cp3[1]=(w[a][2]*xp[0]-w[a][0]*xp[2])/lp2;
+				cp3[2]=(w[a][0]*xp[1]-w[a][1]*xp[0])/lp2;
+				for(d=0;d<3;d++) {
+					g[d]=cm[d];
+					g[3+d]=-cm[d]-cp3[d];
+					g[6+d]=cp3[d]; }
+				g[9]=-(w[a][0]*xm[0]+w[a][1]*xm[1]+w[a][2]*xm[2])/lm;		// rolling segment node-1
+				g[10]=(w[a][0]*xp[0]+w[a][1]*xp[1]+w[a][2]*xp[2])/lp;		// rolling segment node, which only changes roll
+				for(i=0;i<ng;i++)
+					for(j=0;j<ng;j++)
+						sparseAddToM(forcemat,gidx[i],gidx[j],-k*g[i]*g[j]); }}}
+
+	if(fil->endjunct[0] || fil->endjunct[1] || fil->njunct>0 || filSurfForceOn(filtype)) {	// junction and surface forces: finite differences
+		extforce0=flatnodes[2];																		// scratch space, which filImplicitDynamics overwrites later
+		for(node=0;node<=fil->nseg;node++)
+			for(d=0;d<dim;d++) forces[node][d]=0;
+		filAddJunctionForces(fil,-1,-1);
+		filAddSurfForces(fil,-1,-1);
+		for(node=0;node<=fil->nseg;node++)
+			for(d=0;d<dim;d++) extforce0[stride*node+d]=forces[node][d];
 		for(node=0;node<=fil->nseg;node++) {
-			for(d=0;d<4;d++) {
-				if(node==fil->nseg && d==4) break;
-				dx=flatnodes[1][4*node+d];
-				if(dx==0) break;
-				dxinv=1.0/dx;
-				if(d<3) nodes[node][d]+=dx;
-				else fil->segments[node]->ypr[2]+=dx;
-				filNodes2Angles(fil,(d==0)?node-2:node-1,node+1);	// update for new change and fix prior change
+			nmin=(node<2)?0:node-2;
+			nmax=(node+2>fil->nseg)?fil->nseg:node+2;
+			for(d=0;d<dim;d++) {
+				dx=dtmu/1000*flatforces[0][stride*node+d];					// perturbation scaled to the step
+				dxmin=FILDERIVDXMIN*stdlen;
+				if(fabs(dx)<dxmin) dx=dxmin;													// zero force still needs its column
+				for(side=0;side<2;side++) {														// forward and backward differences
+					dxinv=1.0/dx;
+					nodes[node][d]+=dx;
+					for(i=nmin;i<=nmax;i++)
+						for(d2=0;d2<dim;d2++) forces[i][d2]=0;
+					filAddJunctionForces(fil,nmin,nmax);
+					filAddSurfForces(fil,nmin,nmax);
+					nodes[node][d]=flatnodes[0][stride*node+d];
+					colnorm[side]=0;
+					nrow=0;
+					for(i=nmin;i<=nmax;i++)
+						for(d2=0;d2<dim;d2++) {
+							col[side][nrow]=dxinv*(forces[i][d2]-extforce0[stride*i+d2]);
+							colnorm[side]+=col[side][nrow]*col[side][nrow];
+							nrow++; }
+					dx=-dx; }
+				side=(colnorm[1]<colnorm[0])?1:0;										// a difference across a force discontinuity is the larger one
+				nrow=0;
+				for(i=nmin;i<=nmax;i++)
+					for(d2=0;d2<dim;d2++)
+						sparseAddToM(forcemat,stride*i+d2,stride*node+d,col[side][nrow++]); }}}
 
-				filComputeForces(fil,node-2,node+2);
-				filFlattenForces(fil,1,node-2,node+2);						// flatforces[1] is modified forces
-
-				if(d<3) nodes[node][d]=flatnodes[0][4*node+d];
-				else fil->segments[node]->ypr[2]=flatnodes[0][4*node+d];
-				node2first=(node<2)?0:node-2;
-				node2last=(node+2>fil->nseg)?fil->nseg:node+2;
-				for(node2=node2first;node2<=node2last;node2++) {		// row block is node2, column block is node
-					sparseAddToM(forcemat,4*node2+0,4*node+d,dxinv*(flatforces[1][4*node2+0]-flatforces[0][4*node2+0]));
-					sparseAddToM(forcemat,4*node2+1,4*node+d,dxinv*(flatforces[1][4*node2+1]-flatforces[0][4*node2+1]));
-					sparseAddToM(forcemat,4*node2+2,4*node+d,dxinv*(flatforces[1][4*node2+2]-flatforces[0][4*node2+2]));
-					sparseAddToM(forcemat,4*node2+3,4*node+d,dxinv*(flatforces[1][4*node2+3]-flatforces[0][4*node2+3])); }}}}
-
-	filNodes2Angles(fil,node-2,-1);
-	sparseMultiplyMV(forcemat,flatnodes[0],flatforces[1]);						// flatforces[1] is F1.x
-	sumVD(1,flatforces[0],-1,flatforces[1],flatforces[1],flatsize);		// flatforces[1] is F0
+	for(i=0;i<fil->ncontact;i++) {															// contact forces: stiffness along the contact normal
+		con=&fil->contacts[i];
+		wnode[0]=1-con->frac;
+		wnode[1]=con->frac;
+		for(a=0;a<2;a++)
+			for(j=0;j<2;j++)
+				for(d=0;d<dim;d++)
+					for(d2=0;d2<dim;d2++)
+						sparseAddToM(forcemat,stride*(con->seg+a)+d,stride*(con->seg+j)+d2,-con->kjac*wnode[a]*wnode[j]*con->norm[d]*con->norm[d2]); }
 
 	return; }
 
@@ -4299,33 +7171,46 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 /******************************************************************************/
 
 
-/* Material part of an Euler step, evaluated on the old segment axis. This
-   retains the original roll convention without computing discarded positions. */
-void filStepMaterialFrame(filamentptr fil,double dtmu,int in,int out) {
-	int seg;
-	filamentworkptr filwork=fil->filwork;
-	double axis[3],**nodesin=filwork->wnodes[in];
-	double *seg0upin=filwork->wseg0up[in],*seg0upout=filwork->wseg0up[out];
-	double *rollin=filwork->wroll[in],*rollout=filwork->wroll[out],*nodemobility=fil->nodemobility;
-	if(fil->filtype->filss->sim->dim==3) {
-		if(in==0) filCopyYpr2ToRoll(fil);
-		axis[0]=nodesin[1][0]-nodesin[0][0];
-		axis[1]=nodesin[1][1]-nodesin[0][1];
-		axis[2]=nodesin[1][2]-nodesin[0][2];
-		Sph_RotateVectorAxisAngle(seg0upin,axis,dtmu*nodemobility[0]*filwork->torques[0],seg0upout);
-		for(seg=1;seg<fil->nseg;seg++)
-			rollout[seg]=rollin[seg]+dtmu*nodemobility[1]*filwork->torques[seg];
-		if(out==0) filCopyRollToYpr2(fil); }
-	return; }
-
 /* filStepDynamics */
 void filStepDynamics(filamentptr fil,double dtmu,int in,int out) {
-	int node,d,dim=fil->filtype->filss->sim->dim;
-	filamentworkptr filwork=fil->filwork;
-	double **nodesin=filwork->wnodes[in],**nodesout=filwork->wnodes[out];
-	filStepMaterialFrame(fil,dtmu,in,out);
-	for(node=0;node<=fil->nseg;node++) for(d=0;d<dim;d++)
-		nodesout[node][d]=nodesin[node][d]+dtmu*fil->nodemobility[node]*filwork->forces[node][d];
+	int node,seg,dim,d;
+	double **nodesin,**nodesout,*seg0upout,*rollin,*rollout,*segnew,*dphi;
+	double **forces,*nodemobility;
+	filamentworkptr filwork;
+
+	dim=fil->filtype->filss->sim->dim;
+	filwork=fil->filwork;
+
+	nodesin=filwork->wnodes[in];
+	rollin=filwork->wroll[in];
+	nodesout=filwork->wnodes[out];
+	seg0upout=filwork->wseg0up[out];
+	rollout=filwork->wroll[out];
+	forces=filwork->forces;
+
+	nodemobility=filwork->flatforces[1];						// effective node mobility factors (filNodeMobility), in scratch space
+	for(node=0;node<=fil->nseg;node++) nodemobility[node]=filNodeMobility(fil,node);
+
+	if(dim==2) {
+		for(node=0;node<=fil->nseg;node++) {
+			nodesout[node][0]=nodesin[node][0]+dtmu*nodemobility[node]*forces[node][0];
+			nodesout[node][1]=nodesin[node][1]+dtmu*nodemobility[node]*forces[node][1]; }}
+	else {
+		if(in==0) filCopyYpr2ToRoll(fil);
+		segnew=filwork->flatnodes[2];							// scratch space
+		dphi=filwork->flatnodes[1];
+		for(seg=0;seg<fil->nseg;seg++) {					// new segment vectors, and each segment's rotation about its own axis from its torque
+			for(d=0;d<3;d++)
+				segnew[3*seg+d]=nodesin[seg+1][d]+dtmu*nodemobility[seg+1]*forces[seg+1][d]-nodesin[seg][d]-dtmu*nodemobility[seg]*forces[seg][d];
+			dphi[seg]=dtmu*filSegRollMobility(fil,seg)*filwork->torques[seg]; }
+		if(in==0) filWorkFramesFromSegments(fil);
+		filTransportFrames(fil,nodesin,filwork->wqabs[in],segnew,dphi,1,filwork->wqabs[out],seg0upout,out==0?rollout:NULL);	// a working state other than 0 only needs its frames
+		if(fil->nseg>0) rollout[0]=rollin[0];			// segment 0's orientation is held in seg0up
+		for(node=0;node<=fil->nseg;node++) {			// process node forces
+			nodesout[node][0]=nodesin[node][0]+dtmu*nodemobility[node]*forces[node][0];
+			nodesout[node][1]=nodesin[node][1]+dtmu*nodemobility[node]*forces[node][1];
+			nodesout[node][2]=nodesin[node][2]+dtmu*nodemobility[node]*forces[node][2]; }
+		if(out==0) filCopyRollToYpr2(fil); }
 	return; }
 
 
@@ -4405,10 +7290,37 @@ void filRK4Dynamics(simptr sim,filamenttypeptr filtype) {
 	return; }
 
 
+/* filMobilityWeights */
+// Puts the effective mobility factor of each flattened coordinate of filament fil in wt:
+// filNodeMobility for node positions, and in 3D, filSegRollMobility for segment rotations. Returns the number of flattened coordinates.
+int filMobilityWeights(filamentptr fil,double *wt) {
+	int dim,stride,node,seg,d;
+
+	dim=fil->filtype->filss->sim->dim;
+	stride=(dim==2)?2:4;
+	for(node=0;node<=fil->nseg;node++)
+		for(d=0;d<dim;d++) wt[stride*node+d]=filNodeMobility(fil,node);
+	if(dim==3)
+		for(seg=0;seg<fil->nseg;seg++) wt[4*seg+3]=filSegRollMobility(fil,seg);
+	return (dim==2)?2*(fil->nseg+1):4*(fil->nseg+1)-1; }
+
+
+/* filScaleMatrixRows */
+// Multiplies row i of banded matrix sprs by wt[i], for its first nrows rows.
+void filScaleMatrixRows(sparsematrix sprs,const double *wt,int nrows) {
+	int i,j,jmin,jmax;
+
+	for(i=0;i<nrows;i++) {
+		jmin=sprs->col0[i]<0?0:sprs->col0[i];
+		jmax=sprs->col1[i]>sprs->fcols?sprs->fcols:sprs->col1[i];
+		for(j=jmin;j<jmax;j++) sparseMultiplyBy(sprs,i,j,wt[i]); }
+	return; }
+
+
 /* filEulerMatDynamics */
-void filEulerMatDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores nodemobility
+void filEulerMatDynamics(simptr sim,filamenttypeptr filtype) {
 	double dtmu;
-	int f;
+	int f,flatsize;
 	filamentptr fil;
 	filamentworkptr filwork;
 
@@ -4419,9 +7331,12 @@ void filEulerMatDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores
 		filComputeForceMatrix(fil);
 		filFlattenNodes(fil,0,0);
 		dtmu=filtype->mobility*sim->dt;
+		flatsize=filMobilityWeights(fil,filwork->flatforces[1]);
+		filScaleMatrixRows(filwork->forcemat,filwork->flatforces[1],flatsize);	// forcemat is W F, with effective mobility factors W
 		sparseMultiplyScalarM(filwork->forcemat,dtmu);
 		sparseAddIdentityM(filwork->forcemat,1);
 		sparseMultiplyMV(filwork->forcemat,filwork->flatnodes[0],filwork->flatnodes[1]);
+		filAddMatrixForceStep(fil,dtmu,filwork->flatnodes[1]);	// thermal, junction, and confinement forces
 		filUnflattenNodes(fil,1,0);
 		filNodes2Angles(fil,-1,-1); }
 
@@ -4429,9 +7344,9 @@ void filEulerMatDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores
 
 
 /* filImplicitOldDynamics */
-void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores nodemobility
+void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype) {
 	double dtmu;
-	int f;
+	int f,i,flatsize;
 	filamentptr fil;
 	filamentworkptr filwork;
 	sparsematrix forcemat;
@@ -4442,17 +7357,23 @@ void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype) {	//?? This igno
 		forcemat=filwork->forcemat;
 		if(!forcemat->BiCGSTAB)
 			sparseAllocBandM(forcemat,-1,-1,1);
+		flatsize=(sim->dim==2)?2*(fil->nseg+1):4*(fil->nseg+1)-1;
 
 		filComputeForceMatrix(fil);
 		filFlattenNodes(fil,0,0);													// flatnodes[0] is current state
 		dtmu=filtype->mobility*sim->dt;
+		filMobilityWeights(fil,filwork->flatforces[1]);
+		filScaleMatrixRows(forcemat,filwork->flatforces[1],flatsize);	// forcemat is W F, with effective mobility factors W
 		sparseMultiplyScalarM(forcemat,dtmu);
-		sparseAddIdentityM(forcemat,1);										// forcemat is 1+dtmu*force
-		sparseMultiplyMV(forcemat,filwork->flatnodes[0],filwork->flatnodes[1]);	// flatnodes[1] is forward Euler next state
+		sparseAddIdentityM(forcemat,1);										// forcemat is 1+dtmu*W*force
+		sparseMultiplyMV(forcemat,filwork->flatnodes[0],filwork->flatnodes[1]);	// flatnodes[1] is forward Euler next state, without thermal forces
+		for(i=0;i<flatsize;i++) filwork->flatnodes[2][i]=filwork->flatnodes[0][i];
+		filAddMatrixForceStep(fil,dtmu,filwork->flatnodes[2]);		// flatnodes[2] is current state plus displacements from thermal, junction, and confinement forces
+		for(i=0;i<flatsize;i++) filwork->flatnodes[1][i]+=filwork->flatnodes[2][i]-filwork->flatnodes[0][i];	// initial guess, with the same displacements
 
 		sparseMultiplyScalarM(forcemat,-1);
-		sparseAddIdentityM(forcemat,2);										// forcemat is 1-dtmu*force
-		sparseBiCGSTAB(forcemat,filwork->flatnodes[0],filwork->flatnodes[1],1e-9);	// flatnodes[1] is backward Euler next state
+		sparseAddIdentityM(forcemat,2);										// forcemat is 1-dtmu*W*force
+		sparseBiCGSTAB(forcemat,filwork->flatnodes[2],filwork->flatnodes[1],1e-9);	// flatnodes[1] is backward Euler next state
 		filUnflattenNodes(fil,1,0);
 		filNodes2Angles(fil,-1,-1); }
 
@@ -4461,9 +7382,9 @@ void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype) {	//?? This igno
 
 
 /* filImplicitDynamics */
-void filImplicitDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores nodemobility
-	double dtmu,**flatnodes,**flatforces;
-	int f,flatsize,dim;
+void filImplicitDynamics(simptr sim,filamenttypeptr filtype) {
+	double dtmu,**flatnodes,**flatforces,bnorm2,*wt;
+	int f,flatsize,dim,i;
 	filamentptr fil;
 	filamentworkptr filwork;
 	sparsematrix forcemat;
@@ -4480,13 +7401,21 @@ void filImplicitDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores
 			sparseAllocBandM(forcemat,-1,-1,1);
 
 		dtmu=filtype->mobility*sim->dt;
-		filComputeDerivForceMat(fil,dtmu);															// nodes are in flatnodes[0], forces are in flatforces[0], F0 is in flatforces[1] and F1 is in forcemat
-		sumVD(1,flatnodes[0],dtmu,flatforces[0],flatnodes[1],flatsize);	// flatnodes[1] is forward Euler next state
-		sumVD(1,flatnodes[0],dtmu,flatforces[1],flatnodes[2],flatsize);	// flatnodes[2] is x(t)+dtmu*F0
-
-		sparseMultiplyScalarM(forcemat,-dtmu);
-		sparseAddIdentityM(forcemat,1);																	// forcemat is 1-dtmu*force
-		sparseBiCGSTAB(forcemat,flatnodes[2],flatnodes[1],1e-9);				// flatnodes[1] is backward Euler next state
+		filComputeDerivForceMat(fil,dtmu);															// nodes are in flatnodes[0], forces are in flatforces[0], and J is in forcemat
+		wt=flatforces[1];																								// effective mobility factors W (filNodeMobility), in scratch space
+		filMobilityWeights(fil,wt);
+		filScaleMatrixRows(forcemat,wt,flatsize);												// forcemat is W J
+		bnorm2=0;
+		for(i=0;i<flatsize;i++) {
+			flatnodes[2][i]=dtmu*wt[i]*flatforces[0][i];									// flatnodes[2] is the forward Euler displacement
+			flatnodes[1][i]=flatnodes[2][i];															// which is the initial guess
+			bnorm2+=flatnodes[2][i]*flatnodes[2][i]; }
+		if(bnorm2>0) {
+			sparseMultiplyScalarM(forcemat,-dtmu);
+			sparseAddIdentityM(forcemat,1);																// forcemat is 1-dtmu*W*J
+			sparseBiCGSTAB(forcemat,flatnodes[2],flatnodes[1],1e-20*bnorm2); }	// flatnodes[1] is the backward Euler displacement, to relative residual 1e-10
+		for(i=0;i<flatsize;i++)
+			flatnodes[1][i]+=flatnodes[0][i];															// flatnodes[1] is the next state
 		filUnflattenNodes(fil,1,0);
 		filNodes2Angles(fil,-1,-1); }
 
@@ -4494,72 +7423,542 @@ void filImplicitDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores
 
 
 
+/* filConstrained */
+// Returns 1 if filament type filtype has any constraints, meaning a negative length or
+// angle force constant, and 0 if not.
+int filConstrained(filamenttypeptr filtype) {
+	if(filtype->klen<0) return 1;
+	if(filtype->kypr[0]<0) return 1;
+	if(filtype->filss->sim->dim==3 && (filtype->kypr[1]<0 || filtype->kypr[2]<0)) return 1;
+	return 0; }
+
+
+/* filConstraintGrad */
+// Computes constraint number c of filament fil, for filProjectConstraints. Constraints
+// are numbered by node, with cstride of them per node (2 in 2D, 4 in 3D): number
+// cstride*node is the length of segment node, and the next ones are the yaw, pitch, and
+// roll of segment node relative to segment node-1. A length is constrained to the
+// standard length if the length force constant is negative, and an angle to its standard
+// angle if its force constant is negative. This returns 0 if constraint c doesn't apply.
+// Otherwise, it puts the constraint's deviation from its target value in res, and its
+// gradient with respect to the flattened coordinates (node positions and, in 3D, segment
+// rotations about their own axes) in g, with the coordinate indices in idx, and returns
+// the number of coordinates, which is at most 11. The angle gradients are the same as for
+// filComputeDerivForceMat.
+int filConstraintGrad(filamentptr fil,int c,int *idx,double *g,double *res) {
+	int dim,cstride,fs,node,a,d,unitdim;
+	double **nodes,u[3],len,r,xm[3],xp[3],lm2,lp2,lm,lp,cm[3],cp3[3],e[3][3],unit[3],w[3];
+	double cy,sy,cp,sp;
+	filamenttypeptr filtype;
+
+	filtype=fil->filtype;
+	dim=filtype->filss->sim->dim;
+	cstride=(dim==2)?2:4;
+	fs=(dim==2)?2:4;
+	nodes=fil->nodes;
+	node=c/cstride;
+	a=c%cstride-1;
+
+	if(a<0) {																					// length of segment node
+		if(filtype->klen>=0 || node>=fil->nseg) return 0;
+		len=0;
+		for(d=0;d<dim;d++) {
+			u[d]=nodes[node+1][d]-nodes[node][d];
+			len+=u[d]*u[d]; }
+		len=sqrt(len);
+		*res=len-filtype->stdlen;
+		for(d=0;d<dim;d++) {
+			idx[d]=fs*node+d;
+			g[d]=-u[d]/len;
+			idx[dim+d]=fs*(node+1)+d;
+			g[dim+d]=u[d]/len; }
+		return 2*dim; }
+
+	if(node<1 || node>=fil->nseg || filtype->kypr[a]>=0) return 0;
+	r=fil->segments[node]->ypr[a]-filtype->stdypr[a];
+	while(r>PI) r-=2*PI;
+	while(r<-PI) r+=2*PI;
+	*res=r;
+	lm2=lp2=0;
+	for(d=0;d<dim;d++) {
+		xm[d]=nodes[node][d]-nodes[node-1][d];
+		xp[d]=nodes[node+1][d]-nodes[node][d];
+		lm2+=xm[d]*xm[d];
+		lp2+=xp[d]*xp[d]; }
+	if(dim==2) {
+		cm[0]=-xm[1]/lm2;
+		cm[1]=xm[0]/lm2;
+		cp3[0]=-xp[1]/lp2;
+		cp3[1]=xp[0]/lp2;
+		for(d=0;d<2;d++) {
+			idx[d]=2*(node-1)+d;
+			g[d]=cm[d];
+			idx[2+d]=2*node+d;
+			g[2+d]=-cm[d]-cp3[d];
+			idx[4+d]=2*(node+1)+d;
+			g[4+d]=cp3[d]; }
+		return 6; }
+
+	lm=sqrt(lm2);
+	lp=sqrt(lp2);
+	for(unitdim=0;unitdim<3;unitdim++) {
+		unit[0]=unit[1]=unit[2]=0;
+		unit[unitdim]=1;
+		Sph_QtniRotate(fil->segments[node-1]->qabs,unit,e[unitdim]); }
+	cy=cos(fil->segments[node]->ypr[0]);
+	sy=sin(fil->segments[node]->ypr[0]);
+	cp=cos(fil->segments[node]->ypr[1]);
+	sp=sin(fil->segments[node]->ypr[1]);
+	if(cp<FILCOSPMIN) cp=FILCOSPMIN;
+	for(d=0;d<3;d++) {
+		if(a==0) w[d]=e[2][d]+sp/cp*(cy*e[0][d]+sy*e[1][d]);
+		else if(a==1) w[d]=-sy*e[0][d]+cy*e[1][d];
+		else w[d]=(cy*e[0][d]+sy*e[1][d])/cp; }
+	cm[0]=(w[1]*xm[2]-w[2]*xm[1])/lm2;
+	cm[1]=(w[2]*xm[0]-w[0]*xm[2])/lm2;
+	cm[2]=(w[0]*xm[1]-w[1]*xm[0])/lm2;
+	cp3[0]=(w[1]*xp[2]-w[2]*xp[1])/lp2;
+	cp3[1]=(w[2]*xp[0]-w[0]*xp[2])/lp2;
+	cp3[2]=(w[0]*xp[1]-w[1]*xp[0])/lp2;
+	for(d=0;d<3;d++) {
+		idx[d]=4*(node-1)+d;
+		g[d]=cm[d];
+		idx[3+d]=4*node+d;
+		g[3+d]=-cm[d]-cp3[d];
+		idx[6+d]=4*(node+1)+d;
+		g[6+d]=cp3[d]; }
+	idx[9]=4*(node-1)+3;
+	g[9]=-(w[0]*xm[0]+w[1]*xm[1]+w[2]*xm[2])/lm;
+	idx[10]=4*node+3;
+	g[10]=(w[0]*xp[0]+w[1]*xp[1]+w[2]*xp[2])/lp;
+	return 11; }
+
+
+/* filConstraintStart */
+// Stores the gradients of the constraints of filament fil (see filConstraintGrad) at the
+// current state, in filwork->cidx, cng, and cg, for filProjectConstraints. This is called
+// at the start of each dynamics step.
+void filConstraintStart(filamentptr fil) {
+	int c,nc;
+	double res;
+	filamentworkptr filwork;
+
+	filwork=fil->filwork;
+	nc=((fil->filtype->filss->sim->dim==2)?2:4)*fil->nseg;
+	for(c=0;c<nc;c++)
+		filwork->cng[c]=filConstraintGrad(fil,c,filwork->cidx+11*c,filwork->cg+11*c,&res);
+	return; }
+
+
+/* filProjectConstraints */
+// Moves filament fil onto its constraints (see filConstraintGrad), which are a fixed
+// length for each segment if the length force constant is negative and fixed relative
+// angles for each angle whose force constant is negative. This is done after each
+// dynamics step. The coordinates move by -W G0^T lambda, where G0 is the constraint
+// gradient matrix at the start of the step (from filConstraintStart) and W is the
+// diagonal matrix of mobility factors (node mobility factors for node positions, and
+// their averages for segment rotations), so nodes with mobility factor 0 don't move.
+// Projecting along the start-of-step gradients, as in SHAKE, makes the dynamics sample
+// the Boltzmann distribution of the rigidly constrained system; projecting along the
+// gradients at the projected point instead gives a bias that doesn't vanish with the
+// time step. Newton iterations find lambda by solving (G W G0^T) dlambda = r, where r is
+// the list of constraint deviations and G is the current gradient matrix. This matrix is
+// banded, so this uses the filament's force matrix and BiCGSTAB. Segment frames are moved with
+// filTransportFrames. Iterations stop when every length deviation is less than
+// FILCONSTRAINTTOL times the standard length and every angle deviation is less than
+// FILCONSTRAINTTOL. Returns 0 for success, 1 if the iterations did not converge, and 2 for
+// a memory allocation failure.
+int filProjectConstraints(filamentptr fil) {
+	int dim,cstride,fs,nc,flatsize,c,c2,i,k,l,iter,band,*idx,*ng,*idx0,*ng0,er,seg,node,d;
+	double *g,*g0,*res,*lambda,*delta,*segnew,*wt,sum,maxres,res2,dev;
+	filamentworkptr filwork;
+	sparsematrix forcemat;
+
+	if(fil->nseg<1) return 0;
+	filwork=fil->filwork;
+	forcemat=filwork->forcemat;
+	dim=fil->filtype->filss->sim->dim;
+	cstride=(dim==2)?2:4;
+	fs=(dim==2)?2:4;
+	band=(dim==2)?5:11;															// constraints that share a coordinate are at most this far apart
+	nc=cstride*fil->nseg;
+	flatsize=(dim==2)?2*(fil->nseg+1):4*(fil->nseg+1)-1;
+	if(!forcemat->BiCGSTAB)
+		sparseAllocBandM(forcemat,-1,-1,1);
+
+	idx0=filwork->cidx;															// gradients at the start of the step
+	ng0=filwork->cng;
+	g0=filwork->cg;
+	res=filwork->flatforces[0];											// scratch space
+	lambda=filwork->flatforces[1];
+	delta=filwork->flatnodes[2];
+	segnew=filwork->flatnodes[1];
+	idx=(int*) malloc(11*nc*sizeof(int));
+	ng=(int*) malloc(nc*sizeof(int));
+	g=(double*) malloc(11*nc*sizeof(double));
+	wt=(double*) malloc(flatsize*sizeof(double));
+	if(!idx || !ng || !g || !wt) {
+		free(idx);
+		free(ng);
+		free(g);
+		free(wt);
+		return 2; }
+
+	for(node=0;node<=fil->nseg;node++)							// mobility weights
+		for(d=0;d<dim;d++) wt[fs*node+d]=filNodeMobility(fil,node);
+	if(dim==3)
+		for(seg=0;seg<fil->nseg;seg++) wt[4*seg+3]=filSegRollMobility(fil,seg);
+
+	er=1;
+	for(iter=0;iter<FILCONSTRAINTITER;iter++) {
+		maxres=res2=0;
+		for(c=0;c<nc;c++) {													// deviations and gradients
+			ng[c]=filConstraintGrad(fil,c,idx+11*c,g+11*c,&res[c]);
+			if(ng[c]) {
+				sum=0;
+				for(k=0;k<ng[c];k++) sum+=g[11*c+k]*g[11*c+k]*wt[idx[11*c+k]];
+				if(sum<=0) ng[c]=0; }													// only immobile coordinates, so it can't be satisfied by moving
+			if(!ng[c]) res[c]=0;
+			dev=fabs(res[c]);
+			if(c%cstride==0) dev/=fil->filtype->stdlen;
+			if(dev>maxres) maxres=dev;
+			res2+=res[c]*res[c]; }
+		if(maxres<FILCONSTRAINTTOL) {
+			er=0;
+			break; }
+
+		sparseSetSizeM(forcemat,nc,nc);									// G W G0^T
+		sparseClearM(forcemat);
+		for(c=0;c<nc;c++) {
+			lambda[c]=0;
+			if(!ng[c] || !ng0[c]) {
+				sparseAddToM(forcemat,c,c,1);
+				res[c]=0;
+				continue; }
+			for(c2=(c-band<0?0:c-band);c2<=c+band && c2<nc;c2++) {
+				if(!ng[c2] || !ng0[c2]) continue;
+				sum=0;
+				for(k=0;k<ng[c];k++)
+					for(l=0;l<ng0[c2];l++)
+						if(idx[11*c+k]==idx0[11*c2+l]) sum+=g[11*c+k]*wt[idx[11*c+k]]*g0[11*c2+l];
+				if(sum!=0) sparseAddToM(forcemat,c,c2,sum); }}
+		sparseBiCGSTAB(forcemat,res,lambda,1e-24*res2);
+
+		for(i=0;i<flatsize;i++) delta[i]=0;							// delta = -W G0^T lambda
+		for(c=0;c<nc;c++)
+			if(ng[c])
+				for(k=0;k<ng0[c];k++)
+					delta[idx0[11*c+k]]-=wt[idx0[11*c+k]]*g0[11*c+k]*lambda[c];
+
+		if(dim==2)
+			for(node=0;node<=fil->nseg;node++) {
+				fil->nodes[node][0]+=delta[2*node];
+				fil->nodes[node][1]+=delta[2*node+1]; }
+		else {
+			filCopyYpr2ToRoll(fil);
+			filWorkFramesFromSegments(fil);
+			for(seg=0;seg<fil->nseg;seg++)
+				for(d=0;d<3;d++)
+					segnew[3*seg+d]=fil->nodes[seg+1][d]+delta[4*(seg+1)+d]-fil->nodes[seg][d]-delta[4*seg+d];
+			filTransportFrames(fil,fil->nodes,filwork->wqabs[0],segnew,delta+3,4,filwork->wqabs[0],fil->seg0up,fil->roll);
+			for(node=0;node<=fil->nseg;node++)
+				for(d=0;d<3;d++) fil->nodes[node][d]+=delta[4*node+d];
+			filCopyRollToYpr2(fil); }
+		filNodes2Angles(fil,-1,-1); }
+
+	free(idx);
+	free(ng);
+	free(g);
+	free(wt);
+	return er; }
+
+
+/* filUnstable */
+// Returns 1 if the mechanics of filament type filtype have become numerically unstable
+// and 0 if not. It is unstable if some node coordinate is not finite or some segment is
+// longer than 100 times the system diagonal plus the standard length. With a length
+// spring, it is also unstable if some segment is longer than 100 times the standard
+// length plus the thermal spread of segment lengths. This stops a blown-up simulation
+// before branch nucleation, which scales with contour length, creates an unbounded
+// number of filaments.
+int filUnstable(simptr sim,filamenttypeptr filtype) {
+	int f,node,d,dim;
+	double maxlen,maxlen2,sprlen,seglen2,len2,dx;
+	filamentptr fil;
+
+	dim=sim->dim;
+	maxlen=100*(systemdiagonal(sim)+filtype->stdlen);
+	maxlen2=maxlen*maxlen;
+	for(f=0;f<filtype->nfil;f++) {
+		fil=filtype->fillist[f];
+		for(node=0;node<=fil->nseg;node++) {
+			len2=0;
+			for(d=0;d<dim;d++) {
+				if(!isfinite(fil->nodes[node][d])) return 1;
+				if(node>0) {
+					dx=fil->nodes[node][d]-fil->nodes[node-1][d];
+					len2+=dx*dx; }}
+			if(node==0) continue;
+			seglen2=maxlen2;
+			if(filtype->klen>0) {
+				sprlen=100*(filtype->stdlen+sqrt(filtype->kT/(fil->segments[node-1]->thk*filtype->klen)));
+				if(sprlen*sprlen<seglen2) seglen2=sprlen*sprlen; }
+			if(!(len2<=seglen2)) return 1; }}
+	return 0; }
+
+
+/* filDynamicsEnds */
+// Treadmilling, branching, and end dynamics for filament type filtype, which are the parts
+// of a time step that change the filament structure.
+void filDynamicsEnds(simptr sim,filamenttypeptr filtype) {
+	filamentptr fil;
+	int f,i,treadnum;
+
+	if(filtype->treadrate!=0) {
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			if(fil->endstate[filtype->treadrate>0?1:0]!=FESopen) continue;	// only an open end takes a monomer
+			treadnum=poisrandD(fabs(filtype->treadrate)*sim->dt);
+			for(i=0;i<treadnum;i++)
+				filTreadmill(sim,fil,filtype->treadrate>0?'p':'m'); }}
+
+	filBranchDynamics(sim,filtype);									// Arp2/3-style branch nucleation
+	if(filSurfBranchOn(filtype)) filSurfBranchDynamics(sim,filtype);	// branching near surfaces
+	filEndTransitions(sim,filtype);									// before length changes: an end capped now doesn't also grow now
+	filEndDynamics(sim,filtype);										// before the integrator: a new segment relaxes this step
+	return; }
+
+
+/* filDynamicsIntegrate */
+// Moves the filaments of type filtype with its dynamics method, including constraints.
+// Returns 0 for success or 1 for an error.
+int filDynamicsIntegrate(simptr sim,filamenttypeptr filtype) {
+	int f,i,reflect;
+
+	if(filtype->dynamics!=FDnone && filConstrained(filtype))		// constraint gradients at the start of the step
+		for(f=0;f<filtype->nfil;f++)
+			filConstraintStart(filtype->fillist[f]);
+	reflect=(filtype->dynamics!=FDnone && filSurfReflectOn(filtype));
+	if(filtype->dynamics!=FDnone)										// node positions before the integrator, for reflecting surfaces and adsorbed nodes
+		for(f=0;f<filtype->nfil;f++)
+			if(reflect || filNodesAdsorbed(filtype->fillist[f]))
+				filSaveStartNodes(filtype->fillist[f]);
+	if(filtype->dynamics==FDeuler)
+		filEulerDynamics(sim,filtype);
+	else if(filtype->dynamics==FDRK2)
+		filRK2Dynamics(sim,filtype);
+	else if(filtype->dynamics==FDRK4)
+		filRK4Dynamics(sim,filtype);
+	else if(filtype->dynamics==FDeulermat)
+		filEulerMatDynamics(sim,filtype);
+	else if(filtype->dynamics==FDimplicit)
+		filImplicitDynamics(sim,filtype);
+	else if(filtype->dynamics==FDimplicitold)
+		filImplicitOldDynamics(sim,filtype);
+
+	if(filtype->dynamics!=FDnone && filConstrained(filtype))		// negative force constants are constraints
+		for(f=0;f<filtype->nfil;f++) {
+			i=filProjectConstraints(filtype->fillist[f]);
+			if(i==2) {
+				simLog(sim,10,"Out of memory projecting filaments onto constraints\n");
+				return 1; }
+			if(i==1 && !filtype->constraintwarn) {
+				simLog(sim,5,"WARNING: filament %s did not converge onto its constraints (negative force constants) at time %g; the time step may be too long\n",filtype->fillist[f]->filname,sim->time);
+				filtype->constraintwarn=1; }}
+
+	if(filtype->dynamics!=FDnone && filUnstable(sim,filtype)) {
+		simLog(sim,9,"ERROR: filament type %s became numerically unstable at time %g; reduce time_step, mobility, or force constants, or use dynamics implicit\n",filtype->ftname,sim->time);
+		return 1; }
+	return 0; }
+
+
 /* filDynamics */
 int filDynamics(simptr sim) {
 	filamentssptr filss;
 	filamentptr fil;
 	filamenttypeptr filtype;
-	int f,ft,i,treadnum,steric,profileerror;
+	int f,ft;
 
 	filss=sim->filss;
 	if(!filss) return 0;
-	steric=filStericEnabled(sim) || filImplicitEnabled(sim);
-	if(filLengthEnabled(sim) && !filImplicitEnabled(sim)) {
-		simLog(sim,9,"ERROR: negative force_length requires coupled implicit_network dynamics in this branch\n");return 1;}
-	if(sim->srfss && sim->srfss->nforceclamp && !filImplicitEnabled(sim)) {
-		simLog(sim,9,"ERROR: force_clamp requires implicit_network; no panel was moved\n");return 1;}
-	if(steric) {
-		SMOL_PROFILE_RUN(SP_CHEM_PREPARE,profileerror=filStericChemistry(sim,1));
-		if(profileerror) return 1; }
+    if(sim->srfss && sim->srfss->nforceclamp && !filImplicitEnabled(sim)) {simLog(sim,9,"ERROR: force_clamp requires implicit_network filament dynamics\n");return 1;}
 
-	for(ft=0;ft<filss->ntype;ft++) {
+	if(filStericEnabled(sim) || filImplicitEnabled(sim)) {
+        if(filStericValidate(sim) || filStericChemistry(sim,1)) return 1;
+        for(ft=0;ft<filss->ntype;ft++) filDynamicsEnds(sim,filss->filtypes[ft]);
+        if(filStericChemistry(sim,0) || filStericDynamics(sim)) return 1;
+        goto network_moved;
+    }
+
+	if(filContactOn(filss) || filss->contacton) {		// end changes for all types first, so contact forces see the final structure
+		for(ft=0;ft<filss->ntype;ft++)
+			filDynamicsEnds(sim,filss->filtypes[ft]);
+		if(filContactForces(sim)) {
+			simLog(sim,10,"Out of memory computing filament contact forces\n");
+			return 1; }
+		for(ft=0;ft<filss->ntype;ft++)
+			if(filDynamicsIntegrate(sim,filss->filtypes[ft])) return 1; }
+	else
+		for(ft=0;ft<filss->ntype;ft++) {
+			filDynamicsEnds(sim,filss->filtypes[ft]);
+			if(filDynamicsIntegrate(sim,filss->filtypes[ft])) return 1; }
+
+network_moved:
+	for(ft=0;ft<filss->ntype;ft++) {								// adsorbed nodes stay on their surfaces
 		filtype=filss->filtypes[ft];
-		if(filtype->treadrate!=0) {
-			SMOL_PROFILE_RUN(SP_TREADMILL,for(f=0;f<filtype->nfil;f++) {
+		if(filtype->dynamics==FDnone) continue;
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			if(filSurfAdsorbedNodes(fil)) filNodes2Angles(fil,-1,-1); }}
+
+	filPinJunctions(filss);													// re-pin rigid junctions after all motion this step
+
+	if(filss->njunct>0)															// pinning moves daughters, so put their adsorbed nodes back on their surfaces
+		for(ft=0;ft<filss->ntype;ft++) {
+			filtype=filss->filtypes[ft];
+			if(filtype->dynamics==FDnone) continue;
+			for(f=0;f<filtype->nfil;f++) {
 				fil=filtype->fillist[f];
-				if(filEndIsCapped(fil,filtype->treadrate>0?'b':'f')) continue;	// capped end takes no monomer
-				treadnum=poisrandD(fabs(filtype->treadrate)*sim->dt);
-				for(i=0;i<treadnum;i++)
-					filTreadmill(sim,fil,filtype->treadrate>0?'b':'f'); }); }
+				if(filRigidParent(fil) && filSurfAdsorbedNodes(fil)) filNodes2Angles(fil,-1,-1); }}
 
-		SMOL_PROFILE_RUN(SP_BRANCH,filBranchDynamics(sim,filtype));  // Arp2/3-style branch nucleation
-		SMOL_PROFILE_RUN(SP_CAP,filCappingDynamics(sim,filtype));    // cap before elongation
-		if(filtype->elongmodel) {
-			/* Rest length changes without moving any node. Existing coupled
-			   mechanics then transfers the polymerization stress to obstacles. */
-			SMOL_PROFILE_RUN(SP_ELONGATE,for(f=0;f<filtype->nfil;f++) {
-				if(filElongate(sim,filtype->fillist[f],filtype->elongrate*sim->dt)<0) profileerror=1;
-			});
-			if(profileerror) {if(steric) filStericChemistry(sim,0);return 1;}
-		} else SMOL_PROFILE_RUN(SP_ELONGATE,filElongationDynamics(sim,filtype));
-
-		if(steric) continue;
-		if(filtype->dynamics==FDeuler)
-			filEulerDynamics(sim,filtype);
-		else if(filtype->dynamics==FDRK2)
-			filRK2Dynamics(sim,filtype);
-		else if(filtype->dynamics==FDRK4)
-			filRK4Dynamics(sim,filtype);
-		else if(filtype->dynamics==FDeulermat)
-			filEulerMatDynamics(sim,filtype);
-		else if(filtype->dynamics==FDimplicit)
-			filImplicitDynamics(sim,filtype);
-		else if(filtype->dynamics==FDimplicitold)
-			filImplicitOldDynamics(sim,filtype);
-			}
-
-	if(steric) {
-		if(filStericChemistry(sim,0)) return 1;
-		SMOL_PROFILE_RUN(SP_MECHANICS,profileerror=filStericDynamics(sim));
-		return profileerror; }
-	for(ft=0;ft<filss->ntype;ft++) {								// re-pin branches after all motion this step
+	for(ft=0;ft<filss->ntype;ft++) {								// reflecting surfaces reflect nodes that crossed them; after pinning, which moves daughters
 		filtype=filss->filtypes[ft];
-		for(f=0;f<filtype->nfil;f++)
-			filPinBranches(filtype->fillist[f]); }
+		if(filtype->dynamics==FDnone || !filSurfReflectOn(filtype)) continue;
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			if(filSurfReflectNodes(fil)) filNodes2Angles(fil,-1,-1); }}
 
-	if(sim->boxs && sim->boxs->blist) return boxesupdatesegments(sim);
+	for(ft=0;ft<filss->ntype;ft++) {								// adsorption and desorption of nodes, after all motion this step
+		filtype=filss->filtypes[ft];
+		if(filSurfAdsorbOn(filtype)) filSurfAdsorbDesorb(sim,filtype); }
+
+	filSurfReactionForces(sim);											// forces that filaments exert on surfaces, at the end of the step
+
+	if(filBoxesUpdate(sim)) {													// box lists describe the filaments at the end of the step
+		simLog(sim,10,"Out of memory assigning filaments to boxes\n");
+		return 1; }
+
 	return 0; }
 
 
 
 
+
+
+int filSetWorkers(simptr sim,int workers) {
+ if(!sim) return 1;
+ if(workers<0 || workers>256 || (workers>1 && !filWorkersSupported())) return 2;
+ if(!sim->filss && filEnableFilaments(sim)) return 1;
+ sim->filss->workers=workers;return 0;
+}
+
+
+segmentptr filPointInFilament(simptr sim,const double *point,double *distance,segmentptr *nearest) {
+	return filStericQuery(sim,point,point,0,NULL,distance,nearest); }
+
+
+segmentptr filLineXFilament(simptr sim,const double *a,const double *b,double radius,double *distance,segmentptr *nearest) {
+	return filStericQuery(sim,a,b,radius,NULL,distance,nearest); }
+
+
+int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr) {
+	int f,i,ft,cross;
+	double thk,*ptf,*ptb,dist;
+	filamentssptr filss;
+	filamenttypeptr filtype;
+	filamentptr fil,fil2;
+	segmentptr segmentm1,segmentp1,segment2;
+	if(filptr) *filptr=NULL;
+	if(filStericEnabled(sim)) {
+		segmentptr hit=filStericQuery(sim,segment->xyzminus,segment->xyzplus,segment->fil->filtype->stericradius,segment,NULL,NULL);
+		if(hit && filptr) *filptr=hit->fil;
+		return hit!=NULL; }
+
+	fil=segment->fil;
+	ptf=segment->xyzminus;
+	ptb=segment->xyzplus;
+	thk=segment->thk;
+	segmentm1=(segment->index==0) ? NULL:fil->segments[segment->index-1];
+	segmentp1=(segment->index==fil->nseg-1) ? NULL:fil->segments[segment->index+1];
+
+	cross=0;
+	filss=sim->filss;
+	for(ft=0;ft<filss->ntype && !cross;ft++) {
+		filtype=filss->filtypes[ft];
+		for(f=0;f<filtype->nfil && !cross;f++) {
+			fil2=filtype->fillist[f];
+			for(i=0;i<fil2->nseg && !cross;i++) {
+				segment2=fil2->segments[i];
+				if(!(segment2==segment || segment2==segmentm1 || segment2==segmentp1)) {
+					dist=Geo_NearestSeg2SegDist(ptf,ptb,segment2->xyzminus,segment2->xyzplus);
+					if(dist<thk+segment2->thk) cross=1; }}}}
+	if(cross && filptr)
+		*filptr=fil2;
+	return cross; }
+
+
+int filAddFilamentForce(simptr sim) {
+	return filStericForces(sim); }
+
+
+static void filConfinePointForce(filamenttypeptr type,panelptr panel,const double *point,double *force) {
+ int dim=type->filss->sim->dim,d;double nearest[3];
+ enum PanelFace bad=type->confineface==PFfront?PFback:PFfront;
+ if(panel->ps==PSrect) {
+  double sign=(bad==PFback?1:-1)*panel->front[0],height,dist;
+  d=(int)panel->front[1];height=panel->forceclamp && panel->forceclamp->intrial?panel->forceclamp->trialposition:panel->point[0][d];
+  dist=sign*(point[d]-height);if(dist<type->stericradius) force[d]+=type->confineforce*(type->stericradius-dist)*sign;
+ } else if(panelside((double*)point,panel,dim,NULL,0,0)==bad) {
+  closestpanelpt(panel,dim,(double*)point,nearest,0);
+  for(d=0;d<dim;d++) force[d]+=type->confineforce*(nearest[d]-point[d]);
+ }
+}
+static void filLegacyConfineNodeForce(const filamentptr fil,int node,double *force) {
+ filamenttypeptr type=fil->filtype;surfaceptr surf=type->confinesrf;
+ if(!surf || type->confineforce<=0) return;
+ for(int ps=0;ps<PSMAX;ps++) for(int p=0;p<surf->npanel[ps];p++) filConfinePointForce(type,surf->panels[ps][p],fil->nodes[node],force);
+}
+static void filLegacySurfaceReaction(simptr sim) {
+ for(int ft=0;ft<sim->filss->ntype;ft++) {
+  filamenttypeptr type=sim->filss->filtypes[ft];surfaceptr surf=type->confinesrf;
+  if(!surf || type->confineforce<=0) continue;
+  for(int ps=0;ps<PSMAX;ps++) for(int p=0;p<surf->npanel[ps];p++) {
+   panelptr panel=surf->panels[ps][p];
+   for(int f=0;f<type->nfil;f++) {filamentptr fil=type->fillist[f];if(!fil->nseg) continue;
+    for(int node=0;node<=fil->nseg;node++) {double force[3]={0,0,0};filConfinePointForce(type,panel,fil->nodes[node],force);for(int d=0;d<sim->dim;d++) panel->force[d]-=force[d];}
+   }
+  }
+ }
+}
+void filAddConfineForces(filamentptr fil,int nodemin,int nodemax) {
+ filamenttypeptr type=fil->filtype;surfaceptr surf=type->confinesrf;
+ if(!surf || type->confineforce<=0) return;
+ if(nodemin<0) nodemin=0;
+ if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
+ for(int ps=0;ps<PSMAX;ps++) for(int p=0;p<surf->npanel[ps];p++)
+  for(int node=nodemin;node<=nodemax;node++) filConfinePointForce(type,surf->panels[ps][p],fil->nodes[node],fil->filwork->forces[node]);
+}
+
+
+void filStepMaterialFrame(filamentptr fil,double dtmu,int in,int out) {
+	int seg;
+	filamentworkptr filwork=fil->filwork;
+	double axis[3],**nodesin=filwork->wnodes[in];
+	double *seg0upin=filwork->wseg0up[in],*seg0upout=filwork->wseg0up[out];
+	double *rollin=filwork->wroll[in],*rollout=filwork->wroll[out],*nodemobility=fil->nodemobility;
+	if(fil->filtype->filss->sim->dim==3) {
+		if(in==0) filCopyYpr2ToRoll(fil);
+		axis[0]=nodesin[1][0]-nodesin[0][0];
+		axis[1]=nodesin[1][1]-nodesin[0][1];
+		axis[2]=nodesin[1][2]-nodesin[0][2];
+		Sph_RotateVectorAxisAngle(seg0upin,axis,dtmu*nodemobility[0]*filwork->torques[0],seg0upout);
+		for(seg=1;seg<fil->nseg;seg++)
+			rollout[seg]=rollin[seg]+dtmu*nodemobility[1]*filwork->torques[seg];
+		if(out==0) filCopyRollToYpr2(fil); }
+	return; }
+
+void filPrepareThermalForces(filamentptr fil) {filDrawThermalForces(fil);}
+int filtypeSetPlusEnd(filamenttypeptr type,char end) {if(end=='b') end='p';if(end=='f') end='m';if(end!='p' && end!='m') return 1;type->plusend=end;return 0;}
+int filElongate(simptr sim,filamentptr fil,double length) {int end=fil->filtype->plusend!='m';if(fil->endstate[end]==FEScapped) return 0;return filEndLengthChange(sim,fil,end,length);}
+void filCappingDynamics(simptr sim,filamenttypeptr type) {filEndTransitions(sim,type);}
+void filElongationDynamics(simptr sim,filamenttypeptr type) {filEndDynamics(sim,type);}

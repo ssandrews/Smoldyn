@@ -1,4 +1,5 @@
 # Filaments
+# This file works well with RK4 dynamics, but is unstable with Euler or Implicit
 
 #units nm us zJ
 
@@ -9,19 +10,12 @@ dim 2
 boundaries x -20 20 r
 boundaries y -20 20 r
 
-species red
-
-difc red 3
-
-color red red
-
 time_start 0
 time_stop 50000
 time_step 0.06
 
 frame_thickness 0
 
-#mol 1 red u u
 
 start_filament_type template
 color blue
@@ -29,7 +23,7 @@ thickness 3
 polygon ve
 force_arrows 1 red
 kT 5
-dynamics implicit2
+dynamics RK4
 standard_length 5
 standard_angle 0
 force_length 1
@@ -37,19 +31,7 @@ force_angle 5
 mobility 10
 end_filament_type
 
-#start_filament template:fil1
-#first_segment 0 0  5  0
-#add_segment 5  0.3
-#add_segment 5  0.3
-#end_filament
-
-
 random_filament template:fil1 8  0 0 u
-#random_filament template:fil2 8  20 50 u
-#random_filament template:fil3 20  30 50 u
-#random_filament template:fil4 49  40 50 u
-#random_filament template:fil5 49  50 50 u
-
 
 filament template:fil1 node_mobility 0 0
 filament template:fil1 node_mobility -1 0
@@ -57,7 +39,7 @@ filament template:fil1 node_mobility -1 0
 filament_type template standard_angle 0.3
 filament_type template kT 0
 
-cmd B pause
+cmd E pause
 #cmd E printFilament template fil1 xabf stdout
 
 end_file

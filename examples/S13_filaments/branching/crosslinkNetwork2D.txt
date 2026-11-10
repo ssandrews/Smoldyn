@@ -1,0 +1,153 @@
+# A crosslinked filament network.
+#
+# Two actin filaments (rails) are joined by six short crosslink filaments (rungs)
+# into a ladder, which has five closed loops. Each rung attaches by its minus end
+# to the lower rail and by its plus end to the upper rail. Smoldyn holds the
+# attachments that form a tree exactly, and holds each remaining attachment, which
+# closes a loop, with a spring (junction_force). Here, each rung's minus end is
+# pinned exactly to the lower rail, and each rung's plus end is held to the upper
+# rail by a spring. The diagnostics output at the start lists which attachments
+# are rigid and which are springs. The crosslink type's branch_angle and
+# branch_force_angle hold each rung at right angles to both rails.
+#
+# During the simulation, attachments change with "set filament" commands:
+#  - at time 20, rungs r3 and r7 detach their plus ends from the upper rail,
+#    opening two loops, so these rungs stand free on the lower rail;
+#  - at time 40, rung r3 attaches its plus end to the upper rail again, at node 5
+#    instead of node 3, so it ends up tilted;
+#  - at time 60, rung r1 detaches its minus end from the lower rail. Its plus end
+#    attachment then becomes rigid, so r1 is now held exactly by the upper rail
+#    and hangs from it.
+#
+# smoldyn crosslinkNetwork2D.txt
+
+graphics opengl_good
+graphic_iter 20
+
+dim 2
+boundaries x -10 10
+boundaries y -8 12
+
+time_start 0
+time_stop 80
+time_step 0.001
+random_seed 1
+
+frame_thickness 0
+
+start_filament_type actin
+color red
+thickness 3
+polygon ve
+dynamics euler
+kT 0.01
+standard_length 1
+standard_angle 0
+force_length 100
+force_angle 10
+mobility 1
+end_filament_type
+
+start_filament_type crosslink
+color green
+thickness 3
+polygon ve
+dynamics euler
+kT 0.01
+standard_length 1
+standard_angle 0
+force_length 100
+force_angle 10
+mobility 1
+branch_angle 1.5708          # rungs leave both rails at right angles
+branch_force_angle 5
+end_filament_type
+
+# the two rails, 12 segments each
+start_filament actin:lower
+first_segment -6 0 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+end_filament
+
+start_filament actin:upper
+first_segment -6 3 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+end_filament
+
+# the rungs, 3 segments each, between the same node numbers of the two rails
+start_filament crosslink:r1
+first_segment -5 0 1 1.5708
+add_segment 1 0
+add_segment 1 0
+attach minus actin:lower 1
+attach plus actin:upper 1
+end_filament
+
+start_filament crosslink:r3
+first_segment -3 0 1 1.5708
+add_segment 1 0
+add_segment 1 0
+attach minus actin:lower 3
+attach plus actin:upper 3
+end_filament
+
+start_filament crosslink:r5
+first_segment -1 0 1 1.5708
+add_segment 1 0
+add_segment 1 0
+attach minus actin:lower 5
+attach plus actin:upper 5
+end_filament
+
+start_filament crosslink:r7
+first_segment 1 0 1 1.5708
+add_segment 1 0
+add_segment 1 0
+attach minus actin:lower 7
+attach plus actin:upper 7
+end_filament
+
+start_filament crosslink:r9
+first_segment 3 0 1 1.5708
+add_segment 1 0
+add_segment 1 0
+attach minus actin:lower 9
+attach plus actin:upper 9
+end_filament
+
+start_filament crosslink:r11
+first_segment 5 0 1 1.5708
+add_segment 1 0
+add_segment 1 0
+attach minus actin:lower 11
+attach plus actin:upper 11
+end_filament
+
+cmd b diagnostics filament
+
+cmd @ 20 set filament crosslink:r3 detach plus
+cmd @ 20 set filament crosslink:r7 detach plus
+cmd @ 40 set filament crosslink:r3 attach plus actin:upper 5
+cmd @ 60 set filament crosslink:r1 detach minus
+
+end_file

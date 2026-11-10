@@ -151,7 +151,7 @@ static void filImplicitNodeResidual(simptr sim,const double *x,double *r,int i) 
  if(dim==3) {
   r[dim*w->nnode+i]=x[dim*w->nnode+i];
   if(node->node<fil->nseg && t->dynamics!=FDnone) {
-   double mu=t->mobility*fil->nodemobility[node->node?1:0];
+   double mu=t->mobility*filSegRollMobility(fil,node->node);
    r[dim*w->nnode+i]-=sim->dt*t->stdlen*mu*fil->filwork->torques[node->node];
   }
  }
@@ -177,7 +177,7 @@ static void filImplicitSerialResidual(simptr sim,const double *x,double *r) {
   if(dim==3 && node->node<fil->nseg && t->dynamics!=FDnone) {
    /* Preserve the author's rotational mobility convention: node 0 for the
       first material frame, node 1 for subsequent relative roll coordinates. */
-   double mu=t->mobility*fil->nodemobility[node->node?1:0];
+   double mu=t->mobility*filSegRollMobility(fil,node->node);
    r[dim*w->nnode+i]-=sim->dt*t->stdlen*mu*fil->filwork->torques[node->node];
   }
  }
@@ -209,6 +209,8 @@ static int filImplicitTrial(simptr sim,const double *x,double *r,int steric) {
      for(slot=0;slot<p->workers;slot++) for(int next=w->workfirst[slot];next>=0;next=w->filaments[next].worknext)
       if(valid) er|=filImplicitAngles(sim,next);
    }
+#pragma omp single
+   {if(!er && filContactOn(sim->filss)) er=filContactForces(sim);}
    if(hasclamp) {
 #pragma omp single
     {if(!er) er=surfforceclampsolve(sim);}
@@ -230,6 +232,7 @@ static int filImplicitTrial(simptr sim,const double *x,double *r,int steric) {
    if(!p->jacobiantrial) {SMOL_PROFILE_RUN(SP_LENGTH_PROJECT,er=filLengthProject(sim,p->length));}
    for(f=0;f<w->nfilament && !er;f++) er=filImplicitAngles(sim,f);
   }
+  if(!er && filContactOn(sim->filss)) er=filContactForces(sim);
   if(!er && hasclamp) er=surfforceclampsolve(sim);
   if(!er) filStericOrdinaryForces(sim,1,0);
   if(!er && !steric) filImplicitSerialResidual(sim,x,r);
@@ -451,7 +454,7 @@ int filImplicitStep(simptr sim,int workers) {
    stiff+=fmax(0,filSegmentStiffness(node->fil,node->fil->nseg-1));
   stiff+=4*(t->branchforceangle+t->branchforceazimuth)/(length*length)+4*t->sterick;
   for(d=0;d<dim;d++) p->diag[dim*root+d]+=sim->dt*mu*stiff;
-  if(dim==3) p->diag[dim*w->nnode+i]+=4*sim->dt*t->mobility*t->kypr[2];
+  if(dim==3 && node->node<node->fil->nseg) p->diag[dim*w->nnode+i]+=4*sim->dt*t->mobility*filSegRollMobility(node->fil,node->node)*fmax(0,t->kypr[2]);
   p->maxstretch=fmax(p->maxstretch,sim->dt*t->mobility*(t->elongmodel && t->klen<0?filSegmentStiffness(node->fil,node->fil->nseg-1):t->klen));
  }
  if(filImplicitResidual(sim,p->x,p->r)) {

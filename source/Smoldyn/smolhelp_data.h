@@ -3,7 +3,7 @@
  docs/Smoldyn/SmoldynManual.tex. To update, edit the
  manual and rerun the script. */
 
-#define SMOLHELP_NENTRY 290
+#define SMOLHELP_NENTRY 310
 
 static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about the configuration file",0,"#",
@@ -372,7 +372,8 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    value has been reached, additional TIFFs cannot be saved. Default value is\n"
 		"    999."},
 	{"statement","Statements about graphics",0,"light",
-		"  light number parameter value_1 value_2 value_3 [value_4]",
+		"  light number parameter value_1 value_2 value_3 [value_4]\n"
+		"  light number parameter color [alpha]",
 		"    Set the parameters for a light source, for use with \"opengl_better\" quality\n"
 		"    graphics. The light number should be between 0 and 7 for which light is\n"
 		"    being set. It can also be either \"global\" or \"room\", which are the same\n"
@@ -380,12 +381,14 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    \"ambient\" parameter for the room light. The parameter may be one of the\n"
 		"    strings: \"ambient\", \"diffuse\", \"specular\", \"position\", \"on\", \"off\", or\n"
 		"    \"auto\". For \"ambient\", \"diffuse\", and \"specular\", enter the color with the\n"
-		"    value inputs for red, green, and blue color channels; optionally, end with\n"
-		"    alpha. Ambient light is non-directional and does not reflect off of a\n"
-		"    surface. Diffuse light is directional (from the light source) but lights\n"
-		"    the illuminated side of a surface evenly, as though it is a non-shiny\n"
-		"    surface. Specular light is also directional and reflects off of a surface\n"
-		"    as though it is shiny.\n"
+		"    value inputs for red, green, and blue color channels, or as a single color\n"
+		"    name (see the color statement for the list of names); optionally, end with\n"
+		"    alpha. If a color name is the same as a defined variable name, it is\n"
+		"    interpreted as the color name. Ambient light is non-directional and does\n"
+		"    not reflect off of a surface. Diffuse light is directional (from the light\n"
+		"    source) but lights the illuminated side of a surface evenly, as though it\n"
+		"    is a non-shiny surface. Specular light is also directional and reflects off\n"
+		"    of a surface as though it is shiny.\n"
 		"\n"
 		"    For parameter type \"position\", either enter the light's 3-dimensional\n"
 		"    position as x, y, and z in the values and then enter a value of 1 for the\n"
@@ -528,16 +531,18 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    omitted, but see below for where it is needed. state_1 and state_2 can be\n"
 		"    any of: fsoln, bsoln (in solution, hitting the front or back of the panel,\n"
 		"    respectively), front, back, up, or down. value is the rate constant or rate\n"
-		"    coefficient; enter it as -1 if you want the maximum possible value,\n"
-		"    typically meaning that the probability gets set to 1 (however, it may get\n"
-		"    set to a lower value if the rate of the reverse process is also set to -1,\n"
-		"    in which case both probabilities are chosen to maintain the appropriate\n"
-		"    equilibrium constant). If new_spec, which is an optional parameter, is\n"
-		"    entered, then molecules change to the listed species at the same time as\n"
-		"    changing states. If the rule form is used (generally with wildcard\n"
-		"    characters), then the statement is not applied immediately but is stored\n"
-		"    for use during rule expansion; during rule expansion, it is applied to all\n"
-		"    species that match the given species pattern.\n"
+		"    coefficient; it is a rate coefficient, with units of length/time, if\n"
+		"    state_1 is fsoln or bsoln, and otherwise a rate constant, with units of\n"
+		"    1/time; enter it as -1 if you want the maximum possible value, typically\n"
+		"    meaning that the probability gets set to 1 (however, it may get set to a\n"
+		"    lower value if the rate of the reverse process is also set to -1, in which\n"
+		"    case both probabilities are chosen to maintain the appropriate equilibrium\n"
+		"    constant). If new_spec, which is an optional parameter, is entered, then\n"
+		"    molecules change to the listed species at the same time as changing states.\n"
+		"    If the rule form is used (generally with wildcard characters), then the\n"
+		"    statement is not applied immediately but is stored for use during rule\n"
+		"    expansion; during rule expansion, it is applied to all species that match\n"
+		"    the given species pattern.\n"
 		"\n"
 		"    To specify interaction rates for molecules that collide with surface B,\n"
 		"    while diffusing along surface A, use the first state parameter. In this\n"
@@ -716,12 +721,24 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    the correct concentrations, assuming the emitter is created elsewhere (such\n"
 		"    as with a command or a zeroth order reaction). face is the side of the\n"
 		"    surface that faces the emitter, species is the emitted molecular species,\n"
-		"    amount is the emission rate (it only matters if there is more than one\n"
-		"    emitter for this surface and species, and then it is only the relative\n"
-		"    rates of the different emitters that matters), and pos is the\n"
+		"    amount is the emission rate, in units of 1/time (it only matters if there\n"
+		"    is more than one emitter for this surface and species, and then it is only\n"
+		"    the relative rates of the different emitters that matters), and pos is the\n"
 		"    system-dimensional position of the emitter. This statement is designed to\n"
 		"    be used with all emitters strictly inside a closed surface and all of them\n"
 		"    with positive amount values."},
+	{"statement","Statements about surfaces",1,"mobility",
+		"  * mobility float",
+		"    Mobility of the surface, in units of length^2/(energy*time), which makes it\n"
+		"    move in response to the forces that filaments exert on it through softwall\n"
+		"    and repel interactions. In each time step, the surface is translated by its\n"
+		"    mobility times the force on it times the time step, without rotating, where\n"
+		"    the force includes any force from the applysurfaceforce command. Its\n"
+		"    surface-bound molecules and adsorbed filament nodes move with it, and\n"
+		"    solution-phase molecules, and free filament nodes that have a reflect\n"
+		"    interaction with it, that it runs into are pushed along with it. The\n"
+		"    default is 0, meaning that the surface doesn't move. See the section on\n"
+		"    filament-surface interactions."},
 	{"statement","Statements about surfaces",1,"end_surface",
 		"  * end_surface",
 		"    End of a block of surface definitions. Surface statements are no longer\n"
@@ -1062,7 +1079,18 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",1,"dynamics",
 		"  * dynamics dynamics",
 		"    Sets the dynamics for the filament type. Current options are: \"none\",\n"
-		"    \"Euler\". These are case-insensitive."},
+		"    \"Euler\", \"RK2\", \"RK4\", \"EulerMat\", \"Implicit\" and \"ImplicitOld\". These are\n"
+		"    case-insensitive. \"Euler\", \"RK2\", and \"RK4\" are explicit methods, which\n"
+		"    need short time steps for stiff filaments. \"Implicit\" is the implicit Euler\n"
+		"    method, which remains stable for much longer time steps. \"EulerMat\" and\n"
+		"    \"ImplicitOld\" are matrix-based test methods, for which Smoldyn displays a\n"
+		"    warning; \"EulerMat\" gives the same results as \"Euler\" but more slowly, and\n"
+		"    \"ImplicitOld\" can be unstable, so \"Implicit\" is better. In 3D, all of these\n"
+		"    methods also rotate each segment about its own axis in response to twisting\n"
+		"    torques, so twist relaxes toward the standard roll angle. If a filament\n"
+		"    becomes numerically unstable, usually because the time step is too long for\n"
+		"    an explicit method, Smoldyn displays an error message and stops the\n"
+		"    simulation."},
 	{"statement","Statements about filaments",1,"color",
 		"  * color color",
 		"    Sets the drawing color for the filament type. Enter the color as either a\n"
@@ -1096,15 +1124,25 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    Set the thermal energy value, equal to Boltzmann's constant times\n"
 		"    temperature. Enter this in energy units that are consistent with other\n"
 		"    units in the input file. This is only used for some of the dynamics\n"
-		"    options."},
+		"    options. Thermal forces act on the filament nodes, and in 3D, thermal\n"
+		"    torques also twist each segment about its own axis, so bending and twisting\n"
+		"    both fluctuate."},
 	{"statement","Statements about filaments",1,"treadmill_rate",
 		"  * treadmill_rate value",
 		"    Some filaments treadmill, in which they drop off monomers at one end and\n"
-		"    add them to the other end. Set the treadmilling rate here."},
+		"    add them to the other end. Set the treadmilling rate here. A positive value\n"
+		"    adds segments at the plus end and removes them from the minus end, and a\n"
+		"    negative value does the reverse. Treadmilling only occurs while the end\n"
+		"    that gains segments is in the \"open\" state (see end_state). Treadmilling\n"
+		"    stops while the end that gains segments is blocked by a surface that it has\n"
+		"    a reflect interaction with (see surface_interaction)."},
 	{"statement","Statements about filaments",1,"branch_rate",
 		"  * branch_rate value",
 		"    Branching rate off of the mother filament, in units of per unit length per\n"
-		"    time."},
+		"    time. If the filament type has a reflect interaction with a surface (see\n"
+		"    surface_interaction) and a new branch would cross that surface, then\n"
+		"    Smoldyn tries again with new random branch angles, and the branch isn't\n"
+		"    created if all of these cross the surface."},
 	{"statement","Statements about filaments",1,"branch_angle",
 		"  * branch_angle yaw",
 		"    Yaw angle for new branches off of the mother filament, which is given in\n"
@@ -1112,13 +1150,50 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",1,"branch_spread",
 		"  * branch_spread stddev",
 		"    Standard deviation of branching angle, entered in radians. Enter 0 for\n"
-		"    deterministic branching."},
+		"    deterministic branching. If this is not entered and branch_force_angle is\n"
+		"    positive, the spread is set to the equilibrium spread of that spring,\n"
+		"    sqrt(kT/k) for thickness 1, and each new branch uses sqrt(kT/(t*k)), where\n"
+		"    t is the branch's thickness."},
 	{"statement","Statements about filaments",1,"branch_segments",
 		"  * branch_segments segs",
 		"    Length of initial daughter filament in segments."},
+	{"statement","Statements about filaments",1,"branch_min_spacing",
+		"  * branch_min_spacing distance",
+		"    Minimum distance between branch points on a mother filament, measured along\n"
+		"    the mother's contour. When branch_rate or a branch surface interaction (see\n"
+		"    surface_interaction) produces a new branch at a mother node that is closer\n"
+		"    than distance to an existing branch on the same mother, that branch is not\n"
+		"    created, so branch_rate becomes the branching rate per unit of mother\n"
+		"    length that is at least distance from existing branches. Existing branches\n"
+		"    include those made by branching, by the branch statement, and by attach to\n"
+		"    a node other than the target's end nodes, as well as branches made earlier\n"
+		"    in the same time step. The distance is computed from the current segment\n"
+		"    lengths at the time of the branching event. Branches form at mother nodes,\n"
+		"    so the spacing is realized to within one segment length; any positive value\n"
+		"    smaller than a segment length only prevents two branches from forming at\n"
+		"    the same node. Branches entered with the branch or attach statements are\n"
+		"    not affected, but Smoldyn warns if they are closer together than distance.\n"
+		"    Also, filament mechanics can stretch or compress a mother after its\n"
+		"    branches form, which can move existing branches slightly closer together\n"
+		"    than distance. The default is 0, which means that there is no minimum\n"
+		"    spacing and branches can form at the same node."},
+	{"statement","Statements about filaments",1,"branch_end",
+		"  * branch_end end",
+		"    Which end of a daughter filament attaches to its mother, entered as \"minus\"\n"
+		"    (the default) or \"plus\". This applies to branches created by branch_rate\n"
+		"    and is the default for the branch statement. A daughter attached by its\n"
+		"    minus end has its minus end at the branch point and extends away from the\n"
+		"    mother toward its plus end. A daughter attached by its plus end has its\n"
+		"    plus end at the branch point, so its minus end is the free end. If such a\n"
+		"    daughter elongates, it does so by adding segments at the branch point,\n"
+		"    which pushes the rest of the daughter away from the mother (insertional\n"
+		"    growth)."},
 	{"statement","Statements about filaments",1,"branch_force_angle",
 		"  * branch_force_angle value",
-		"    Yaw spring constant at the branch point."},
+		"    Yaw spring constant at the branch point. As for the bending force\n"
+		"    constants, the spring constant at each branch point is this value times the\n"
+		"    average thickness of the branch's first segment and the parent filament's\n"
+		"    segment at the branch point."},
 	{"statement","Statements about filaments",1,"branch_azimuth",
 		"  * branch_azimuth string",
 		"    Initial azimuth of the branch about the mother filament. Enter string as\n"
@@ -1129,7 +1204,9 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    vary."},
 	{"statement","Statements about filaments",1,"branch_force_azimuth",
 		"  * branch_force_azimuth value",
-		"    Azimuthal spring constant at the branch point."},
+		"    Azimuthal spring constant at the branch point. Like branch_force_angle, it\n"
+		"    is multiplied by the average thickness of the two segments at the branch\n"
+		"    point."},
 	{"statement","Statements about filaments",1,"branch_surface",
 		"  * branch_surface surface distance",
 		"    If branching should only be allowed close to a surface, enter the surface\n"
@@ -1138,35 +1215,242 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"  * branch_compartment compartment",
 		"    If branching should only be allowed within a certain compartment, enter\n"
 		"    that compartment name here."},
+	{"statement","Statements about filaments",1,"junction_force",
+		"  * junction_force value",
+		"    The spring constant, in the same units as force_length, for attachments\n"
+		"    that close a loop in a filament network (see attach). Such an attachment is\n"
+		"    held by the energy 0.5*k*d^2, where k is this value and d is the distance\n"
+		"    between the attached filament end and the node that it attaches to. The\n"
+		"    default is 0, which means that the force_length value is used. In either\n"
+		"    case, the spring constant is multiplied by the thickness of the attached\n"
+		"    filament's end segment, as for segment force constants, so by default the\n"
+		"    junction is as stiff as that segment. Larger values hold loops more tightly\n"
+		"    but require smaller time steps; Smoldyn warns if the time step times the\n"
+		"    mobility times this value is more than 0.5. The forces of these springs are\n"
+		"    passed on through the attachments that are held exactly, so in a network\n"
+		"    with many loops, such as a web, a filament can carry the springs of many\n"
+		"    attachments; Smoldyn also warns if the time step times the mobility times\n"
+		"    the sum of the spring constants that one attachment carries is more than\n"
+		"    0.5. The value of the attached filament's type is used."},
 	{"statement","Statements about filaments",1,"confine_surface",
 		"  * confine_surface surface force [face]",
 		"    If the filament should be confined by a surface, enter that surface name\n"
-		"    here in surface and the force constant for that confinement in force.\n"
-		"    Afterward, there is an optional face entry. This only accepts \"front\" or\n"
-		"    \"back\" but should also accept \"both\"."},
-	{"statement","Statements about filaments",1,"plus_end",
-		"  * plus_end end",
-		"    Enter whether the front or the back of the filament is considered to be the\n"
-		"    plus end. Use full word \"back\" or \"front\"."},
+		"    here in surface and the force constant for that confinement in force, in\n"
+		"    units of energy/length^2. Each node on the wrong side of the surface is\n"
+		"    pushed back with force constant force times the node's thickness, which is\n"
+		"    the average thickness of its adjacent segments, as for the other filament\n"
+		"    force constants. Afterward, there is an optional face entry, which is\n"
+		"    \"front\" (the default) or \"back\", for the side of the surface that the\n"
+		"    filament is confined to. This statement is a shorthand for\n"
+		"    surface_interaction surface face all softwall force."},
+	{"statement","Statements about filaments",1,"radius",
+		"  * radius value",
+		"    Radius of filaments of this type, which needs to be greater than 0. It is\n"
+		"    used for filament contact forces (see filament_interaction), for computing\n"
+		"    mobilities from the viscosity, and for the default rotational mobility, and\n"
+		"    it's separate from the thickness of filament segments, which affects\n"
+		"    filament stiffness and drag. The default is 1."},
+	{"statement","Statements about filaments",1,"filament_interaction",
+		"  * filament_interaction type softwall k",
+		"    Adds a contact force between filaments of this type and filaments of type\n"
+		"    type, which needs to be defined before this statement and can be this type.\n"
+		"    Two segments are pushed apart when their centerlines are closer than the\n"
+		"    sum of the filaments' radii, with force constant k, in units of\n"
+		"    energy/length^2, times the harmonic mean of their thicknesses. Large force\n"
+		"    constants need dynamics Implicit. A value of 0 turns the force off. The\n"
+		"    interaction is symmetric, so it only needs to be entered for one of the two\n"
+		"    types, and entering it again from either type replaces k. If type is this\n"
+		"    type, this also applies to different parts of a single filament. Filaments\n"
+		"    have no contact forces by default. See the Smoldyn User's Manual. This\n"
+		"    statement can be used during a simulation with the set command."},
+	{"statement","Statements about filaments",1,"surface_interaction",
+		"  * surface_interaction surface face parts[(state)] action [parameters]",
+		"    Adds an interaction between filaments of this type and surface surface,\n"
+		"    which needs to be defined before this filament type. Filaments only\n"
+		"    interact with surfaces through these interactions, so without any,\n"
+		"    filaments pass through surfaces (see the Smoldyn User's Manual). Enter face\n"
+		"    as \"front\", \"back\", or \"both\", for the face of the surface that the\n"
+		"    filament is on. Enter parts as \"minus\", \"plus\", \"side\", or \"all\", or as a\n"
+		"    comma-separated list such as \"plus,side\", where \"minus\" and \"plus\" are the\n"
+		"    end nodes and \"side\" is all nodes between them. Optionally, follow parts\n"
+		"    with an end state in parentheses and without a space, such as plus(open),\n"
+		"    where the state is \"open\", \"capped\", \"shrink\", or \"barbed\" (see end_state);\n"
+		"    then the interaction only applies to a listed end while that end is in this\n"
+		"    state. For example, surface_interaction floor front plus(open) softwall 20\n"
+		"    only acts on plus ends that are open. A state can only be given if parts\n"
+		"    lists only ends, so not \"side\" or \"all\". Without a state, the interaction\n"
+		"    applies to the listed parts in every state. Enter action as \"softwall\",\n"
+		"    \"repel\", \"reflect\", \"adsorb\", \"desorb\", or \"branch\". For \"softwall\", the\n"
+		"    parameter is a force constant, in units of energy/length^2, and each node\n"
+		"    of these parts that is on the other side of the surface is pushed back\n"
+		"    toward the surface with this force constant times the node's thickness; the\n"
+		"    face needs to be \"front\" or \"back\". For \"repel\", the parameters are a force\n"
+		"    constant and a repel distance, and the force is the same as for \"softwall\"\n"
+		"    except that it starts at the repel distance from the surface, on the\n"
+		"    filament's side, rather than at the surface; the face needs to be \"front\"\n"
+		"    or \"back\". For \"reflect\", there are no parameters, filament ends of these\n"
+		"    parts don't grow, from elongation or treadmilling, if the new segment would\n"
+		"    cross the surface from the given face, or from either face for \"both\", new\n"
+		"    branches from branch_rate aren't created if they would cross the surface,\n"
+		"    and, for filaments with dynamics, nodes of these parts that move across the\n"
+		"    surface from that face are reflected back. For \"adsorb\", the parameters are\n"
+		"    an adsorption rate, a capture distance, and optionally a lateral mobility\n"
+		"    factor, which is 1 by default, and free nodes of these parts that are\n"
+		"    within the capture distance of the surface, on the given face or either\n"
+		"    face for \"both\", adsorb at the adsorption rate. For \"desorb\", the\n"
+		"    parameters are a desorption rate and optionally an offset, which is 0 by\n"
+		"    default, and nodes of these parts that are adsorbed to the surface, on the\n"
+		"    given face or either face for \"both\", desorb at the desorption rate and are\n"
+		"    placed at the offset distance from the surface (see the Smoldyn User's\n"
+		"    Manual). For \"branch\", the parameters are a distance and a branching rate,\n"
+		"    and each node of these parts that is within the distance of the surface, on\n"
+		"    the given face or either face for \"both\", branches at the branching rate,\n"
+		"    using the filament type's branch parameters. Entering an interaction again\n"
+		"    with the same surface, face, parts, state, and action replaces its\n"
+		"    parameters, so interactions for different states can have different\n"
+		"    parameters. This statement can be entered more than once to add multiple\n"
+		"    interactions, and can be used during a simulation with the set command."},
 	{"statement","Statements about filaments",1,"elongation_rate",
-		"  * elongation_rate value",
-		"    This is the elongation rate at the plus end in units of length/time. This\n"
-		"    is usually not used in combination with treadmilling."},
+		"  * elongation_rate value\n"
+		"  * elongation_rate end state value\n"
+		"  * elongation_rate end barbed a [k [b]]",
+		"    The rate at which a filament end changes length, in units of length/time.\n"
+		"    Each end of a filament is in one of four states, \"open\", \"capped\",\n"
+		"    \"shrink\", or \"barbed\" (see end_state and end_transition), and the end\n"
+		"    changes length at the rate given for its current state. In the second form,\n"
+		"    enter end as \"minus\" or \"plus\", state as \"open\", \"capped\", \"shrink\", or\n"
+		"    \"barbed\", and value as the rate for that end in that state, which is\n"
+		"    positive for elongation and negative for shrinking. All rates are 0 by\n"
+		"    default. The first form, with only a value, is the same as elongation_rate\n"
+		"    plus open value and requires a value >=0. The state names are labels, and\n"
+		"    the rates define what the states do; typically, \"open\" has a positive rate,\n"
+		"    \"capped\" has a rate of 0, and \"shrink\" has a negative rate. Ends grow and\n"
+		"    shrink by whole segments, keeping track of the remaining length so that the\n"
+		"    average length change equals the rate times the elapsed time. A growing end\n"
+		"    adds segments with random lengths and angles; it stops growing if it is\n"
+		"    blocked by a surface that it has a reflect interaction with (see\n"
+		"    surface_interaction) or reaches elongation_max_length. A shrinking end\n"
+		"    removes its end segment. When a filament that is down to one segment\n"
+		"    shrinks by that segment's full length, the filament is removed from the\n"
+		"    simulation, as with remove_filament. Shrinking past a mother filament node\n"
+		"    where a branch attaches releases that branch. These rates are usually not\n"
+		"    used in combination with treadmilling.\n"
+		"\n"
+		"    A barbed end elongates more slowly when something pushes against it. Its\n"
+		"    rate is v=a*min(exp(-k*F),2)-b, where a is the polymerization rate with no\n"
+		"    force, k is the force sensitivity, b is the depolymerization rate, and F is\n"
+		"    the force pushing against the end node. This is the Brownian ratchet form,\n"
+		"    in which a is the monomer on-rate constant times the monomer concentration\n"
+		"    times the length that one monomer adds, k is that length divided by kT, or\n"
+		"    less if the load is shared among several filaments, and b is the monomer\n"
+		"    off-rate times the length that one monomer adds. The rate with no force is\n"
+		"    a-b. As F increases, the rate decreases toward -b, so the end stalls at the\n"
+		"    force F=ln(a/b)/k if b is positive, and beyond that it shrinks. a and b\n"
+		"    have units of length/time and k has units of length/energy, which is\n"
+		"    inverse force. All three values are for the given end, and entering them\n"
+		"    again replaces them. k and b are 0 if they aren't entered, and all three\n"
+		"    values need to be >=0. F is the component along the end segment of the\n"
+		"    softwall and repel forces from surfaces on the end node (see\n"
+		"    surface_interaction) and of the contact force from other filaments, from\n"
+		"    the previous time step (see filament_interaction), and it is positive if it\n"
+		"    pushes the end node back toward the filament. It is computed at the start\n"
+		"    of each time step. It doesn't include the filament's own stretching and\n"
+		"    bending forces or thermal forces. It doesn't include reflect interactions\n"
+		"    either, since these don't exert forces, so a barbed end needs softwall or\n"
+		"    repel interactions to respond to a surface, and Smoldyn warns if a filament\n"
+		"    type has none of these or contact interactions. F can be negative, which\n"
+		"    pulls the end outward and increases the rate above a-b; this can happen\n"
+		"    when an end grows away from a repelling surface while it is still within\n"
+		"    the repel distance. The exponential factor is capped at 2, so it is 1 with\n"
+		"    no force, approaches 0 for large pushing forces, and is 2 for pulling\n"
+		"    forces of ln(2)/k or more, which makes the maximum rate 2a-b. The\n"
+		"    treadmill_rate statement only applies to open ends, so barbed ends don't\n"
+		"    treadmill. The S13_filaments/dynamics/barbedEnd2D.txt example shows barbed\n"
+		"    ends."},
 	{"statement","Statements about filaments",1,"elongation_max_length",
 		"  * elongation_max_length value",
 		"    Maximum filament contour length when elongation can occur. Longer filaments\n"
 		"    don't elongate."},
 	{"statement","Statements about filaments",1,"capping_rate",
 		"  * capping_rate value",
-		"    Capping rate at the plus end. Units are inverse time. Capped filaments\n"
-		"    don't elongate."},
+		"    Capping rate at the plus end, in inverse time units. This is the same as\n"
+		"    end_transition plus open capped value."},
 	{"statement","Statements about filaments",1,"uncapping_rate",
 		"  * uncapping_rate value",
-		"    Uncapping rate at the plus end. Units are inverse time. Uncapped filaments\n"
-		"    can elongate."},
+		"    Uncapping rate at the plus end, in inverse time units. This is the same as\n"
+		"    end_transition plus capped open value."},
+	{"statement","Statements about filaments",1,"end_transition",
+		"  * end_transition end state1 state2 rate",
+		"    The rate, in inverse time units, at which filament end end (\"minus\" or\n"
+		"    \"plus\") changes from state state1 to state state2, where the states are\n"
+		"    \"open\", \"capped\", \"shrink\", or \"barbed\". All transition rates are 0 by\n"
+		"    default. In each time step, an end leaves its current state with\n"
+		"    probability 1-exp(-R*dt), where R is the sum of the rates out of that state\n"
+		"    and dt is the time step, and goes to one of the other states with\n"
+		"    probability proportional to the individual rates. For example, dynamic\n"
+		"    instability at the plus end can be represented with end_transition plus\n"
+		"    open shrink k_cat and end_transition plus shrink open k_res, for\n"
+		"    catastrophe and rescue rates, along with a positive elongation_rate plus\n"
+		"    open and a negative elongation_rate plus shrink."},
+	{"statement","Statements about filaments",1,"end_state",
+		"  * end_state end state",
+		"    The state that end end (\"minus\" or \"plus\") of new filaments of this type\n"
+		"    starts in, which is \"open\", \"capped\", \"shrink\", or \"barbed\". The default is\n"
+		"    \"open\" for both ends. This applies to filaments that are created after this\n"
+		"    statement, including branches, and does not change existing filaments. It\n"
+		"    can be changed during a simulation with the set command, for example cmd @\n"
+		"    0.5 set filament_type actin end_state plus capped, which affects filaments\n"
+		"    created after that time. The state of an individual filament's end can be\n"
+		"    set with the end_state statement in a filament block, including during a\n"
+		"    simulation with a command such as cmd @ 0.5 set filament actin:fil0\n"
+		"    end_state plus capped."},
 	{"statement","Statements about filaments",1,"mobility",
 		"  * mobility value",
-		"    Mobility of the nodes within the surrounding medium."},
+		"    Mobility of the nodes within the surrounding medium, in units of\n"
+		"    length^2/(energy*time), so that a node's velocity is its mobility times the\n"
+		"    force on it (see the Smoldyn User's Manual). The default is 1, unless\n"
+		"    viscosity is entered, in which case the mobility is computed from it."},
+	{"statement","Statements about filaments",1,"viscosity",
+		"  * viscosity value",
+		"    Viscosity of the surrounding medium, in units of energy*time/length^3 (for\n"
+		"    example, water's viscosity of 1 mPa*s can be entered as 1e-3|J.s/m3, which\n"
+		"    is 1 zJ*s/upmum^3). If this is entered, then Smoldyn computes the mobility\n"
+		"    and the rotational mobility from it, unless they are entered directly,\n"
+		"    treating each node as carrying the drag of one segment, which is a cylinder\n"
+		"    with length l equal to standard_length and radius a equal to radius, in\n"
+		"    viscosity eta. The mobility is the orientation-averaged mobility of a\n"
+		"    cylinder, from Tirado and Garc\\'ia de la Torre (J. Chem. Phys. 71:2581,\n"
+		"    1979, and 73:1986, 1980), mu= fraclnp + nu3pietal, qquadnu=\n"
+		"    0.312+frac0.565p-frac0.100p^2 where p=l/2a is the aspect ratio, which is\n"
+		"    set to at least 2 because the expression is only accurate for p from about\n"
+		"    2 to 30. The rotational mobility about the segment axis is mu_r =\n"
+		"    1/(4pietaa^2 l), which is exact for a long cylinder. These values are for\n"
+		"    thickness 1; with thickness_drag, thicker segments have proportionally more\n"
+		"    drag. These are approximations, because they ignore hydrodynamic\n"
+		"    interactions between segments and the anisotropy of drag along and across a\n"
+		"    filament."},
+	{"statement","Statements about filaments",1,"rotational_mobility",
+		"  * rotational_mobility value",
+		"    Rotational mobility of segments about their own axes, for 3D simulations,\n"
+		"    in units of 1/(energy*time), so that a segment's roll rate is its\n"
+		"    rotational mobility times the torque on it about its axis. This affects how\n"
+		"    quickly filaments twist but not their equilibrium twist. If this isn't\n"
+		"    entered, it is computed from the viscosity if that was entered, and\n"
+		"    otherwise it is the mobility value divided by the square of the filament\n"
+		"    radius, which is about right for a rod, since its rotational drag per unit\n"
+		"    length is roughly its translational drag per unit length times its radius\n"
+		"    squared. With the default radius of 1, this default equals the mobility\n"
+		"    value."},
+	{"statement","Statements about filaments",1,"thickness_drag",
+		"  * thickness_drag 0/1",
+		"    Whether the thickness of a filament affects its drag. With 1, which is the\n"
+		"    default, each node's mobility is divided by its thickness, which is the\n"
+		"    average thickness of the segments on either side of it, so a filament with\n"
+		"    thickness 3 moves and diffuses 3 times more slowly than one with thickness\n"
+		"    1, as for a bundle of 3 filaments. With 0, mobility does not depend on\n"
+		"    thickness. In either case, thickness also multiplies the force constants,\n"
+		"    and thermal forces are scaled to match the mobility, so equilibrium\n"
+		"    conformations are the same."},
 	{"statement","Statements about filaments",1,"standard_length",
 		"  * standard_length length",
 		"    Relaxed length of a filament segment. It can change through stretching or\n"
@@ -1174,17 +1458,55 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",1,"standard_angle",
 		"  * standard_angle yaw\n"
 		"  * standard_angle yaw pitch roll",
-		"    Relaxed angles between adjacent filament segments. When facing toward the\n"
-		"    filament's front end, yaw represents left-right bending, pitch represents\n"
-		"    up-down bending, and roll represents rotation about the filament axis. For\n"
-		"    2D simulations, only enter a single bending angle."},
+		"    Relaxed angles between adjacent filament segments. When looking along the\n"
+		"    filament from its minus end toward its plus end, yaw represents left-right\n"
+		"    bending, pitch represents up-down bending, and roll represents rotation\n"
+		"    about the filament axis. For 2D simulations, only enter a single bending\n"
+		"    angle."},
 	{"statement","Statements about filaments",1,"force_length",
 		"  * force_length value",
-		"    Stretching force constant for filament segments."},
+		"    Stretching force constant for filament segments, in units of\n"
+		"    energy/length^2. The force constant of each segment is this value times the\n"
+		"    segment's thickness, which is 1 by default. A negative value makes the\n"
+		"    segment lengths fixed at standard_length (see the Smoldyn User's Manual)."},
 	{"statement","Statements about filaments",1,"force_angle",
 		"  * force_angle yaw\n"
 		"  * force_angle yaw pitch roll",
-		"    Force constants for bending and torsion."},
+		"    Force constants for bending and torsion, in energy units (energy/radian^2).\n"
+		"    The force constants at each node between segments are these values times\n"
+		"    the average thickness of the two segments, which is 1 by default. A\n"
+		"    negative value makes that angle fixed at its standard_angle value (see the\n"
+		"    Smoldyn User's Manual). Alternatively, the force constants can be computed\n"
+		"    from persistence lengths, using persistence_length and\n"
+		"    persistence_length_twist."},
+	{"statement","Statements about filaments",1,"persistence_length",
+		"  * persistence_length length",
+		"    Persistence length for filament bending, for thickness 1, which Smoldyn\n"
+		"    uses to compute the yaw and pitch force constants, so force_angle doesn't\n"
+		"    need to be entered. The persistence length, L_p, is defined by left< bmt_0\n"
+		"    *bmt_s right> = e^(-s/L_p), where bmt_0 and bmt_s are the directions of two\n"
+		"    segments separated by contour length s. In 3D, the yaw and pitch force\n"
+		"    constants are both set to k_phi=k_theta=kT L_p/l, where l is the standard\n"
+		"    length; in 2D, the single bending force constant is set to k_phi=kT L_p/2l.\n"
+		"    These are computed from the current kT and standard_length values,\n"
+		"    regardless of the order in which the statements are entered, and both\n"
+		"    values need to be positive. In 3D, if neither the roll force constant (in\n"
+		"    force_angle) nor persistence_length_twist is entered, then the torsional\n"
+		"    persistence length is set to 3 times the persistence length. The\n"
+		"    persistence length takes precedence over yaw and pitch force constants that\n"
+		"    are entered with force_angle. Smoldyn lists the persistence length in its\n"
+		"    filament type output, whether it was entered or computed from force_angle."},
+	{"statement","Statements about filaments",1,"persistence_length_twist",
+		"  * persistence_length_twist length",
+		"    Torsional persistence length, for thickness 1 and 3D simulations only,\n"
+		"    which Smoldyn uses to compute the roll force constant. The torsional\n"
+		"    persistence length, L_t, is defined by left< cosdelta_psiright> =\n"
+		"    e^(-s/L_t), where delta_psi is the total twist over contour length s, and\n"
+		"    the roll force constant is set to k_psi=kT L_t/2l. Note that a common\n"
+		"    alternative definition, often used for DNA, is that the twist variance is\n"
+		"    left< delta_psi^2 right> = s/L_t, which gives values that are half as large\n"
+		"    as those here. This takes precedence over the roll force constant entered\n"
+		"    with force_angle."},
 	{"statement","Statements about filaments",1,"end_filament_type",
 		"  * end_filament_type",
 		"    End of a block of filament type definitions. Filament type statements are\n"
@@ -1196,6 +1518,16 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    type, has segments number of segments, and, optionally, has its starting\n"
 		"    location at (x,y,z) and initial yaw-pitch-roll angle (phi, theta, psi). For\n"
 		"    2D, only enter x,y and phi. It also has optional thickness thickness."},
+	{"statement","Statements about filaments",0,"remove_filament",
+		"  remove_filament type:name",
+		"    Removes the filament named name, of type type, from the simulation. The\n"
+		"    type is optional if the filament name is unique. All attachments that\n"
+		"    involve this filament are removed: any filament ends that attach to it are\n"
+		"    released, so they continue as free ends, and its own ends are detached. A\n"
+		"    removed filament's name can be used again. Smoldyn keeps the memory of\n"
+		"    removed filaments and reuses it for filaments that are created later. This\n"
+		"    statement can be used during a simulation with the set command, for example\n"
+		"    cmd @ 0.5 set remove_filament actin:fil0."},
 	{"statement","Statements about filaments",0,"start_filament",
 		"  start_filament type:name",
 		"    Start of filament definition block, for a filament of type type and named\n"
@@ -1222,35 +1554,38 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    y, and z, the segment length in length, and its absolute orientation with\n"
 		"    the angle values. For 2D, the angle is the angle from the x-axis and in 3D\n"
 		"    these values are the yaw-pitch-roll values away from the x-axis. The\n"
-		"    thickness value is optional."},
+		"    thickness value is optional; it is unitless, because it multiplies the\n"
+		"    force constants (and divides the node mobilities, see thickness_drag), and\n"
+		"    it is 1 by default."},
 	{"statement","Statements about filaments",1,"add_segment",
 		"  * add_segment length angle [thickness [end]]\n"
 		"  * add_segment length yaw pitch roll [thickness [end]]",
 		"    Add a segment to the filament, with the given length. The angles are\n"
 		"    relative angles from the prior segment using yaw-pitch-roll values, and the\n"
-		"    thickness is optional. The segment can be added to either end, given in\n"
-		"    end, where the options are front or back."},
+		"    thickness, which is unitless, is optional. The segment can be added to\n"
+		"    either end, given in end, where the options are \"plus\" (the default) or\n"
+		"    \"minus\"."},
 	{"statement","Statements about filaments",1,"remove_segment",
 		"  * remove_segment end",
-		"    Remove one segment from end end of the filament (\"front\" or \"back\")."},
+		"    Remove one segment from end end of the filament (\"plus\" or \"minus\")."},
 	{"statement","Statements about filaments",1,"modify_segment",
-		"  * modify_segment segment length/angle/thickness +/-/= value(s) end",
+		"  * modify_segment segment length/angle/minus_position/thickness +/-/= value(s) [end]",
 		"    This modifies the length, relative angle, position, or thickness parameters\n"
 		"    for the single segment number segment. After the segment number, enter one\n"
-		"    of \"length\", \"angle\", \"front_position\", or \"thickness\". Then, enter \"+\" to\n"
+		"    of \"length\", \"angle\", \"minus_position\", or \"thickness\". Then, enter \"+\" to\n"
 		"    increase the current value by the given amount, \"-\" to decrease the current\n"
 		"    value by the given amount, or \"=\" to set the value to the given amount,\n"
 		"    where the given amount is entered in value. For the angle option with 3D,\n"
 		"    enter 3 values for yaw, pitch, and roll. For the position option, enter two\n"
 		"    values for 2D and three values for 3D. Finally, for the length and angle\n"
-		"    options, enter end as either \"front\" or \"back\" for which filament end gets\n"
-		"    moved in the process."},
+		"    options, optionally enter end as either \"plus\" (the default) or \"minus\" for\n"
+		"    which filament end gets moved in the process."},
 	{"statement","Statements about filaments",1,"random_segments",
 		"  * random_segments number [x y phi] [thickness]\n"
 		"  * random_segments number [x y z phi theta psi] [thickness]",
 		"    Add number of random segments to the filament. If the filament doesn't have\n"
-		"    any segments yet, then enter the front position in (x,y) for 2D or (x,y,z)\n"
-		"    for 3D and also enter the front segment angle in phi for 2D and\n"
+		"    any segments yet, then enter the minus end position in (x,y) for 2D or\n"
+		"    (x,y,z) for 3D and also enter the minus end segment angle in phi for 2D and\n"
 		"    (phi,theta,psi) for 3D. These position and angle values can be `u' for\n"
 		"    uniform distributions. The thickness parameter is optional."},
 	{"statement","Statements about filaments",1,"translate",
@@ -1263,11 +1598,25 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    Copy the current filament to filament, which is created here if it doesn't\n"
 		"    already exist; any prior data in filament is overwritten."},
 	{"statement","Statements about filaments",1,"branch",
-		"  * branch daughter segment [yaw pitch roll]",
+		"  * branch daughter node [end] [length [yaw pitch roll]]",
 		"    Create a branch off of the current filament (the mother filament). Enter\n"
-		"    daughter as the name of the new branch filament (the daughter) and segment\n"
-		"    as the branching position off of the mother. The yaw pitch roll angles are\n"
-		"    optional. If they are entered, they are the bending angle away from the\n"
+		"    daughter as the name of the new branch filament (the daughter) and node as\n"
+		"    the node number on the mother where the branch attaches. Optionally, enter\n"
+		"    end as \"minus\" or \"plus\" for which end of the daughter attaches at this\n"
+		"    node; the default is the filament type's branch_end value, which is \"minus\"\n"
+		"    unless it was set otherwise. Optionally, enter length as the length of the\n"
+		"    daughter's segment 0; if it is omitted, the length is chosen randomly from\n"
+		"    the filament type's length distribution, as for other new segments. For a\n"
+		"    daughter attached by its minus end, segment 0 is the segment at the branch\n"
+		"    point, and for a daughter attached by its plus end with more than one\n"
+		"    segment, segment 0 is the segment at the daughter's free minus end. The\n"
+		"    first number after node and end is always length, so the angles can only be\n"
+		"    entered after a length. The node can be any node of the mother, from 0 (its\n"
+		"    minus end) to the number of mother segments (its plus end). The branch\n"
+		"    angles are measured relative to the mother segment that ends at this node,\n"
+		"    and they give the direction of the daughter away from the mother, whichever\n"
+		"    end attaches. The yaw pitch roll angles are optional (and only enter yaw\n"
+		"    for 2D). If they are entered, they are the bending angle away from the\n"
 		"    mother filament. If they are not entered, then the standard bending angles\n"
 		"    are taken from the filament type definition (branch_angle)."},
 	{"statement","Statements about filaments",1,"sequence",
@@ -1276,12 +1625,65 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",1,"node_mobility",
 		"  * node_mobility node mobility",
 		"    Sets a unitless node mobility factor, which is multiplied by the mobility\n"
-		"    that's defined in the filament type, to give the total node mobility value.\n"
-		"    Enter node as the node number, where 0 is the front of the filament.\n"
-		"    Alternatively, enter node as a negative value to count from the back of the\n"
-		"    filament, where -1 is the back end. The mobility value has a default value\n"
-		"    of 1, and can be set to other values here. In particular, setting it to 0\n"
-		"    means that the node is fixed in space."},
+		"    that's defined in the filament type, to give the total node mobility value\n"
+		"    (and is divided by the node's thickness unless thickness_drag is 0). Enter\n"
+		"    node as the node number, where 0 is the minus end of the filament.\n"
+		"    Alternatively, enter node as a negative value to count from the plus end of\n"
+		"    the filament, where -1 is the plus end. The mobility value has a default\n"
+		"    value of 1, and can be set to other values here. In particular, setting it\n"
+		"    to 0 means that the node is fixed in space."},
+	{"statement","Statements about filaments",1,"adsorb_node",
+		"  * adsorb_node node surface [face [mobility]]",
+		"    Adsorbs node node of this filament to surface surface (see the Smoldyn\n"
+		"    User's Manual). Enter node as for node_mobility, where 0 is the minus end\n"
+		"    and negative values count from the plus end, so -1 is the plus end. The\n"
+		"    node is moved to the closest point of the surface, onto face face, which is\n"
+		"    \"front\" or \"back\"; if face is omitted, it is the side of the surface that\n"
+		"    the node was on. An adsorbed node stays on the surface, but can move within\n"
+		"    it with its usual mobility times the lateral mobility factor mobility,\n"
+		"    which is 1 by default and can be 0 to anchor the node in place. The end of\n"
+		"    a filament that is rigidly attached to its mother can't be adsorbed. This\n"
+		"    statement can be used during a simulation with the set command, for example\n"
+		"    cmd @ 10 set filament actin:fil0 adsorb_node 0 membrane front."},
+	{"statement","Statements about filaments",1,"desorb_node",
+		"  * desorb_node node",
+		"    Desorbs node node of this filament from its surface, if it is adsorbed, so\n"
+		"    that it can move freely again. Enter node as for adsorb_node. This\n"
+		"    statement can be used during a simulation with the set command."},
+	{"statement","Statements about filaments",1,"attach",
+		"  * attach end target node",
+		"    Attaches end end (\"minus\" or \"plus\") of this filament, which needs to be\n"
+		"    free, to node node of filament target. The target is entered as type:name,\n"
+		"    or just name if the name is unique, and can be this filament itself. The\n"
+		"    node is from 0 to the number of target segments. If this attachment adds to\n"
+		"    a tree of attachments, the filament is moved so that its end is at the\n"
+		"    target node, and later stays there exactly, along with the filaments\n"
+		"    attached to it. If it closes a loop, for example by attaching the second\n"
+		"    end of a filament, attaching a filament to itself, or connecting two\n"
+		"    filaments that are already connected, then only the end node of this\n"
+		"    filament is moved onto the target node, and a spring holds it there\n"
+		"    afterward (see junction_force). An attachment at the target's minus or plus\n"
+		"    end node is an end-to-end join, whose angle is held by the filament type's\n"
+		"    bending spring (standard_angle and force_angle, scaled by the average\n"
+		"    thickness of the two joined segments), so the join bends like any other\n"
+		"    node; for example, attach plus type:name 0, for the filament's own name,\n"
+		"    closes it into a circle. An attachment at any other node is held at the\n"
+		"    branch angle, using branch_angle, branch_force_angle, and\n"
+		"    branch_force_azimuth. Attaching or detaching an end can change which other\n"
+		"    attachments are held exactly and which by springs. In 3D, avoid\n"
+		"    branch_force_azimuth for filaments in loops, because the azimuthal spring\n"
+		"    only acts on the attached filament, so it can make a loop rotate steadily;\n"
+		"    Smoldyn warns about this. This statement can be used during a simulation\n"
+		"    with the set command."},
+	{"statement","Statements about filaments",1,"detach",
+		"  * detach end",
+		"    Detaches end end (\"minus\" or \"plus\") of this filament, which leaves it\n"
+		"    free."},
+	{"statement","Statements about filaments",1,"end_state",
+		"  * end_state end state",
+		"    Sets the current state of end end (\"minus\" or \"plus\") of this filament to\n"
+		"    state, which is \"open\", \"capped\", \"shrink\", or \"barbed\". See the end_state,\n"
+		"    elongation_rate, and end_transition statements for filament types."},
 	{"statement","Statements about filaments",1,"end_filament",
 		"  * end_filament",
 		"    End of a block of filament definitions. Filament statements are no longer\n"
@@ -1392,7 +1794,11 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    Rather than using molperbox to specify the sizes of the virtual boxes,\n"
 		"    boxsize can be used to request the width of the boxes. The actual box\n"
 		"    volumes will be no larger than the volume calculated from the width given\n"
-		"    here."},
+		"    here. Virtual boxes are also used to find filament interactions more\n"
+		"    efficiently. The number of boxes is computed from the number of molecules,\n"
+		"    so a simulation without molecules has only one box unless boxsize is\n"
+		"    entered; Smoldyn warns if filaments have surface interactions and there is\n"
+		"    only one box."},
 	{"statement","Statements for simulation settings",0,"gauss_table_size",
 		"  gauss_table_size int",
 		"    This sets the size of a lookup table that is used to generate\n"
@@ -1893,7 +2299,7 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    screen. These are identical to those that are displayed at program\n"
 		"    initialization, but for later times. The options for the type word are:\n"
 		"    \"simulation\", \"wall\", \"molecule\", \"surface\", \"command\", \"box\", \"reaction\",\n"
-		"    \"compartment\", \"port\", \"check\", and \"all\"."},
+		"    \"compartment\", \"port\", \"filament\", \"check\", and \"all\"."},
 	{"command","System observation commands",0,"executiontime",
 		"  executiontime filename",
 		"    Prints a single line of text with the current simulation time and the\n"
@@ -1912,9 +2318,12 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"command","System observation commands",0,"printFilaments",
 		"  printFilaments filename",
 		"    Prints out every filament (all types) as a flat polyline of node\n"
-		"    coordinates, one line each: FIL <time> <type>:<name> <nseg> <parent-or-\"-\">\n"
-		"    x0 y0 [z0] x1 y1 [z1] .... Auto-named daughters are included, so this\n"
-		"    captures a whole branched network."},
+		"    coordinates, one line each: FIL <time> <type>:<name> <nseg> <minus-attach>\n"
+		"    <plus-attach> <minus-state> <plus-state> x0 y0 [z0] x1 y1 [z1] ..., where\n"
+		"    the attachments are what each end is attached to, as type:name:node, or \"-\"\n"
+		"    for a free end, and the states are the end states (\"open\", \"capped\",\n"
+		"    \"shrink\", or \"barbed\"). Auto-named daughters are included, so this captures\n"
+		"    a whole branched network."},
 	{"command","System observation commands",0,"writeVTK",
 		"  writeVTK filepath/filename",
 		"    Outputs VTK format data for viewing with applications such as Visit or\n"
@@ -2186,6 +2595,26 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    \"squeezed\", meaning that it gets bumped into by the moving compartment, but\n"
 		"    then gets bumped back due to some other surface, then that molecule will\n"
 		"    end up inside of the compartment."},
+	{"command","System manipulation commands",0,"applysurfaceforce",
+		"  applysurfaceforce surface F_x\n"
+		"  applysurfaceforce surface F_x F_y\n"
+		"  applysurfaceforce surface F_x F_y F_z",
+		"    Applies the force given by F_x, F_y, and F_z (with fewer values for lower\n"
+		"    dimensions), in units of energy/length, to the surface called surface, or\n"
+		"    to every surface if surface is \"all\". The force only affects surfaces that\n"
+		"    have a mobility (see the mobility statement), which move in response to it\n"
+		"    in the same way as to the forces from filaments, including carrying their\n"
+		"    surface-bound molecules and adsorbed filament nodes, and pushing molecules\n"
+		"    that they run into (see the section on filament-surface interactions). The\n"
+		"    force is added to the forces from filaments for the next time step only, so\n"
+		"    in that step the surface moves by its mobility times the force times the\n"
+		"    time step, and it is then cleared. Thus, to apply a constant force, run\n"
+		"    this command at every time step, as in cmd E applysurfaceforce membrane 0 0\n"
+		"    -2; running it every n time steps applies the force for only one of those\n"
+		"    time steps. Running it more than once in a time step adds the forces\n"
+		"    together. The force values can be expressions that use variables. The\n"
+		"    output for the diagnostics surface command lists a force that has been\n"
+		"    applied but hasn't acted yet."},
 	{"command","System manipulation commands",0,"diffusecmpt",
 		"  diffusecmpt compartment code stddev_x [cmpt_bound radius nsample]\n"
 		"  diffusecmpt compartment code stddev_x stddev_y [cmpt_bound radius nsample]\n"
@@ -2217,15 +2646,16 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    probably be negative for most physically reasonable forces. This equation\n"
 		"    applies for all separations between rad_min and rad_max, and the force is\n"
 		"    zero elsewhere. For computational efficiency, it's a good idea to keep\n"
-		"    rad_max reasonably small. Molecules of species_1 move distance mobility_1\n"
-		"    delta_t times the force, while those of species_2 move mobility_2 delta_t\n"
-		"    times the force, where delta_t is the simulation time step. Except in very\n"
-		"    unusual circumstances, both mobilities should be positive values. Note that\n"
-		"    this accounts for the simulation time step, which is unusual for commands.\n"
-		"    However, it does not account for the command being run at wide intervals,\n"
-		"    such as every 2, 3, or 4 time steps. Instead, to be quantitatively\n"
-		"    accurate, it needs to run at every time step (or run it every n time steps,\n"
-		"    and multiply the force or mobility by n)."},
+		"    rad_max reasonably small. The mobilities have units of\n"
+		"    length^2/(energy*time) and the force is in energy/length units. Molecules\n"
+		"    of species_1 move distance mobility_1 delta_t times the force, while those\n"
+		"    of species_2 move mobility_2 delta_t times the force, where delta_t is the\n"
+		"    simulation time step. Except in very unusual circumstances, both mobilities\n"
+		"    should be positive values. Note that this accounts for the simulation time\n"
+		"    step, which is unusual for commands. However, it does not account for the\n"
+		"    command being run at wide intervals, such as every 2, 3, or 4 time steps.\n"
+		"    Instead, to be quantitatively accurate, it needs to run at every time step\n"
+		"    (or run it every n time steps, and multiply the force or mobility by n)."},
 	{"command","System manipulation commands",0,"translatemol",
 		"  translatemol species(state) equation_x\n"
 		"  translatemol species(state) equation_x equation_y\n"

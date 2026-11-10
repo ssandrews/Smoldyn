@@ -31,9 +31,9 @@ Building Smoldyn
 =================
 
 Clone the source code
---------------------
+---------------------
 
-Run the following command in terminal. Optionally you can pass `--depth 10`
+Run the following command in terminal. Optionally you can pass ``--depth 10``
 to limit the download history (it is recommended).
 
 .. code-block:: bash
@@ -50,7 +50,7 @@ from your package manager.
 You will also need ``cmake`` (version 3.14+) and a recent C++ compiler such as
 ``gcc``, ``clang``, or Microsoft Visual Studio.
 
-On Debian/Ubuntu  system, these dependencies can be installed using `apt`
+On Debian/Ubuntu  system, these dependencies can be installed using ``apt``
 package manager.
 
 Debian
@@ -66,23 +66,25 @@ Running Smoldyn in headless environment
 
 Smoldyn can be run in headless environments (e.g., clusters, CI) using xvfb.
 
-```
-RUN apt-get -y update \
-    && apt-get install --no-install-recommends -y \
-        xvfb \
-    && rm -rf /var/lib/apt/lists/* \
-    && mkdir /tmp/.X11-unix \
-    && chmod 1777 /tmp/.X11-unix
-COPY xvfb-startup.sh .
-RUN chmod +x xvfb-startup.sh
-ARG RESOLUTION="1920x1080x24"
-ARG XARGS=""
-ENV XVFB_RES="${RESOLUTION}" \
-    XVFB_ARGS="${XARGS}"
-```
+.. code-block:: docker
 
-xvfb script for installation [xvfb-startup.sh](./scripts/xvfb-startup.sh)
+    RUN apt-get -y update \
+        && apt-get install --no-install-recommends -y \
+            xvfb \
+        && rm -rf /var/lib/apt/lists/* \
+        && mkdir /tmp/.X11-unix \
+        && chmod 1777 /tmp/.X11-unix
+    COPY xvfb-startup.sh .
+    RUN chmod +x xvfb-startup.sh
+    ARG RESOLUTION="1920x1080x24"
+    ARG XARGS=""
+    ENV XVFB_RES="${RESOLUTION}" \
+        XVFB_ARGS="${XARGS}"
 
-```bash
-/bin/bash /xvfb-startup.sh python -m smoldyn
-````
+xvfb script for installation:
+`xvfb-startup.sh <https://github.com/ssandrews/Smoldyn/blob/master/scripts/xvfb-startup.sh>`_
+
+.. code-block:: bash
+
+    /bin/bash /xvfb-startup.sh python -m smoldyn
+

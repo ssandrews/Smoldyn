@@ -18,8 +18,6 @@
 #endif
 
 void filBendTorque(const filamentptr fil,int node,double *torque);
-int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daughter,int dim,double *tm,double *td,double *lm,double *ld,double *c,double *s);
-int filBranchDazim(const filamentptr mother,int br,double *dphi);
 
 typedef struct filopsegment {
  double t[3],y[3],z[3],gyaw[3],gpitch[3],paxis[3],tau[3],dtau[9],invlen;
@@ -112,13 +110,21 @@ static int opBuildFilament(simptr sim,struct filamentoperatorstruct *p,int f) {
   }
   if(!j || type->dynamics==FDnone) continue;
   filBendTorque(fil,j,s->tau);
-  if(dim==2) {s->dtau[6]=-type->kypr[0];continue;}
-  cp=cos(fil->segments[j]->ypr[0]);sp=sin(fil->segments[j]->ypr[0]);
-  ct=cos(fil->segments[j]->ypr[1]);st=sin(fil->segments[j]->ypr[1]);
-  D1=type->kypr[1]*(fil->segments[j]->ypr[1]-type->stdypr[1]);D2=type->kypr[2]*(fil->segments[j]->ypr[2]-type->stdypr[2]);
-  s->dtau[0]=D2*ct*sp+D1*cp;s->dtau[1]=D2*st*cp+type->kypr[1]*sp;s->dtau[2]=-type->kypr[2]*ct*cp;
-  s->dtau[3]=D1*sp-D2*cp;s->dtau[4]=-type->kypr[1]*cp;s->dtau[5]=-type->kypr[2]*sp;
-  s->dtau[6]=-type->kypr[0]-D2*sp*st;s->dtau[7]=D2*cp*ct;s->dtau[8]=type->kypr[2]*cp*st;
+  {double thk=0.5*(fil->segments[j-1]->thk+fil->segments[j]->thk);
+   double K0=thk*fmax(0,type->kypr[0]),K1=thk*fmax(0,type->kypr[1]),K2=thk*fmax(0,type->kypr[2]),D0;
+   if(dim==2) {s->dtau[6]=-K0;continue;}
+   cp=cos(fil->segments[j]->ypr[0]);sp=sin(fil->segments[j]->ypr[0]);
+   ct=cos(fil->segments[j]->ypr[1]);st=sin(fil->segments[j]->ypr[1]);
+   if(ct<0.05) return 1; /* reference differences at the gimbal bound */
+   D0=K0*(fil->segments[j]->ypr[0]-type->stdypr[0]);
+   D1=K1*(fil->segments[j]->ypr[1]-type->stdypr[1]);D2=K2*(fil->segments[j]->ypr[2]-type->stdypr[2]);
+   s->dtau[0]=-K0*st/ct*cp+D0*st/ct*sp+D1*cp+D2*sp/ct;
+   s->dtau[1]=-D0*cp/(ct*ct)+K1*sp-D2*cp*st/(ct*ct);
+   s->dtau[2]=-K2*cp/ct;
+   s->dtau[3]=-K0*st/ct*sp-D0*st/ct*cp+D1*sp-D2*cp/ct;
+   s->dtau[4]=-D0*sp/(ct*ct)-K1*cp-D2*sp*st/(ct*ct);
+   s->dtau[5]=-K2*sp/ct;s->dtau[6]=-K0;s->dtau[7]=s->dtau[8]=0;
+  }
   {double local[9];FilOpSegment *prev=s-1;memcpy(local,s->dtau,sizeof(local));
    for(d=0;d<3;d++) for(a=0;a<3;a++) s->dtau[3*d+a]=prev->t[d]*local[a]+prev->y[d]*local[3+a]+prev->z[d]*local[6+a];
   }
@@ -129,21 +135,25 @@ static int opBuildBranches(simptr sim,struct filamentoperatorstruct *p) {
  struct filamentstericstruct *w=sim->filss->steric;int f,br;
  for(f=0;f<w->nfilament;f++) {
   FilStericFilament *record=&w->filaments[f];filamentptr mother=record->fil;
-  for(br=0;br<mother->nbranch;br++) {
-   FilOpBranch *b=&p->branch[record->branchstart+br];filamentptr daughter=mother->branches[br];double tm[3],td[3],lm,ld,angle,phi;
-   int spot=mother->branchspots[br];memset(b,0,sizeof(*b));
-   if(!daughter || daughter->frontend!=mother || !daughter->nseg || spot<0 || spot>=mother->nseg) continue;
-   if(!filJunctionGeometry(mother,spot,daughter,sim->dim,tm,td,&lm,&ld,&b->c,&b->s)) continue;
+  for(br=0;br<mother->njunct;br++) {
+   FilOpBranch *b=&p->branch[record->branchstart+br];filjunctionptr joint=mother->juncts[br];filamentptr daughter=joint->fil;double tm[3],td[3],lm,ld,angle,phi;
+   int ma,mb,spot=joint->node-1;double kappa,theta,kaz,kj;memset(b,0,sizeof(*b));
+   if(!daughter || !daughter->nseg) continue;
+   /* General joins/loops use the complete residual derivative until an exact
+      cached block for their orientation and spring reaction is available. */
+   if(joint->end!='m' || joint->bend || !joint->rigid || spot<0 || spot>=mother->nseg || sim->filss->nspring) return 1;
+   filJunctionParams(joint,sim->dim,&kappa,&theta,&kaz,&kj);
+   if(!filJunctionGeometry(joint,sim->dim,tm,td,&lm,&ld,&b->c,&b->s,&ma,&mb)) continue;
    b->valid=1;b->mother=record->nodeoffset+spot;b->daughter=daughter->stericnodeoffset;
    if(b->daughter<0) return 1;
    p->node[b->daughter].parentbranch=record->branchstart+br;angle=acos(b->c);
-   b->sd=daughter->filtype->branchforceangle*(angle-daughter->filtype->branchangle)/(ld*b->s);
-   b->sm=mother->filtype->branchforceangle*(angle-mother->filtype->branchangle)/(lm*b->s);
-   b->cd=(-daughter->filtype->branchforceangle/ld+b->sd*b->c)/(b->s*b->s);
-   b->cm=(-mother->filtype->branchforceangle/lm+b->sm*b->c)/(b->s*b->s);
-   if(daughter->filtype->branchforceazimuth>0 && sim->dim==3 && filBranchDazim(mother,br,&phi)) {
+   b->sd=kappa*(angle-theta)/(ld*b->s);
+   b->sm=kappa*(angle-theta)/(lm*b->s);
+   b->cd=(-kappa/ld+b->sd*b->c)/(b->s*b->s);
+   b->cm=(-kappa/lm+b->sm*b->c)/(b->s*b->s);
+   if(daughter->filtype->branchforceazimuth>0 && sim->dim==3 && filBranchDazim(joint,&phi)) {
     double sb=fmax(b->s,0.1);
-    b->ap=-daughter->filtype->branchforceazimuth/(ld*sb*sb);b->az=b->ap*phi;
+    b->ap=-kaz/(ld*sb*sb);b->az=b->ap*phi;
     b->ac=b->s>0.1?2*b->az*b->c/(b->s*b->s):0;
    }
   }
@@ -155,19 +165,19 @@ static int opBuildContacts(simptr sim,struct filamentoperatorstruct *p) {
  p->ncontact=0;if(!filStericEnabled(sim)) return 0;
  for(i=0;i<w->npair;i++) {
   FilStericSegment *a=&w->segments[w->pairs[i].a],*b=&w->segments[w->pairs[i].b];
-  FilOpContact c;double trimA,trimB,normal[3]={0,0,0},s,t,dist;
+  FilOpContact c;double trimA,trimB,highA,highB,normal[3]={0,0,0},s,t,dist;
   dist=filStericGeometry(a->segment,b->segment,&s,&t,normal);
   if(!(dist<a->radius+b->radius)) continue;
   if(!(dist>1e-12)) return 1;
-  trimA=filStericTrim(a->segment,b->segment);trimB=filStericTrim(b->segment,a->segment);
+  filStericTrimBounds(a->segment,b->segment,&trimA,&highA);filStericTrimBounds(b->segment,a->segment,&trimB,&highB);
   /* A moving trim bound depends on contour lengths outside the contact.
      Fixed-length tangents make those derivatives zero. For elastic trimmed
      contacts use the complete reference operator rather than omit them. */
-  if((trimA>0 || trimB>0) && (a->fil->filtype->klen>=0 || b->fil->filtype->klen>=0)) return 1;
+  if((trimA>0 || trimB>0 || highA<1 || highB<1) && (a->fil->filtype->klen>=0 || b->fil->filtype->klen>=0)) return 1;
   memset(&c,0,sizeof(c));c.s=s;c.t=t;c.dist=dist;c.delta=a->radius+b->radius-dist;c.k=2/(1/a->stiffness+1/b->stiffness);
   c.node[0]=a->fil->stericnodeoffset+a->index;c.node[1]=c.node[0]+1;c.node[2]=b->fil->stericnodeoffset+b->index;c.node[3]=c.node[2]+1;
-  c.freeS=s>trimA+1e-8 && s<1-1e-8;c.freeT=t>trimB+1e-8 && t<1-1e-8;
-  for(d=0;d<3;d++) {c.u[d]=a->segment->xyzback[d]-a->segment->xyzfront[d];c.v[d]=b->segment->xyzback[d]-b->segment->xyzfront[d];c.normal[d]=normal[d];c.r[d]=normal[d]*dist;}
+  c.freeS=s>trimA+1e-8 && s<highA-1e-8;c.freeT=t>trimB+1e-8 && t<highB-1e-8;
+  for(d=0;d<3;d++) {c.u[d]=a->segment->xyzplus[d]-a->segment->xyzminus[d];c.v[d]=b->segment->xyzplus[d]-b->segment->xyzminus[d];c.normal[d]=normal[d];c.r[d]=normal[d]*dist;}
   c.a=opDot(c.u,c.u);c.b=opDot(c.u,c.v);c.c=opDot(c.v,c.v);
   if(c.freeS && c.freeT && c.a*c.c-c.b*c.b<1e-12*c.a*c.c) c.freeS=c.freeT=0; /* parallel closest-point gauge; quasi-Newton block */
   FIL_OP_GROW(p->contact,p->maxcontact,(size_t)p->ncontact+1);
@@ -206,6 +216,12 @@ static int opBuildWalls(simptr sim,struct filamentoperatorstruct *p) {
 int filOperatorBuild(simptr sim,struct filamentoperatorstruct **work,int workers) {
  struct filamentstericstruct *w=sim->filss->steric;struct filamentoperatorstruct *p=*work;int i,slot,er=0;
  if(workers<1 || workers>256) return 1;
+ /* Do not allocate a cache whose interaction blocks need reference differences. */
+ if(filContactOn(sim->filss)) return 1;
+ for(int ft=0;ft<sim->filss->ntype;ft++) for(int q=0;q<sim->filss->filtypes[ft]->nsurfint;q++) {
+  filsurfinteractptr interaction=sim->filss->filtypes[ft]->surfint[q];
+  if((interaction->action==FSAsoftwall || interaction->action==FSArepel) && interaction->kforce>0) return 1;
+ }
  if(!p) {p=(struct filamentoperatorstruct*)calloc(1,sizeof(*p));if(!p) return 1;*work=p;}
  FIL_OP_GROW(p->segment,p->maxsegment,w->nnode);
  FIL_OP_GROW(p->node,p->maxnode,w->nnode);
@@ -260,7 +276,7 @@ static void opApplyFilament(simptr sim,struct filamentoperatorstruct *p,int f,co
    if(dim==3) {node->torque+=opDot(tau,s->t)+opDot(s->tau,dt);p->node[off+j-1].torque-=opDot(tau,prev->t)+opDot(s->tau,dtm);}
   }
   if(t->klen>0 || (t->elongmodel && j==fil->nseg-1)) {
-   double axial=opDot(s->t,ds),ratio=(t->elongmodel?filSegmentRestLength(fil,j):t->stdlen)*s->invlen,k=t->elongmodel?filSegmentStiffness(fil,j):t->klen;
+   double axial=opDot(s->t,ds),ratio=(t->elongmodel?filSegmentRestLength(fil,j):t->stdlen)*s->invlen,k=filSegmentStiffness(fil,j);
    for(d=0;d<dim;d++) {double df=-k*((1-ratio)*ds[d]+ratio*axial*s->t[d]);node->force[d]-=df;p->node[off+j+1].force[d]+=df;}
   }
   memcpy(previous,node->omega,3*sizeof(double));
@@ -293,7 +309,7 @@ static void opApplyBranches(simptr sim,struct filamentoperatorstruct *p,int f) {
  struct filamentstericstruct *w=sim->filss->steric;FilStericFilament *r=&w->filaments[f];int j,b;
  if(r->nodeoffset<0 || r->fil->filtype->dynamics==FDnone) return;
  b=p->node[r->nodeoffset].parentbranch;if(b>=0) opBranchForce(sim,p,&p->branch[b],1);
- for(j=0;j<r->fil->nbranch;j++) {b=r->branchstart+j;if(p->branch[b].valid) opBranchForce(sim,p,&p->branch[b],0);}
+ for(j=0;j<r->fil->njunct;j++) {b=r->branchstart+j;if(p->branch[b].valid) opBranchForce(sim,p,&p->branch[b],0);}
 }
 static void opContactForce(struct filamentoperatorstruct *p,FilOpContact *c) {
  double a[3],b[3],du[3],dv[3],r[3],dr[3],ds,dt,dd,rs,rt;int d;
@@ -350,7 +366,7 @@ int filOperatorApply(simptr sim,struct filamentoperatorstruct *p,const double *d
    for(k=0;k<dim;k++) out[dim*i+k]=sim->dt*force[k]/n->drag;
   }
   if(dim==3 && n->node<fil->nseg && fil->filtype->dynamics!=FDnone)
-   out[dim*w->nnode+i]=sim->dt*fil->filtype->stdlen*fil->filtype->mobility*fil->nodemobility[n->node?1:0]*p->node[i].torque;
+   out[dim*w->nnode+i]=sim->dt*fil->filtype->stdlen*fil->filtype->mobility*filSegRollMobility(fil,n->node)*p->node[i].torque;
  }
  return 0;
 }

@@ -1,0 +1,59 @@
+# Minimum spacing between branches on a mother filament.
+#
+# Two nearly straight mothers branch at the same rate. The upper one, of type spaced, has
+# branch_min_spacing 2, so a new branch only forms at nodes that are at least 2 length
+# units (4 segments) along the mother from every existing branch. The lower one, of
+# type free, has no minimum spacing, so its branches cluster and can share nodes.
+# Branching also continues on the daughters, with the same rules.
+#
+# smoldyn branchMinSpacing2D.txt
+
+graphics opengl_good
+
+dim 2
+boundaries x -12 12 r
+boundaries y -8 8 r
+
+time_start 0
+time_stop 5
+time_step 0.01
+random_seed 1
+
+frame_thickness 0
+
+start_filament_type spaced
+color red
+thickness 2
+polygon ve
+dynamics none
+standard_length 0.5
+standard_angle 0
+force_length 1000
+force_angle 1000
+branch_rate 0.1
+branch_angle 1.22
+branch_segments 4
+branch_min_spacing 2
+end_filament_type
+
+start_filament_type free
+color blue
+thickness 2
+polygon ve
+dynamics none
+standard_length 0.5
+standard_angle 0
+force_length 1000
+force_angle 1000
+branch_rate 0.1
+branch_angle 1.22
+branch_segments 4
+end_filament_type
+
+random_filament spaced:mother 40  -10 3  0
+random_filament free:mother 40  -10 -5  0
+
+cmd B pause
+#cmd @ 5 printFilaments stdout
+
+end_file

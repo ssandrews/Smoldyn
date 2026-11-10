@@ -15,7 +15,8 @@
 filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence);
 int filAddSegment(filamentptr fil,const double *pos,double length,const double *angle,double thick,char end);
 void filNodes2Angles(filamentptr fil,int lo,int hi);
-double filBranchAzimuth(const filamentptr mother,int spot,const filamentptr daughter);
+double filBranchAzimuth(const filjunctionptr joint);
+filjunctionptr filAddJunction(filamentptr fil,char end,filamentptr target,int node,int bend);
 enum CMDcode cmdprintFilaments(simptr sim,cmdptr cmd,char *line);
 double gaussrandD(void);
 #define REQUIRE(x) do {if(!(x)) {fprintf(stderr,"Profile failed at line %d: %s\n",__LINE__,#x);exit(1);}} while(0)
@@ -24,7 +25,7 @@ static void counts(simptr sim,int *filaments,int *segments,int *growing) {
  int ft,f;*filaments=*segments=*growing=0;
  for(ft=0;ft<sim->filss->ntype;ft++) {
   filamenttypeptr t=sim->filss->filtypes[ft];*filaments+=t->nfil;
-  for(f=0;f<t->nfil;f++) {*segments+=t->fillist[f]->nseg;if(!t->fillist[f]->capped) (*growing)++;}
+  for(f=0;f<t->nfil;f++) {*segments+=t->fillist[f]->nseg;if(!t->fillist[f]->endstate[1]) (*growing)++;}
  }
 }
 /* Exact doubles, material frames and subsequent RNG draws: worker regression
@@ -38,8 +39,8 @@ static void writeState(simptr sim) {
   for(f=0;f<type->nfil;f++) {
    filamentptr fil=type->fillist[f];
    REQUIRE(fwrite(fil->filname,1,strlen(fil->filname)+1,file)==strlen(fil->filname)+1);
-   REQUIRE(fwrite(&fil->nseg,sizeof(int),1,file)==1);REQUIRE(fwrite(&fil->capped,sizeof(int),1,file)==1);
-   REQUIRE(fwrite(&fil->growbank,sizeof(double),1,file)==1);REQUIRE(fwrite(fil->seg0up,sizeof(double),3,file)==3);
+   REQUIRE(fwrite(&fil->nseg,sizeof(int),1,file)==1);REQUIRE(fwrite(&fil->endstate[1],sizeof(int),1,file)==1);
+   REQUIRE(fwrite(&fil->lenbank[1],sizeof(double),1,file)==1);REQUIRE(fwrite(fil->seg0up,sizeof(double),3,file)==3);
    for(j=0;j<=fil->nseg;j++) REQUIRE(fwrite(fil->nodes[j],sizeof(double),sim->dim,file)==(size_t)sim->dim);
    for(j=0;j<fil->nseg;j++) {
     REQUIRE(fwrite(&fil->segments[j]->len,sizeof(double),1,file)==1);
@@ -66,7 +67,7 @@ static void snapshot(simptr sim,const char *path) {
   REQUIRE(t);fil=filAddFilament(t,colon);REQUIRE(fil);
   for(i=0;i<nseg;i++) REQUIRE(!filAddSegment(fil,start,t->stdlen,angle,1,'b'));
   for(i=0;i<=nseg;i++) for(d=0;d<sim->dim;d++) REQUIRE(fscanf(file,"%lf",&fil->nodes[i][d])==1);
-  REQUIRE(fscanf(file,"%lf",&bank)==1);fil->growbank=bank;fil->capped=capped?1:0;
+  REQUIRE(fscanf(file,"%lf",&bank)==1);fil->lenbank[1]=bank;fil->endstate[1]=capped?1:0;
   /* Avoid a degenerate up vector for a nearly vertical first segment. */
   {double z=fil->nodes[1][2]-fil->nodes[0][2],len=0;
    for(d=0;d<sim->dim;d++) {double dx=fil->nodes[1][d]-fil->nodes[0][d];len+=dx*dx;}
@@ -80,18 +81,16 @@ static void snapshot(simptr sim,const char *path) {
  }
  REQUIRE(n>0);fclose(file);
  for(i=0;i<n;i++) if(strcmp(records[i].parent,"-")) {
-  filamentptr mother=NULL,daughter=records[i].fil;int spot=-1,b;double best=1e100;
+  filamentptr mother=NULL,daughter=records[i].fil;int spot=-1;double best=1e100;
   for(j=0;j<n;j++) if(!strcmp(records[j].fil->filname,records[i].parent)) mother=records[j].fil;
   REQUIRE(mother);
   for(j=1;j<=mother->nseg;j++) {double dist=0;
    for(d=0;d<sim->dim;d++) {double dx=mother->nodes[j][d]-daughter->nodes[0][d];dist+=dx*dx;}
    if(dist<best) {best=dist;spot=j-1;}
   }
-  REQUIRE(best<1e-10);b=mother->nbranch;REQUIRE(filAlloc(mother,0,b+1,0));
-  mother->branchspots[b]=spot;mother->branches[b]=daughter;mother->nbranch++;
-  daughter->frontend=mother;
+  REQUIRE(best<1e-10);REQUIRE(filAddJunction(daughter,'m',mother,spot+1,0));
   for(d=0;d<sim->dim;d++) daughter->nodes[0][d]=mother->nodes[spot+1][d];
-  filNodes2Angles(daughter,-1,-1);mother->branchazim0[b]=filBranchAzimuth(mother,spot,daughter);
+  filNodes2Angles(daughter,-1,-1);daughter->endjunct[0]->azim0=filBranchAzimuth(daughter->endjunct[0]);
  }
  free(records);
 }
@@ -120,16 +119,14 @@ int main(int argc,char **argv) {
   while(done<w->nfilament) {
    progress=0;
    for(f=0;f<w->nfilament;f++) if(!ready[f]) {
-    filamentptr fil=w->filaments[f].fil,mother=fil->frontend;int parent=-1,br;
+    filamentptr fil=w->filaments[f].fil,mother=fil->endjunct[0]?fil->endjunct[0]->target:NULL;int parent=-1;
     if(mother) {
      for(parent=0;parent<w->nfilament && w->filaments[parent].fil!=mother;parent++);
      REQUIRE(parent<w->nfilament);if(!ready[parent]) continue;
     }
     if(fil->nseg && fil->filtype->dynamics!=FDnone) {
      if(mother) {
-      for(br=0;br<mother->nbranch && mother->branches[br]!=fil;br++) {}
-      REQUIRE(br<mother->nbranch);
-      memcpy(fil->nodes[0],mother->nodes[mother->branchspots[br]+1],3*sizeof(double));
+      memcpy(fil->nodes[0],mother->nodes[fil->endjunct[0]->node],3*sizeof(double));
      }
      for(j=0;j<fil->nseg;j++) {
       double len=0,axis[3];REQUIRE(fil->nodemobility[j+1]>0);

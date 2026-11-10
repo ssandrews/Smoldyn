@@ -30,7 +30,7 @@ if(NOT SMOLDYN_VERSION)
     else()
       # hourly release.
       string(TIMESTAMP STAMP "%Y%m%d%H%M")
-      set(SMOLDYN_VERSION "2.76.dev${STAMP}")
+      set(SMOLDYN_VERSION "2.77.dev${STAMP}")
     endif()
   endif()
 endif()
@@ -147,6 +147,7 @@ set(SRC_FILES
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentparallel.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentgrowth.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentsteric.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentimplicit.c
@@ -462,7 +463,11 @@ endif ()
 if (OPTION_PYTHON)
   # Find python before using pybind11. There is a possibility of version mismatch later.
   if(${SMOLDYN_PYTHON_VERSION} STREQUAL "Auto")
-    find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+    # The smoldyn package requires Python 3.10 or later (see pyproject.toml.in).
+    # This accepts any such version, using the first one found on the PATH (or
+    # an active virtual environment). To use a different one, configure with
+    # -DPython3_EXECUTABLE=/path/to/python3, or set SMOLDYN_PYTHON_VERSION.
+    find_package(Python3 3.10 COMPONENTS Interpreter Development REQUIRED)
   else()
     find_package(Python3 ${SMOLDYN_PYTHON_VERSION} EXACT COMPONENTS Interpreter Development REQUIRED)
   endif()
@@ -525,6 +530,9 @@ endif()
 enable_testing()
 option(OPTION_FILAMENT_STERIC_TESTS "Build native filament contact regression checks" OFF)
 if(OPTION_FILAMENT_STERIC_TESTS)
+  add_executable(test_filament_upstream tests/test_filament_upstream.c)
+  target_link_libraries(test_filament_upstream PRIVATE smoldyn_static)
+  add_test(NAME filament_upstream_compatibility COMMAND test_filament_upstream)
   add_executable(test_filament_growth tests/test_filament_growth.c)
   target_link_libraries(test_filament_growth PRIVATE smoldyn_static)
   add_test(NAME filament_growth COMMAND test_filament_growth)

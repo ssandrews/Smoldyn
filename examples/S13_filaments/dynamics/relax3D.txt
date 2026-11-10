@@ -30,7 +30,7 @@ force_arrows 10 red
 thickness 2
 polygon ve
 kT 1
-dynamics implicit2
+dynamics RK4
 standard_length 5
 standard_angle 0 0 0
 force_length 1
@@ -55,7 +55,7 @@ filament_type template standard_angle 0.3 0 0
 filament_type template kT 0
 
 #cmd B printFilament template fil1 xabyft stdout
-cmd E pause
+cmd B pause
 #cmd i 0 10000 1000 printFilament template fil1 xabyft stdout
 
 end_file

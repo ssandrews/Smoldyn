@@ -8,13 +8,12 @@
 #include "smoldyn.h"
 #include "smoldynfuncs.h"
 #include "smolfilamentsteric.h"
+#include "filament_test_compat.h"
 #include "Geometry.h"
 #include "random2.h"
 filamenttypeptr filAddFilamentType(simptr sim,const char *name);
 int filtypeSetParam(filamenttypeptr type,const char *param,int index,double value);
 int filAddSegment(filamentptr fil,const double *x,double length,const double *angle,double thick,char end);
-filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thick,const char *name);
-double filBranchAzimuth(const filamentptr mother,int spot,const filamentptr daughter);
 void filCopyRollToYpr2(filamentptr fil);
 void filCopyYpr2ToRoll(filamentptr fil);
 void filComputeForces(filamentptr fil,int lo,int hi);
@@ -51,7 +50,7 @@ static filamentptr rod(filamenttypeptr t,const double *a,const double *b) {
  filNodes2Angles(f,-1,-1);return f;
 }
 static double distance(segmentptr a,segmentptr b) {
- double s,t,n[3];return Geo_ClosestSeg2Seg(a->xyzfront,a->xyzback,b->xyzfront,b->xyzback,3,&s,&t,n);
+ double s,t,n[3];return Geo_ClosestSeg2Seg(a->xyzminus,a->xyzplus,b->xyzminus,b->xyzplus,3,&s,&t,n);
 }
 static void geometry(void) {
  double a[3]={0,0,0},b[3]={0.01,0,0},c[3]={0.002,0.006,0},d[3]={0.008,0.006,0},s,t,n[3];
@@ -104,7 +103,7 @@ static double query_oracle(simptr sim,const double *a,const double *b,double rad
   filamenttypeptr type=sim->filss->filtypes[ft];if(type->stericradius<=0) continue;
   for(f=0;f<type->nfil;f++) for(i=0;i<type->fillist[f]->nseg;i++) {
    segmentptr seg=type->fillist[f]->segments[i];
-   double gap=Geo_ClosestSeg2Seg(a,b,seg->xyzfront,seg->xyzback,sim->dim,&s,&t,n)-radius-type->stericradius;
+   double gap=Geo_ClosestSeg2Seg(a,b,seg->xyzminus,seg->xyzplus,sim->dim,&s,&t,n)-radius-type->stericradius;
    if(gap<best) {best=gap;*nearest=seg;}
   }
  }
@@ -119,8 +118,8 @@ static void unified_boxes(void) {
   CHECK(!simreadstring(sim,NULL,"filament_box_density","50000"));
   CHECK(!boxsetsize(sim,"boxsize",0.1));CHECK(!boxesupdate(sim));
   cell=pos2box(sim,p);seen=0;
-  for(i=0;i<cell->nsegment;i++) if(cell->segment[i]==f->segments[0]) seen++;
-  CHECK(seen==1);CHECK(cell->maxsegment>=cell->nsegment);
+  for(i=0;i<cell->nfilseg;i++) if(cell->filseg[i]==f->segments[0]) seen++;
+  CHECK(seen==1);CHECK(cell->maxfilseg>=cell->nfilseg);
   /* Axis-aligned centerline on a box face and physical capsule just across it. */
   CHECK(segmentinbox(sim,f->segments[0],pos2box(sim,a)));
   CHECK(filPointInFilament(sim,p,NULL,NULL)==f->segments[0]);
@@ -138,7 +137,7 @@ static void unified_boxes(void) {
   CHECK(!filPointInFilament(sim,p,NULL,NULL));
   for(i=0;i<sim->boxs->nsegmentbox;i++) {
    boxptr box=sim->boxs->segmentbox[i];int s;
-   for(s=0;s<box->nsegment;s++) CHECK(box->segment[s]!=f->segments[0]);
+   for(s=0;s<box->nfilseg;s++) CHECK(box->filseg[s]!=f->segments[0]);
   }
   simfree(sim);
  }
@@ -152,10 +151,10 @@ static void unified_boxes(void) {
  }
  /* Disabled sterics still records finite centerlines in the original boxes. */
  {simptr sim=scene(2);filamenttypeptr t=type(sim,"plain",1);filamentptr f=rod(t,a,b);boxptr box;
-  t->stericradius=0;CHECK(!boxsetsize(sim,"boxsize",0.1));CHECK(!boxesupdate(sim));
-  box=pos2box(sim,a);seen=0;for(i=0;i<box->nsegment;i++) seen+=box->segment[i]==f->segments[0];CHECK(seen==1);
+  t->stericradius=0;CHECK(!boxsetsize(sim,"boxsize",0.1));CHECK(!boxesupdate(sim));CHECK(!filSetBoxLists(sim,1));
+  box=pos2box(sim,a);seen=0;for(i=0;i<box->nfilseg;i++) seen+=box->filseg[i]==f->segments[0];CHECK(seen==1);
   f->nodes[0][1]=f->nodes[1][1]=0.5;CHECK(!filDynamics(sim));
-  CHECK(box->nsegment==0);CHECK(pos2box(sim,f->nodes[0])->nsegment==1);simfree(sim);
+  CHECK(box->nfilseg==0);CHECK(pos2box(sim,f->nodes[0])->nfilseg==1);simfree(sim);
  }
  /* Molecules, panels and segments share the very same box; rebuilding contact
     payload must leave molecule ownership and static panel storage untouched. */
@@ -164,7 +163,7 @@ static void unified_boxes(void) {
   rod(t,a,b);CHECK(floor && id>0);CHECK(!surfaddpanel(floor,3,PSrect,"+2",panel,"base"));
   CHECK(!molsetmaxmol(sim,10));CHECK(!addmol(sim,1,id,p,p,0));CHECK(!boxsetsize(sim,"boxsize",0.1));CHECK(!simupdate(sim));
   for(ll=0;ll<sim->mols->nlist;ll++) for(i=0;i<sim->mols->nl[ll];i++) if(sim->mols->live[ll][i]->ident==id) mol=sim->mols->live[ll][i];
-  CHECK(mol);box=mol->box;CHECK(box==pos2box(sim,p));CHECK(box->npanel>0 && box->nsegment>0);originalpanel=box->panel[0];
+  CHECK(mol);box=mol->box;CHECK(box==pos2box(sim,p));CHECK(box->npanel>0 && box->nfilseg>0);originalpanel=box->panel[0];
   CHECK(!filStericPrepare(sim));rod(t,a,b);CHECK(!filStericPrepare(sim));
   CHECK(mol->box==box && box->npanel>0 && box->panel[0]==originalpanel);
   CHECK(box->nmol[mol->list]==1);simfree(sim);
@@ -191,7 +190,7 @@ static void queries(void) {
    expected=query_oracle(sim,a,b,0.002,&want);
     hit=filLineXFilament(sim,a,b,0.002,&dist,&nearest);NEAR(dist,expected,1e-12);CHECK(nearest);
     /* Several 2D crossings can be equally nearest; any tied segment is valid. */
-    {double s,tt,n[3];NEAR(Geo_ClosestSeg2Seg(a,b,nearest->xyzfront,nearest->xyzback,dim,&s,&tt,n)-0.002-nearest->fil->filtype->stericradius,expected,1e-12);}
+    {double s,tt,n[3];NEAR(Geo_ClosestSeg2Seg(a,b,nearest->xyzminus,nearest->xyzplus,dim,&s,&tt,n)-0.002-nearest->fil->filtype->stericradius,expected,1e-12);}
    CHECK((hit!=NULL)==(expected<=0));CHECK((filLineXFilament(sim,a,b,0.002,NULL,NULL)!=NULL)==(expected<=0));
   }
   /* A nearest query far outside occupied cells still finds the global answer. */
@@ -282,7 +281,7 @@ static void branch_azimuth_poles(void) {
  simptr sim=scene(3);filamenttypeptr t=type(sim,"actin",0);filamentptr mother,daughter;
  double a[3]={0,0,0},b[3]={0.01,0,0},angle[3]={1.344,0,0};
  double theta,phi,dphi,expected,norm,previous,eps,pi=acos(-1.0);int pole,side,i,d;
- t->stericradius=0;t->klen=0;t->branchsegments=1;t->branchforceangle=0;t->branchforceazimuth=0.76;
+ t->dynamics=FDimplicitnetwork;t->stericradius=0;t->klen=0;t->branchsegments=1;t->branchforceangle=0;t->branchforceazimuth=0.76;
  mother=rod(t,a,b);daughter=filAddBranch(sim,mother,0,angle,1,NULL);CHECK(daughter);
  /* Ordinary branch angles retain the original azimuthal spring. The two
     guard-edge samples also check continuity at sin(theta)=0.1. */
@@ -291,7 +290,7 @@ static void branch_azimuth_poles(void) {
   daughter->nodes[1][0]=0.01+0.01*cos(theta);
   daughter->nodes[1][1]=0.01*sin(theta);daughter->nodes[1][2]=0;
   filNodes2Angles(daughter,-1,-1);phi=filBranchAzimuth(mother,0,daughter);CHECK(phi>=0);
-  mother->branchazim0[0]=fmod(phi+0.4,2*pi);
+  daughter->endjunct[0]->azim0=fmod(phi+0.4,2*pi);
   filComputeForces(daughter,-1,-1);norm=0;
   for(d=0;d<3;d++) {double force=daughter->filwork->forces[1][d];norm+=force*force;NEAR(force+daughter->filwork->forces[0][d],0,1e-12);}
   norm=sqrt(norm);expected=t->branchforceazimuth*0.4/(0.01*sin(theta));
@@ -308,7 +307,7 @@ static void branch_azimuth_poles(void) {
    daughter->nodes[1][0]=0.01+pole*0.01*cos(eps);
    daughter->nodes[1][1]=side*0.01*sin(eps);daughter->nodes[1][2]=0;
    filNodes2Angles(daughter,-1,-1);phi=filBranchAzimuth(mother,0,daughter);CHECK(phi>=0);
-   dphi=phi-mother->branchazim0[0];if(dphi>pi) dphi-=2*pi;else if(dphi<-pi) dphi+=2*pi;
+   dphi=phi-daughter->endjunct[0]->azim0;if(dphi>pi) dphi-=2*pi;else if(dphi<-pi) dphi+=2*pi;
    filComputeForces(daughter,-1,-1);norm=0;
    for(d=0;d<3;d++) {double force=daughter->filwork->forces[1][d];CHECK(isfinite(force));norm+=force*force;NEAR(force+daughter->filwork->forces[0][d],0,1e-12);}
    norm=sqrt(norm);expected=t->branchforceazimuth*fabs(dphi)*sin(eps)/(0.01*0.1*0.1);
@@ -336,7 +335,7 @@ static int trial_oracle(simptr sim,segmentptr trial) {
    segmentptr other=type->fillist[f]->segments[i];if(filStericExcluded(trial,other)) continue;
    extent=trial->fil->filtype->stericradius+type->stericradius;
    for(d=0;d<sim->dim;d++)
-    if(fmin(trial->xyzfront[d],trial->xyzback[d])>fmax(other->xyzfront[d],other->xyzback[d])+extent || fmin(other->xyzfront[d],other->xyzback[d])>fmax(trial->xyzfront[d],trial->xyzback[d])+extent) break;
+    if(fmin(trial->xyzminus[d],trial->xyzplus[d])>fmax(other->xyzminus[d],other->xyzplus[d])+extent || fmin(other->xyzminus[d],other->xyzplus[d])>fmax(trial->xyzminus[d],trial->xyzplus[d])+extent) break;
    if(d==sim->dim && filStericGeometry(trial,other,&s,&t,n)+1e-12<extent) return 1;
   }
  }
@@ -363,7 +362,7 @@ static void growth_index(void) {
  /* Zero bending stiffness deliberately samples arbitrary birth angles even at
     kT=0. Use a straight deterministic insertion for this location assertion. */
  t->kypr[0]=t->kypr[1]=t->kypr[2]=1;
- t->plusend='f';CHECK(filElongate(sim,front,0.011)==1);CHECK(front->nseg==2);
+ t->plusend='m';CHECK(filElongate(sim,front,0.011)==1);CHECK(front->nseg==2);
  a[0]=b[0]=-0.309;a[1]=0.195;b[1]=0.205;a[2]=b[2]=0;trial=rod(t,a,b);
  CHECK(filStericSegmentBlocked(sim,trial->segments[0]));trial->nseg=0;t->nfil--;
  CHECK(!filRemoveSegment(front,'f'));trial=rod(t,a,b);CHECK(!filStericSegmentBlocked(sim,trial->segments[0]));
@@ -374,10 +373,10 @@ static void branch_rollback(void) {
  simptr sim=scene(3);filamenttypeptr t=type(sim,"actin",0),ob=type(sim,"obstacle",1);
  double a[3]={0,0,0},b[3]={0.01,0,0},c[3]={0.006,0.005,0.003},d[3]={0.016,0.005,0.003},angle[3]={1.5707963267948966,0,0};
  filamentptr mother=rod(t,a,b),obstacle=rod(ob,c,d),daughter;
- CHECK(!filAddBranch(sim,mother,0,angle,1,NULL));CHECK(t->nfil==1);CHECK(mother->nbranch==0);
+ CHECK(!filAddBranch(sim,mother,0,angle,1,NULL));CHECK(t->nfil==1);CHECK(mother->njunct==0);
  CHECK(sim->filss->steric && sim->filss->steric->blockedbranches==1);
  obstacle->nseg=0;daughter=filAddBranch(sim,mother,0,angle,1,"daughter");CHECK(daughter);CHECK(t->nfil==2);
- CHECK(!filAddBranch(sim,mother,0,angle,1,"daughter"));CHECK(t->nfil==2 && mother->nbranch==1 && daughter->frontend==mother);
+ CHECK(!filAddBranch(sim,mother,0,angle,1,"daughter"));CHECK(t->nfil==2 && mother->njunct==1 && daughter->endjunct[0] && daughter->endjunct[0]->target==mother);
  CHECK(!filDynamics(sim));simfree(sim);puts("PASS rejected branch rollback and duplicate-name safety");
 }
 static void diffusion(void) {
@@ -531,13 +530,13 @@ static void movement_cache(void) {
  CHECK(w->movementrebuilds==rebuild);mother->nodemobility[1]=1;
  CHECK(!filDynamics(sim));sim->time+=sim->dt;CHECK(!w->nodes[root].fixed);
  /* A same-count branch-spot edit must invalidate the cache. */
- mother->branchspots[0]=1;memcpy(daughter->nodes[0],mother->nodes[2],3*sizeof(double));filNodes2Angles(daughter,-1,-1);
+ mother->juncts[0]->node=2;memcpy(daughter->nodes[0],mother->nodes[2],3*sizeof(double));filNodes2Angles(daughter,-1,-1);
  CHECK(!filDynamics(sim));sim->time+=sim->dt;CHECK(w->movementrebuilds==++rebuild);
  root=w->nodes[daughter->stericnodeoffset].parent;
  CHECK(root==mother->stericnodeoffset+2);
  CHECK(!filRemoveSegment(daughter,'b'));CHECK(!filDynamics(sim));sim->time+=sim->dt;
  CHECK(w->movementrebuilds==++rebuild);
- daughter->frontend=NULL;CHECK(!filDynamics(sim));sim->time+=sim->dt;CHECK(w->movementrebuilds==++rebuild);
+ filRemoveJunction(daughter->endjunct[0]);CHECK(!filDynamics(sim));sim->time+=sim->dt;CHECK(w->movementrebuilds==++rebuild);
  CHECK(w->nodes[daughter->stericnodeoffset].parent==daughter->stericnodeoffset);
  simfree(sim);puts("PASS movement topology reuse, mobility refresh, branch-spot edits, removal and detachment");
 }
@@ -650,7 +649,9 @@ static void implicit_network(void) {
   f->roll[1]=0.3;filCopyRollToYpr2(f);NEAR(f->segments[1]->ypr[2],0.3,1e-15);
   f->segments[1]->ypr[2]=0.4;filNodes2Angles(f,-1,-1);
   t->stericradius=0;t->kypr[2]=2;sim->dt=0.01;
-  CHECK(!filDynamics(sim));NEAR(f->segments[1]->ypr[2],0.4*(1-0.02),2e-8);
+  /* Upstream advances both absolute material frames: their relative twist
+     relaxes with the sum of the two rotational mobilities. */
+  CHECK(!filDynamics(sim));NEAR(f->segments[1]->ypr[2],0.4*(1-2*0.02),2e-8);
   f->segments[1]->ypr[2]=0.4;filNodes2Angles(f,-1,-1);
   t->dynamics=FDimplicitnetwork;sim->dt=0.1;
   CHECK(!filDynamics(sim));NEAR(f->segments[1]->ypr[2],0.4/1.2,2e-7);
@@ -661,6 +662,7 @@ static void implicit_network(void) {
  for(dim=2;dim<=3;dim++) {
   simptr sim=scene(dim);filamenttypeptr t=type(sim,"actin",0);double a[3]={0,0,0},b[3]={0.01,0,0};
   filamentptr f=rod(t,a,b);t->dynamics=FDimplicitnetwork;t->stericradius=0;t->klen=0;t->kT=0.001;sim->dt=1e-4;
+  t->implicittol=1e-11; /* stricter than the analytic displacement oracle below */
   CHECK(!filDynamics(sim));
   for(j=0;j<=1;j++) for(d=0;d<dim;d++)
    NEAR(f->nodes[j][d]-(j?b[d]:a[d]),sim->dt*t->mobility*f->filwork->thermforce[j][d],2e-8);
@@ -689,38 +691,38 @@ static void parallel_phases(void) {
  int f,i,j,d;simptr sim;filamenttypeptr t;
  if(!filWorkersSupported()) {puts("PASS parallel phases unavailable; serial fallback covered by main suite");return;}
  sim=scene(3);t=type(sim,"actin",0);sim->dt=0.1;t->stericradius=0;
- t->caprate=0.36;t->uncaprate=0.1;t->klen=-1;t->kypr[0]=t->kypr[1]=t->kypr[2]=-1;
+ t->endtrans[1][FESopen][FEScapped]=0.36;t->endtrans[1][FEScapped][FESopen]=0.1;t->klen=-1;t->kypr[0]=t->kypr[1]=t->kypr[2]=-1;
  for(f=0;f<4096;f++) {
   double a[3]={0,0.5+(f%50)*0.02,(f/50)*0.02},b[3]={0.01,0.5+(f%50)*0.02,(f/50)*0.02};
-  filamentptr fil=rod(t,a,b);fil->capped=f%3==0;
+  filamentptr fil=rod(t,a,b);fil->endstate[1]=f%3==0;
  }
  /* Empty slots also verify that ineligible filaments consume no RNG draws. */
  while(t->nfil<32768) CHECK(filAddFilament(t,NULL));
- {int expected[32768];unsigned long next[32];double pc=1-exp(-t->caprate*sim->dt),pu=1-exp(-t->uncaprate*sim->dt);
+ {int expected[32768];unsigned long next[32];double pc=1-exp(-t->endtrans[1][FESopen][FEScapped]*sim->dt),pu=1-exp(-t->endtrans[1][FEScapped][FESopen]*sim->dt);
   Simsetrandseed(sim,31);
-  for(f=0;f<t->nfil;f++) expected[f]=t->fillist[f]->nseg<1?t->fillist[f]->capped:t->fillist[f]->capped?!coinrandD(pu):coinrandD(pc);
+  for(f=0;f<t->nfil;f++) expected[f]=t->fillist[f]->nseg<1?t->fillist[f]->endstate[1]:t->fillist[f]->endstate[1]?!coinrandD(pu):coinrandD(pc);
   for(i=0;i<32;i++) next[i]=randULI();
   Simsetrandseed(sim,31);CHECK(!filSetWorkers(sim,4));filCappingDynamics(sim,t);
-  for(f=0;f<t->nfil;f++) CHECK(t->fillist[f]->capped==expected[f]);
+  for(f=0;f<t->nfil;f++) CHECK(t->fillist[f]->endstate[1]==expected[f]);
   for(i=0;i<32;i++) CHECK(randULI()==next[i]);
  }
  t->nfil=4096;
  /* Bank-only updates, multiple births, length ceilings and capped ends. */
  for(i=0;i<3;i++) {
   double bank[4096];int count[4096];
-  t->elongrate=i==0?0.001:0.24;t->elongmaxlen=i==2?0.015:0;
-  for(f=0;f<t->nfil;f++) t->fillist[f]->growbank=(f%5)*0.0019;
+  t->endrate[1][FESopen]=i==0?0.001:0.24;t->elongmaxlen=i==2?0.015:0;
+  for(f=0;f<t->nfil;f++) t->fillist[f]->lenbank[1]=(f%5)*0.0019;
   CHECK(!filSetWorkers(sim,1));filElongationDynamics(sim,t);
-  for(f=0;f<t->nfil;f++) {filamentptr fil=t->fillist[f];bank[f]=fil->growbank;count[f]=fil->nseg;while(fil->nseg>1) CHECK(!filRemoveSegment(fil,'b'));fil->growbank=(f%5)*0.0019;}
+  for(f=0;f<t->nfil;f++) {filamentptr fil=t->fillist[f];bank[f]=fil->lenbank[1];count[f]=fil->nseg;while(fil->nseg>1) CHECK(!filRemoveSegment(fil,'b'));fil->lenbank[1]=(f%5)*0.0019;}
   CHECK(!filSetWorkers(sim,4));filElongationDynamics(sim,t);
-  for(f=0;f<t->nfil;f++) {filamentptr fil=t->fillist[f];CHECK(fil->nseg==count[f]);NEAR(fil->growbank,bank[f],1e-15);while(fil->nseg>1) CHECK(!filRemoveSegment(fil,'b'));}
+  for(f=0;f<t->nfil;f++) {filamentptr fil=t->fillist[f];CHECK(fil->nseg==count[f]);NEAR(fil->lenbank[1],bank[f],1e-15);while(fil->nseg>1) CHECK(!filRemoveSegment(fil,'b'));}
  }
  /* Two proposals cross each other but neither crosses the old network.
     The first accepted birth must block the second, just as in the serial path. */
- t->elongmaxlen=0;t->elongrate=0.1;t->stericradius=0.0005;
- for(f=0;f<t->nfil;f++) {t->fillist[f]->capped=1;t->fillist[f]->growbank=0;}
+ t->elongmaxlen=0;t->endrate[1][FESopen]=0.1;t->stericradius=0.0005;
+ for(f=0;f<t->nfil;f++) {t->fillist[f]->endstate[1]=1;t->fillist[f]->lenbank[1]=0;}
  {filamentptr a=t->fillist[0],b=t->fillist[1];
-  a->capped=b->capped=0;
+  a->endstate[1]=b->endstate[1]=0;
   a->nodes[0][0]=-0.02;a->nodes[1][0]=-0.01;a->nodes[0][1]=a->nodes[1][1]=0;a->nodes[0][2]=a->nodes[1][2]=0;
   b->nodes[0][0]=b->nodes[1][0]=-0.005;b->nodes[0][1]=-0.02;b->nodes[1][1]=-0.01;b->nodes[0][2]=b->nodes[1][2]=0;
   filNodes2Angles(a,-1,-1);filNodes2Angles(b,-1,-1);
