@@ -3230,7 +3230,8 @@ enum CMDcode cmdprintFilaments(simptr sim,cmdptr cmd,char *line2) {
 			for(nd=0;nd<=fil->nseg;nd++)
 				for(d=0;d<dim;d++)
 					scmdfprintf(cmd->cmds,fptr," %g",fil->nodes[nd][d]);
-			scmdfprintf(cmd->cmds,fptr,"\n"); }}
+			scmdfprintf(cmd->cmds,fptr,"\n");
+			if(filtype->elongmodel) scmdfprintf(cmd->cmds,fptr,"LENGTH %g %s:%s %.17g\n",sim->time,filtype->ftname,fil->filname,filNominalLength(fil)); }}
 
 	scmdflush(fptr);
 	return CMDok; }

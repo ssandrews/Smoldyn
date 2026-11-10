@@ -59,6 +59,29 @@ int filImplicitSave(simptr sim,int restore);
 int filImplicitStep(simptr sim,int workers);
 void filImplicitFree(struct filamentstericstruct *work);
 void filImplicitReport(simptr sim);
+/* Optional translational Schwarz blocks; material rotations stay diagonal. */
+struct filamentprecondstruct;
+int filPrecondBuild(simptr sim,struct filamentprecondstruct **work,const double *diagonal);
+void filPrecondApply(simptr sim,struct filamentprecondstruct *work,const double *in,double *out);
+void filPrecondFree(struct filamentprecondstruct *work);
+/* Cached force derivatives; apply returns h*M*dF, including material torques.
+   No coordinates, physical force arrays, noise or spatial index are mutated. */
+struct filamentoperatorstruct;
+int filOperatorBuild(simptr sim,struct filamentoperatorstruct **work,int workers);
+int filOperatorApply(simptr sim,struct filamentoperatorstruct *work,const double *direction,double *out);
+void filOperatorFree(struct filamentoperatorstruct *work);
+void filOperatorReport(simptr sim,struct filamentoperatorstruct *work);
+/* Network extension of upstream's negative-force_length/SHAKE convention. */
+struct filamentconstraintstruct;
+int filLengthEnabled(const simptr sim);
+int filLengthPrepare(simptr sim,struct filamentconstraintstruct **work);
+int filLengthProject(simptr sim,struct filamentconstraintstruct *work);
+int filLengthSatisfied(struct filamentconstraintstruct *work);
+int filLengthFreeze(simptr sim,struct filamentconstraintstruct *work,const double *diagonal);
+int filLengthTangent(simptr sim,struct filamentconstraintstruct *work,const double *in,double *out);
+int filLengthPrecondition(simptr sim,struct filamentconstraintstruct *work,struct filamentprecondstruct *band,const double *in,double *out);
+void filLengthFree(struct filamentconstraintstruct *work);
+void filLengthReport(simptr sim,struct filamentconstraintstruct *work);
 int filStericPrepareMovement(simptr sim);
 int filStericWorkers(simptr sim);
 int filWorkWorkers(simptr sim,int items,int grain);
@@ -90,6 +113,7 @@ segmentptr filStericQuery(simptr sim,const double *a,const double *b,double radi
 int filStericChemistry(simptr sim,int begin);
 void filStericReport(simptr sim);
 double filStericGeometry(segmentptr a,segmentptr b,double *s,double *t,double *normal);
+double filStericTrim(segmentptr daughter,segmentptr mother);
 int filStericExcluded(segmentptr a,segmentptr b);
 
 #endif

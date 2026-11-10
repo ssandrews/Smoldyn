@@ -1603,7 +1603,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(er!=-1 && er!=-3,"cannot read filament name");
 		CHECKS(er!=-4,"unknonwn filament type");
 		CHECKS(filtype,"missing filament type. Format: type:name segments [x y z phi theta psi] [thickness]");
-		CHECKS(filtype->klen==-1 || filtype->klen>0,"cannot compute random segments because the filament type has length force constant equals 0");
+		CHECKS(filtype->klen!=0,"cannot compute random segments because the filament type has length force constant equals 0");
 		fil=filAddFilament(filtype,nm1);
 		CHECKS(fil,"unable to add filament to simulation");
 		line2=strnword(line2,2);

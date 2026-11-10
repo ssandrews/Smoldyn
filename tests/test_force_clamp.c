@@ -10,6 +10,10 @@
 #undef CHECK
 #define CHECK(c) do {if(!(c)) {fprintf(stderr,"FAIL force clamp line %d: %s\n",__LINE__,#c);exit(1);}} while(0)
 #define NEAR(a,b,t) CHECK(fabs((a)-(b))<(t))
+static int banded=0;
+static int fixedlength=0;
+static int projected=0;
+static int cached=0;
 filamenttypeptr filAddFilamentType(simptr sim,const char *name);
 int filAddSegment(filamentptr fil,const double *pos,double len,const double *angle,double thick,char end);
 void filNodes2Angles(filamentptr fil,int lo,int hi);
@@ -24,6 +28,10 @@ static simptr scene(int dim) {
 static filamenttypeptr type(simptr sim) {
  filamenttypeptr t=filAddFilamentType(sim,"actin");CHECK(t);
  t->dynamics=FDimplicitnetwork;t->kT=0;t->brownian=0;t->stdlen=0.01;t->mobility=1;t->klen=10000;
+ t->implicitpreconditioner=banded;
+ if(fixedlength) t->klen=-1;
+ t->implicitmethod=projected;
+ t->implicitjacobian=cached;
  t->kypr[0]=t->kypr[1]=t->kypr[2]=0;t->implicittol=1e-12;t->implicititerations=20;t->implicitkrylov=80;
  t->confineforce=100;t->confineface=PFfront;t->sterick=4000;t->stericskin=0.002;return t;
 }
@@ -71,6 +79,8 @@ static void geometry_and_lifecycle(void) {
   CHECK(!surfforceclampend(sim,1));NEAR(pnl->point[0][axis],expected,1e-12);membership(sim);
   /* Cross several original boxes, both directions and exactly on a boundary. */
   for(move=0;move<3;move++) {double old=pnl->point[0][axis],shift[3]={0,0,0};shift[axis]=(move==0?0.5:move==1?0:-0.5)-old;surftranslatepanel(pnl,dim,shift);CHECK(!boxesupdatepanel(sim,pnl,old));membership(sim);}
+  /* Leave an exact face, remain inside its next cell, then cross back. */
+  for(move=0;move<3;move++) {double old=pnl->point[0][axis],shift[3]={0,0,0};shift[axis]=(move==0?-0.499:move==1?-0.498:-0.501)-old;surftranslatepanel(pnl,dim,shift);CHECK(!boxesupdatepanel(sim,pnl,old));membership(sim);}
   CHECK(!surfsetforceclamp(pnl,0,0,0,0,0));CHECK(!sim->srfss->nforceclamp);CHECK(!pnl->forceclamp);
   simfree(sim);
  }
@@ -160,6 +170,74 @@ static void active_sets_and_fixed_support(void) {
  simfree(sim);puts("PASS contact active-set changes, mixed stiffness/fixed support, zero load, old geometry and growth-driven retreat");
 }
 
+static void approach_and_feedback(void) {
+ int dim,axis,sign,sub,i;
+ for(dim=2;dim<=3;dim++) for(axis=0;axis<dim;axis++) for(sign=-1;sign<=1;sign+=2) for(sub=1;sub<=4;sub*=4) {
+  simptr sim=scene(dim);filamenttypeptr t=type(sim);double start=sign<0?0.8:-0.8;
+  panelptr pnl=panel(sim,axis,sign,start);filamentptr fil=rod(t,axis,0.2,0);
+  /* Avoid the material-frame pole of the generic rod helper (+z tangent). */
+  if(dim==3 && axis==1) {fil->nodes[1][2]=fil->nodes[0][2];fil->nodes[1][0]=fil->nodes[0][0]+t->stdlen;filNodes2Angles(fil,-1,-1);}
+  t->confinesrf=pnl->srf;t->stericradius=0.0035;t->stericsubsteps=sub;
+  CHECK(!surfsetforceclamp(pnl,1,0.1,1e-10,-0.9,0.9));CHECK(!surfsetforceclampapproach(pnl,0.5,0));
+  for(i=0;i<3;i++) {CHECK(!filDynamics(sim));NEAR(pnl->point[0][axis],start+sign*(i+1)*0.5*sim->dt,1e-12);NEAR(fil->nodes[0][axis],0.2,1e-12);CHECK(!pnl->forceclamp->engaged);}
+  CHECK(!surfforceclampbegin(sim));CHECK(!surfforceclampstep(sim));
+  {unsigned long long scans=pnl->forceclamp->evaluations;double frozen=pnl->forceclamp->trialposition;
+   for(i=0;i<100;i++) CHECK(!surfforceclampsolve(sim));
+   CHECK(scans==pnl->forceclamp->evaluations);NEAR(pnl->forceclamp->trialposition,frozen,1e-14);
+  }
+  CHECK(!surfforceclampend(sim,0));simfree(sim);
+ }
+ {simptr sim=scene(3);filamenttypeptr t=type(sim);panelptr pnl=panel(sim,2,-1,0.205);filamentptr fil=rod(t,2,0.2,0);
+  double loaded;sim->dt=0.001;t->confinesrf=pnl->srf;t->stericradius=0.0035;t->mobility=0;
+  CHECK(!surfsetforceclamp(pnl,1,0.1,1e-10,-0.9,0.9));CHECK(!surfsetforceclampapproach(pnl,10,0));
+  CHECK(!filDynamics(sim));CHECK(pnl->forceclamp->engaged);loaded=pnl->point[0][2];NEAR(loaded,0.203,1e-10);
+  CHECK(!filDynamics(sim));NEAR(pnl->point[0][2],loaded,1e-12);NEAR(pnl->forceclamp->reaction,0.1,1e-9);
+  for(i=0;i<2;i++) fil->nodes[i][2]+=0.05;
+  filNodes2Angles(fil,-1,-1);CHECK(!filDynamics(sim));NEAR(pnl->point[0][2],loaded+0.05,1e-10);NEAR(pnl->forceclamp->reaction,0.1,1e-9);
+  for(i=0;i<2;i++) fil->nodes[i][2]-=0.02;
+  filNodes2Angles(fil,-1,-1);CHECK(!filDynamics(sim));NEAR(pnl->point[0][2],loaded+0.03,1e-10);NEAR(pnl->forceclamp->reaction,0.1,1e-9);
+  simfree(sim);
+ }
+ {simptr sim=scene(3);filamenttypeptr t=type(sim);panelptr pnl=panel(sim,2,-1,-0.899);t->confinesrf=pnl->srf;sim->dt=0.01;
+  CHECK(!surfsetforceclamp(pnl,1,0.1,1e-10,-0.9,0.9));CHECK(!surfsetforceclampapproach(pnl,1,0));
+  CHECK(!filDynamics(sim));NEAR(pnl->point[0][2],-0.9,1e-12);CHECK(!pnl->forceclamp->engaged);
+  CHECK(!filDynamics(sim));NEAR(pnl->point[0][2],-0.9,1e-12);simfree(sim);
+ }
+ {simptr sim=scene(3);filamenttypeptr t=type(sim);panelptr pnl=panel(sim,2,-1,0.204);filamentptr fil=rod(t,2,0.2,0);
+  t->confinesrf=pnl->srf;t->stericradius=0.0035;t->stericsubsteps=4;sim->dt=0.002;
+  CHECK(!surfsetforceclamp(pnl,1,1000,1e-10,-0.9,0.9));CHECK(!surfsetforceclampapproach(pnl,1,0));
+  /* Phase selected on a later substep must disappear when the outer interval
+     is rejected, just like the already-tested filament/plate rollback. */
+  CHECK(!surfforceclampbegin(sim));sim->dt/=4;
+  CHECK(!surfforceclampstep(sim));CHECK(!surfforceclampsolve(sim));CHECK(!pnl->forceclamp->trialengaged);
+  CHECK(!surfforceclampstep(sim));CHECK(!surfforceclampsolve(sim));CHECK(pnl->forceclamp->trialengaged);
+  CHECK(!surfforceclampend(sim,0));NEAR(pnl->point[0][2],0.204,1e-14);NEAR(fil->nodes[0][2],0.2,1e-14);
+  CHECK(!pnl->forceclamp->engaged && !pnl->forceclamp->trialengaged && !pnl->forceclamp->intrial);simfree(sim);
+ }
+ {simptr sim=scene(3);filamenttypeptr t=type(sim);panelptr pnl=panel(sim,2,-1,0.205);filamentptr fil=rod(t,2,0.2,0);
+  t->confinesrf=pnl->srf;t->stericradius=0.0035;t->mobility=0;sim->dt=0.001;
+  CHECK(!surfsetforceclamp(pnl,1,4,1e-10,0.202,0.9));CHECK(!surfsetforceclampapproach(pnl,10,0));
+  CHECK(!filDynamics(sim));NEAR(pnl->point[0][2],0.202,1e-12);NEAR(pnl->forceclamp->reaction,0.3,1e-10);
+  for(i=0;i<2;i++) fil->nodes[i][2]+=0.1;
+  filNodes2Angles(fil,-1,-1);CHECK(!filDynamics(sim));NEAR(pnl->point[0][2],0.2835,1e-10);NEAR(pnl->forceclamp->reaction,4,1e-9);simfree(sim);
+ }
+ puts("PASS finite approach: axes/normals/substeps, frozen trials without repeated scans, contact/hold/up/down, empty stop and phase rollback");
+}
+
+static void approach_parser(void) {
+ simptr sim=scene(3);filamenttypeptr t=type(sim);panelptr pnl=panel(sim,2,-1,0.8);surfaceptr surf=pnl->srf;FILE *file;char buffer[16384];size_t n;
+ char valid[]="rect piston 0.1 1e-8 -0.9 0.9 approach 0.5",bad[]="rect piston 8 1e-8 -0.9 0.9 approach -1";
+ char extra[]="rect piston 8 1e-8 -0.9 0.9 approach 0.5 loaded extra",loaded[]="rect piston 0.1 1e-8 -0.9 0.9 approach 0.5 loaded";
+ t->confinesrf=surf;rod(t,2,0.2,0);
+ CHECK(surfreadstring(sim,NULL,surf,"force_clamp",valid)==surf);NEAR(pnl->forceclamp->approachspeed,0.5,1e-14);CHECK(!pnl->forceclamp->engaged);
+ CHECK(!surfreadstring(sim,NULL,surf,"force_clamp",bad));CHECK(!surfreadstring(sim,NULL,surf,"force_clamp",extra));
+ NEAR(pnl->forceclamp->force,0.1,1e-14);NEAR(pnl->forceclamp->approachspeed,0.5,1e-14);CHECK(!pnl->forceclamp->engaged);
+ file=tmpfile();CHECK(file);writesurfaces(sim,file);rewind(file);n=fread(buffer,1,sizeof(buffer)-1,file);buffer[n]=0;fclose(file);CHECK(strstr(buffer," approach 0.5\n"));
+ CHECK(surfreadstring(sim,NULL,surf,"force_clamp",loaded)==surf);CHECK(pnl->forceclamp->engaged);
+ file=tmpfile();CHECK(file);writesurfaces(sim,file);rewind(file);n=fread(buffer,1,sizeof(buffer)-1,file);buffer[n]=0;fclose(file);CHECK(strstr(buffer," approach 0.5 loaded\n"));
+ simfree(sim);puts("PASS approach parser, invalid-setting atomicity and serialized contact phase");
+}
+
 static void opposing_panels(void) {
  simptr sim=scene(3);filamenttypeptr t=type(sim);panelptr ceiling=panel(sim,2,-1,0.8),floor;
  double pars[5]={-0.5,-0.5,-0.8,1,1};filamentptr fil;
@@ -174,4 +252,4 @@ static void opposing_panels(void) {
  puts("PASS simultaneous opposing clamps, independent panel ownership and cancelling loads");
 }
 
-int main(void) {opposing_panels();geometry_and_lifecycle();active_sets_and_fixed_support();dynamics_and_rollback();parser_and_validation();parallel_and_resize();puts("All force clamp checks passed.");return 0;}
+int main(int argc,char **argv) {banded=argc>1 && !strcmp(argv[1],"--banded");cached=argc>1 && !strcmp(argv[1],"--cached");projected=argc>1 && !strcmp(argv[1],"--projected");fixedlength=cached || projected || (argc>1 && !strcmp(argv[1],"--fixed-length"));opposing_panels();geometry_and_lifecycle();active_sets_and_fixed_support();dynamics_and_rollback();parser_and_validation();parallel_and_resize();approach_and_feedback();approach_parser();puts("All force clamp checks passed.");return 0;}

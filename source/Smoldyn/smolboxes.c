@@ -868,19 +868,26 @@ static int boxPanelBefore(panelptr a,panelptr b) {
    Reserve all needed capacity before changing any membership. No new grid or
    inverse panel-to-box lists, and no molecule/segment payload rebuild. */
 int boxesupdatepanel(simptr sim,panelptr pnl,double oldposition) {
- boxssptr bs=sim->boxs;int d,pt,lo[3],hi[3],cell[3],axis,pass,i,hit,exists;
- double a[3]={0,0,0},b[3]={0,0,0},delta,pad;
+ boxssptr bs=sim->boxs;int d,pt,lo[3],hi[3],oldlo[3],oldhi[3],cell[3],axis,pass,i,hit,exists;
+ double a[3]={0,0,0},b[3]={0,0,0},position,pad;
  BoxGridCell found;
  if(!bs || !bs->blist) return 0;
  if(pnl->ps!=PSrect || bs->condition!=SCok) {boxsetcondition(bs,SCparams,0);return 0;}
- axis=(int)pnl->front[1];delta=oldposition-pnl->point[0][axis];
+ axis=(int)pnl->front[1];position=pnl->point[0][axis];
  for(d=0;d<sim->dim;d++) {
   a[d]=b[d]=pnl->point[0][d];
   for(pt=1;pt<pnl->npts;pt++) {a[d]=fmin(a[d],pnl->point[pt][d]);b[d]=fmax(b[d],pnl->point[pt][d]);}
  }
- a[axis]=fmin(a[axis],a[axis]+delta);b[axis]=fmax(b[axis],b[axis]+delta);
- pad=64*DBL_EPSILON;
+ pad=64*DBL_EPSILON*fmax(1,fabs(oldposition));
  for(d=0;d<sim->dim;d++) pad=fmax(pad,64*DBL_EPSILON*fmax(fabs(a[d]),fabs(b[d])));
+ if(boxGridBounds(&bs->grid,a,b,pad,lo,hi)) return 1;
+ a[axis]=b[axis]=oldposition;
+ if(boxGridBounds(&bs->grid,a,b,pad,oldlo,oldhi)) return 1;
+ /* A pure normal translation within one cell layer cannot change membership.
+    Never take this shortcut at a grid face: an exactly touching panel belongs
+    to both layers. Geometry already moved; only payload lists can be skipped. */
+ if(lo[axis]==hi[axis] && oldlo[axis]==oldhi[axis] && lo[axis]==oldlo[axis]) return 0;
+ a[axis]=fmin(oldposition,position);b[axis]=fmax(oldposition,position);
  if(boxGridBounds(&bs->grid,a,b,pad,lo,hi)) return 1;
  for(pass=0;pass<2;pass++)
   for(cell[0]=lo[0];cell[0]<=hi[0];cell[0]++) for(cell[1]=lo[1];cell[1]<=hi[1];cell[1]++) for(cell[2]=lo[2];cell[2]<=hi[2];cell[2]++) {

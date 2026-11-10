@@ -27,6 +27,7 @@ void filElongationDynamics(simptr sim,filamenttypeptr filtype);
 #define CHECK(c) do {if(!(c)) {fprintf(stderr,"FAIL line %i: %s\n",__LINE__,#c);exit(1);}} while(0)
 #define NEAR(a,b,tol) CHECK(fabs((a)-(b))<(tol))
 static unsigned int state=123;
+static int banded=0;
 static double uniform(void) {state=1664525u*state+1013904223u;return (state>>8)/16777216.0;}
 static simptr scene(int dim) {
  simptr sim=simalloc("");char line[64];int d;
@@ -38,6 +39,7 @@ static simptr scene(int dim) {
 static filamenttypeptr type(simptr sim,const char *name,int fixed) {
  filamenttypeptr t=filAddFilamentType(sim,name);CHECK(t);
  t->dynamics=fixed?FDnone:FDeuler;t->kT=0;t->stdlen=0.01;t->klen=10000;t->kypr[0]=t->kypr[1]=t->kypr[2]=0;
+ t->implicitpreconditioner=banded;
  t->stericradius=0.0035;t->sterick=4000;t->stericskin=0.002;return t;
 }
 static filamentptr rod(filamenttypeptr t,const double *a,const double *b) {
@@ -774,6 +776,7 @@ int main(int argc,char **argv) {
  if(argc>1 && !strcmp(argv[1],"--parallel-phases")) {parallel_phases();return 0;}
  if(argc>1 && !strcmp(argv[1],"--branch-azimuth")) {branch_azimuth_poles();return 0;}
  if(argc>1 && !strcmp(argv[1],"--implicit")) {implicit_network();return 0;}
+ if(argc>1 && !strcmp(argv[1],"--implicit-banded")) {banded=1;implicit_network();return 0;}
  if(argc>1 && !strcmp(argv[1],"--benchmark")) {benchmark(0,0);benchmark(1,0);return 0;}
  if(argc>1 && !strcmp(argv[1],"--benchmark-thermal")) {benchmark(0,1);benchmark(1,1);return 0;}
  if(argc>1 && !strcmp(argv[1],"--benchmark-growth")) {growth_benchmark();return 0;}

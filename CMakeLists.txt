@@ -147,8 +147,12 @@ set(SRC_FILES
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentgrowth.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentsteric.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentimplicit.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentprecond.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentconstraint.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentoperator.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolhelp.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolgraphics.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolmolec.c
@@ -521,12 +525,32 @@ endif()
 enable_testing()
 option(OPTION_FILAMENT_STERIC_TESTS "Build native filament contact regression checks" OFF)
 if(OPTION_FILAMENT_STERIC_TESTS)
+  add_executable(test_filament_growth tests/test_filament_growth.c)
+  target_link_libraries(test_filament_growth PRIVATE smoldyn_static)
+  add_test(NAME filament_growth COMMAND test_filament_growth)
   add_executable(test_filament_steric tests/test_filament_steric.c)
   target_link_libraries(test_filament_steric PRIVATE smoldyn_static)
   add_test(NAME filament_steric COMMAND test_filament_steric)
   add_executable(test_force_clamp tests/test_force_clamp.c)
   target_link_libraries(test_force_clamp PRIVATE smoldyn_static)
   add_test(NAME force_clamp COMMAND test_force_clamp)
+  add_executable(test_filament_preconditioner tests/test_filament_preconditioner.c)
+  target_link_libraries(test_filament_preconditioner PRIVATE smoldyn_static)
+  add_test(NAME filament_preconditioner COMMAND test_filament_preconditioner)
+  add_test(NAME filament_implicit_banded COMMAND test_filament_steric --implicit-banded)
+  add_test(NAME force_clamp_banded COMMAND test_force_clamp --banded)
+  add_executable(test_filament_constraint tests/test_filament_constraint.c)
+  target_link_libraries(test_filament_constraint PRIVATE smoldyn_static)
+  add_test(NAME filament_constraint COMMAND test_filament_constraint)
+  add_test(NAME force_clamp_fixed_length COMMAND test_force_clamp --fixed-length)
+  add_test(NAME filament_projected COMMAND test_filament_constraint --projected)
+  add_test(NAME force_clamp_projected COMMAND test_force_clamp --projected)
+  add_executable(test_filament_operator tests/test_filament_operator.c)
+  target_link_libraries(test_filament_operator PRIVATE smoldyn_static)
+  add_test(NAME filament_operator COMMAND test_filament_operator)
+  add_test(NAME filament_constraint_cached COMMAND test_filament_constraint --cached)
+  add_test(NAME filament_projected_cached COMMAND test_filament_constraint --cached-projected)
+  add_test(NAME force_clamp_cached COMMAND test_force_clamp --cached)
 endif()
 if (OPTION_TARGET_LIBSMOLDYN AND OPTION_EXAMPLES)
   add_subdirectory(examples)

@@ -556,6 +556,8 @@ typedef struct panelforceclampstruct
 {
     double force, tolerance, min, max;
     double trialposition, savedposition, reaction, stiffness;
+    double approachspeed, approachposition; /* optional inward approach, length/time */
+    int engaged, savedengaged, trialengaged, approaching, atstop;
     int intrial, lastiterations;
     unsigned long long evaluations, iterations;
 } * panelforceclampptr;
@@ -869,7 +871,7 @@ typedef struct filamentstruct {
     int maxsequence;                    // allocated sequence characters
     int nsequence;                      // number of sequence characters
     char* sequence;                     // sequence code
-    double growbank;                    // plus-end growth owed but not yet emitted as a segment
+    double growbank;                    // legacy pending growth; mechanochemical: incorporated terminal rest-length excess
     int capped;                         // bitmask of capped ends; see FILCAPPLUS
     int stericnodeoffset;               // transient index of node 0 in coupled steric workspace
 } * filamentptr;
@@ -902,6 +904,12 @@ typedef struct filamenttypestruct
     double implicittol;                // backward Euler residual tolerance, length units
     int implicititerations;            // maximum Newton iterations
     int implicitkrylov;                // maximum GMRES iterations per Newton solve
+    int implicitpreconditioner;        // 0 diagonal (default), 1 overlapping banded filaments
+    int implicitmethod;                // 0 full Newton (default), 1 projected semi-implicit predictor
+    int implicitjacobian;              // 0 residual differences (default), 1 cached local force derivatives
+    double projectedtol;               // accepted predictor defect, length units; otherwise Newton fallback
+    double constrainttol;              // relative length tolerance when klen<0 (upstream convention)
+    int constraintiterations;          // SHAKE geometric corrections per trial, default 20
     int stericsubsteps;                // mechanical steps per chemical timestep
     int stericgrowth;                  // reject overlapping elongation/treadmilling (default 1)
     double branchrate;                 // branch nucleation rate, per unit mother length per time
@@ -921,6 +929,13 @@ typedef struct filamenttypestruct
     char plusend;                      // 'b' (default) or 'f': which end is the barbed/plus end
     double elongrate;                  // plus-end elongation velocity, length/time; 0 = off
     double elongmaxlen;                // stop growing past this contour length; 0 = unbounded
+    int elongmodel;                    // 0 whole-segment legacy; 1 continuous mechanochemical rest-length growth
+    int elongoverlap;                  // geometric elongation may enter occupied capsules/panels; mechanics resolves overlaps
+    double elongstep;                  // polymerization reaction length, independent of node spacing
+    double elongenergy;                // chemical free energy per reaction, model energy units
+    double elongstiffness;             // compliant growing-tip stiffness when completed segments use klen<0
+    double elongattempted,elongaccepted,elongwork; // requested length, incorporated length, elastic work
+    unsigned long long elongstalled,elongremesh; // finite-energy stalls and geometry-preserving refinements
     double caprate;                    // plus-end capping rate, 1/time; 0 = off
     double uncaprate;                  // plus-end uncapping rate, 1/time; 0 = off
     int maxface;                       // filament faces allocated

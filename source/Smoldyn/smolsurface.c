@@ -1331,14 +1331,6 @@ void surfaceoutput(simptr sim) {
 	nspecies=sim->mols?sim->mols->nspecies:0;
 	if(!srfss) {
 		simLog(sim,2," No internal surfaces\n\n");
-	 for(s=0;s<srfss->nsrf;s++) {
-  srf=srfss->srflist[s];
-  for(p=0;p<srf->npanel[PSrect];p++) if(srf->panels[PSrect][p]->forceclamp) {
-   panelforceclampptr c=srf->panels[PSrect][p]->forceclamp;
-   simLog(sim,2," Force clamp %s:%s: load %g, force tolerance %g, travel [%g,%g]\n",
-          srf->sname,srf->panels[PSrect][p]->pname,c->force,c->tolerance,c->min,c->max);
-  }
- }
 	return; }
 
 	simLog(sim,1," Allocated for %i species\n",srfss->maxspecies-1);
@@ -1367,6 +1359,12 @@ void surfaceoutput(simptr sim) {
 	for(s=0;s<srfss->nsrf;s++) {
 		srf=srfss->srflist[s];
 		simLog(sim,2," Surface: %s\n",srfss->snames[s]);
+        for(p=0;p<srf->npanel[PSrect];p++) if(srf->panels[PSrect][p]->forceclamp) {
+            panelforceclampptr c=srf->panels[PSrect][p]->forceclamp;
+            simLog(sim,2,"  Force clamp %s: load %g, force tolerance %g, travel [%g,%g]\n",
+                srf->panels[PSrect][p]->pname,c->force,c->tolerance,c->min,c->max);
+            if(c->approachspeed>0) simLog(sim,2,"   approach speed %g, phase %s\n",c->approachspeed,c->engaged?"constant load":"approach");
+        }
 		simLog(sim,1,"  surface index: %i%s\n",srf->selfindex,(srf->selfindex==s)?"":" ERROR: actual index doesn't match selfindex");
 		if(srf->port[PFfront]) simLog(sim,2,"  The front of this surface is part of port %s\n",srf->port[PFfront]->portname);
 		if(srf->port[PFback]) simLog(sim,2,"  The back of this surface is part of port %s\n",srf->port[PFback]->portname);
@@ -1753,7 +1751,12 @@ void writesurfaces(simptr sim,FILE *fptr) {
 					for(d=0;d<dim;d++) fprintf(fptr," %g",front[d]);
 					if(dim>2) fprintf(fptr," %g",point[1][1]); }
 				fprintf(fptr," %s\n",pnl->pname);
-                if(pnl->forceclamp) {panelforceclampptr c=pnl->forceclamp;fprintf(fptr,"force_clamp rect %s %.17g %.17g %.17g %.17g\n",pnl->pname,c->force,c->tolerance,c->min,c->max);}
+                if(pnl->forceclamp) {
+                    panelforceclampptr c=pnl->forceclamp;
+                    fprintf(fptr,"force_clamp rect %s %.17g %.17g %.17g %.17g",pnl->pname,c->force,c->tolerance,c->min,c->max);
+                    if(c->approachspeed>0) fprintf(fptr," approach %.17g%s",c->approachspeed,c->engaged?" loaded":"");
+                    fprintf(fptr,"\n");
+                }
             }}
 
 		if(srf->action) {
@@ -2894,7 +2897,17 @@ int surfsetforceclamp(panelptr pnl,int enabled,double force,double tolerance,dou
   ss->nforceclamp++;
  }
  c=pnl->forceclamp;c->force=force;c->tolerance=tolerance;c->min=minimum;c->max=maximum;
+ c->approachspeed=0;c->engaged=c->savedengaged=c->trialengaged=1;c->approaching=c->atstop=0;
  c->trialposition=c->savedposition=pnl->point[0][axis];c->intrial=0;return 0;
+}
+
+/* Preserve the ideal setter/API. Contact phase changes only in accepted
+   mechanics, never as a side effect of a Newton/Jacobian trial. */
+int surfsetforceclampapproach(panelptr pnl,double speed,int engaged) {
+ panelforceclampptr c;
+ if(!pnl || !(c=pnl->forceclamp) || !isfinite(speed) || speed<=0 || (engaged!=0 && engaged!=1)) return 1;
+ c->approachspeed=speed;c->engaged=c->savedengaged=c->trialengaged=engaged;c->approaching=0;
+ return 0;
 }
 
 int surfforceclampvalidate(simptr sim) {
@@ -2948,7 +2961,38 @@ int surfforceclampbegin(simptr sim) {
   surfaceptr surf=sim->srfss->srflist[s];
   for(p=0;p<surf->npanel[PSrect];p++) {
    panelptr pnl=surf->panels[PSrect][p];panelforceclampptr c=pnl->forceclamp;
-   if(c) {c->trialposition=c->savedposition=pnl->point[0][(int)pnl->front[1]];c->intrial=1;}
+   if(c) {
+    c->trialposition=c->savedposition=pnl->point[0][(int)pnl->front[1]];c->intrial=1;
+    c->savedengaged=c->trialengaged=c->engaged;
+    c->approaching=c->approachspeed>0 && !c->engaged;c->approachposition=c->savedposition;
+   }
+  }
+ }
+ return 0;
+}
+
+/* Once per mechanical substep, from its accepted starting geometry. Freeze the
+   approach position through all nonlinear trials: no repeated contact scans in
+   GMRES and no trial-dependent phase switches. Contact engages the original
+   coupled constant-force solve. An unsupported approach waits at its travel stop. */
+int surfforceclampstep(simptr sim) {
+ int s,p;
+ if(!sim->srfss || !sim->srfss->nforceclamp) return 0;
+ for(s=0;s<sim->srfss->nsrf;s++) {
+  surfaceptr surf=sim->srfss->srflist[s];
+  for(p=0;p<surf->npanel[PSrect];p++) {
+   panelptr pnl=surf->panels[PSrect][p];panelforceclampptr c=pnl->forceclamp;
+   double sign,q,lo,force,k,seed,maxk;
+   if(!c || !c->intrial || c->approachspeed<=0 || c->trialengaged) continue;
+   if(!isfinite(sim->dt) || sim->dt<=0) return 1;
+   sign=pnl->front[0];lo=fmin(-sign*c->min,-sign*c->max);
+   q=fmax(lo,-sign*c->trialposition-c->approachspeed*sim->dt);
+   c->approachposition=-sign*q;
+   surfforceclampreaction(sim,pnl,c->approachposition,&force,&k,&seed,&maxk);c->evaluations++;
+   if(!isfinite(force) || !isfinite(k)) return 1;
+   c->approaching=force<=c->tolerance;
+   if(!c->approaching) c->trialengaged=1;
+   c->trialposition=c->approachposition;c->reaction=force;c->stiffness=k;c->lastiterations=0;
   }
  }
  return 0;
@@ -2962,6 +3006,8 @@ int surfforceclampsolve(simptr sim) {
    panelptr pnl=surf->panels[PSrect][p];panelforceclampptr c=pnl->forceclamp;
    double sign,q,lo,hi,force,k,seed,maxk,next;
    if(!c || !c->intrial) continue;
+   c->atstop=0;
+   if(c->approaching) {c->trialposition=c->approachposition;c->lastiterations=0;continue;}
    sign=pnl->front[0];lo=fmin(-sign*c->min,-sign*c->max);hi=fmax(-sign*c->min,-sign*c->max);
    q=fmax(lo,fmin(hi,-sign*(c->force==0?c->savedposition:c->trialposition)));
    for(it=0;it<64;it++) {
@@ -2969,9 +3015,18 @@ int surfforceclampsolve(simptr sim) {
     if(!isfinite(force) || !isfinite(k)) return 1;
     if(fabs(force-c->force)<=c->tolerance) break;
     if(k>0) next=q+(force-c->force)/k;
-    else {if(seed==-DBL_MAX) return 1;next=seed;}
+    else {
+     if(seed==-DBL_MAX) {if(c->approachspeed<=0) return 1;next=lo;}
+     else next=seed;
+    }
     next=fmax(lo,fmin(hi,next));
-    if(next==q) return 1; /* Cannot meet force within declared travel bounds. */
+    if(next==q) {
+     /* The finite-approach option treats travel limits as physical stops.
+        A stop carries unsupported external load until filament reaction can
+        lift the plate again. Preserve strict infeasibility for the old API. */
+     if(c->approachspeed>0 && ((q==lo && force<c->force) || (q==hi && force>c->force))) {c->atstop=1;break;}
+     return 1;
+    }
     q=next;c->iterations++;
    }
    if(it==64) return 1;
@@ -3009,6 +3064,9 @@ int surfforceclampend(simptr sim,int commit) {
    if(!c || !c->intrial) continue;
    c->intrial=0;c->trialposition=pnl->point[0][(int)pnl->front[1]];
    surfforceclampreaction(sim,pnl,c->trialposition,&c->reaction,&c->stiffness,&seed,&maxk);
+   c->engaged=commit?c->trialengaged:c->savedengaged;
+   if(commit && c->approachspeed>0 && c->reaction>c->tolerance) c->engaged=1;
+   c->trialengaged=c->engaged;c->approaching=c->atstop=0;
   }
  }
  if(moved) compartsetcondition(sim->cmptss,SCparams,0);
@@ -3699,14 +3757,26 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
    CHECKS(!strnword(line2,4),"unexpected text after force_clamp off");
    er=surfsetforceclamp(pnl,0,0,0,0,0);
   } else {
+   int approach=0,loaded=0;
    line2=strnword(line2,3);
    for(d=0;d<4;d++) {
     CHECKS(line2,"force_clamp needs force tolerance min max");
     itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&fltv1[d]);
     CHECKS(itct==1,"unreadable force_clamp numeric parameter");line2=strnword(line2,2);
    }
-   CHECKS(!line2,"unexpected text after force_clamp parameters");
+   if(line2) {
+    itct=sscanf(line2,"%s",nm1);CHECKS(itct==1 && !strcmp(nm1,"approach"),"expected approach speed [loaded] after force_clamp parameters");
+    line2=strnword(line2,2);CHECKS(line2,"force_clamp approach needs a positive speed");
+    itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&fltv1[4]);
+    CHECKS(itct==1 && isfinite(fltv1[4]) && fltv1[4]>0,"force_clamp approach speed must be positive and finite");
+    line2=strnword(line2,2);approach=1;
+    if(line2) {
+     itct=sscanf(line2,"%s",nm1);CHECKS(itct==1 && !strcmp(nm1,"loaded"),"expected loaded or end of force_clamp approach");
+     CHECKS(!strnword(line2,2),"unexpected text after force_clamp approach");loaded=1;
+    }
+   }
    er=surfsetforceclamp(pnl,1,fltv1[0],fltv1[1],fltv1[2],fltv1[3]);
+   if(!er && approach) er=surfsetforceclampapproach(pnl,fltv1[4],loaded);
   }
   CHECKS(!er,"invalid force_clamp: nonnegative load, positive force tolerance, finite min<max containing current panel required");
  }

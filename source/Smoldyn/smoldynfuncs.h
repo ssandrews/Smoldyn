@@ -267,8 +267,10 @@ int surfaddpanel(surfaceptr srf,int dim,enum PanelShape ps,const char *string,do
 void surftransformpanel(panelptr pnl,int dim,double *translate,double *origin,double *expand); //?? not documented
 void surftranslatepanel(panelptr pnl,int dim,double *translate);
 int surfsetforceclamp(panelptr pnl,int enabled,double force,double tolerance,double minimum,double maximum);
+int surfsetforceclampapproach(panelptr pnl,double speed,int engaged);
 int surfforceclampvalidate(simptr sim);
 int surfforceclampbegin(simptr sim);
+int surfforceclampstep(simptr sim);
 int surfforceclampsolve(simptr sim);
 int surfforceclampend(simptr sim,int commit);
 void surfforceclampreaction(simptr sim,panelptr pnl,double position,double *force,double *stiffness,double *extent,double *maxk);
@@ -450,6 +452,13 @@ int filUpdate(simptr sim);
 // core simulation functions
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
 int filDynamics(simptr sim);
+double filSegmentRestLength(const filamentptr fil,int seg);
+double filSegmentStiffness(const filamentptr fil,int seg);
+int filSegmentIsConstrained(const filamentptr fil,int seg);
+double filNominalLength(const filamentptr fil);
+int filGrowthValidate(const filamenttypeptr type);
+int filMechanochemicalElongate(simptr sim,filamentptr fil,double length);
+void filGrowthReport(simptr sim);
 int filSetWorkers(simptr sim,int workers);
 int filWorkersSupported(void);
 void filStericReport(simptr sim);

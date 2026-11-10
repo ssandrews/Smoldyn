@@ -4,6 +4,14 @@ Implemented and tested locally on 2026-10-13. This is an additional method,
 `implicit_network`; the older `implicit` and `implicitold` methods retain their
 existing algorithms. No external numerical library is required.
 
+Optional fixed-length segments now follow upstream's `force_length < 0`
+convention in `implicit_network`. See [FILAMENT_CONSTRAINTS.md](FILAMENT_CONSTRAINTS.md)
+for the shared-node SHAKE formulation, configuration and measured cost.
+
+The optional `implicit_jacobian cached` applies cached analytical force derivatives
+inside GMRES while retaining nonlinear acceptance; the default remains
+`finite_difference`. See [FILAMENT_FORCE_OPERATOR.md](FILAMENT_FORCE_OPERATOR.md).
+
 ## Configuration
 
 Keep `time_step 0.0001` at global scope. Inside every **mobile** filament type:
@@ -14,6 +22,7 @@ steric_substeps 1
 implicit_tolerance 1e-7
 implicit_iterations 12
 implicit_krylov 60
+implicit_preconditioner diagonal
 brownian_motion 0
 ```
 
@@ -23,6 +32,12 @@ selection; leave it at 0 for the current deterministic mechanical experiment.
 With multiple mobile types, the solver uses the smallest tolerance and largest
 iteration limits. Fixed types use `dynamics none`. Mixing mobile Euler and
 implicit types within one coupled network is rejected.
+
+`implicit_preconditioner diagonal` is the unchanged default. The optional
+`implicit_preconditioner banded` uses shared-node-aware overlapping filament
+blocks with analytic local stretching/bending approximations. Every mobile
+implicit type must select the same option. See [FILAMENT_PRECONDITIONER.md](FILAMENT_PRECONDITIONER.md)
+for the coordinate adaptation, memory cost, limitations and measured results.
 
 `steric_substeps` still divides the outer step for **all** mechanics, including
 this method, even with sterics disabled. The mechanical step is
@@ -51,8 +66,8 @@ material update. This remains a first-order method.
 
 Newton iterations solve the complete nonlinear residual. Each linear correction
 uses restarted GMRES (restart 20), with directional finite differences of that
-same residual. A diagonal estimate of stretching, bending, junction, wall and
-contact stiffness preconditions the linear system; it does **not** replace any
+same residual. By default a diagonal estimate of stretching, bending, junction,
+wall and contact stiffness preconditions the linear system; it does **not** replace any
 force in the physical equation. There is no dense network Jacobian. Vector
 storage is approximately 30 doubles per degree of freedom and is reused.
 
@@ -224,8 +239,10 @@ Logs and metrics are in `../profiling/implicit_2026-10-13/live_final/`.
 | `source/Smoldyn/smolfilamentsteric.h` | Owned solver workspace and shared mechanics interfaces |
 | `source/Smoldyn/smolfilamentsteric.c` | Method validation, shared force/topology/worker access, implicit dispatch and rollback |
 | `source/Smoldyn/smolfilamentimplicit.c` | Residual, matrix-free Newton/GMRES, material coordinates, preconditioning, diagnostics and backup |
+| `source/Smoldyn/smolfilamentprecond.c` | Optional shared-node-aware overlapping banded stiffness blocks and direct solves |
 | `CMakeLists.txt` | Register the new C source in existing targets |
 | `tests/test_filament_steric.c` | Meaningful native integrator checks |
+| `tests/test_filament_preconditioner.c` | Physical force-derivative oracle, shared-node, mobility, lifecycle and nonlinear regression checks |
 | `tools/profile_filaments.c` | Full-precision coordinate export and contact/solver diagnostics outside timing |
 | `tools/benchmark_filament_implicit.py` | Equal-duration timing, position-error and convergence/stiffness sweeps |
 

@@ -637,6 +637,11 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->stericskin=0;
 		filtype->stericsubsteps=1;
 		filtype->implicittol=1e-7;filtype->implicititerations=12;filtype->implicitkrylov=60;
+		filtype->implicitpreconditioner=0;
+		filtype->implicitmethod=0;filtype->projectedtol=1e-5;
+		filtype->implicitjacobian=0;
+		filtype->constrainttol=1e-10;     // upstream FILCONSTRAINTTOL convention
+		filtype->constraintiterations=20;
 		filtype->stericgrowth=1;
 
 		filtype->branchrate=0;											// branching off by default
@@ -657,6 +662,9 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->plusend='b';												// back = barbed/plus, matching every existing convention
 		filtype->elongrate=0;												// elongation off by default
 		filtype->elongmaxlen=0;											// 0 => unbounded growth
+		filtype->elongmodel=0;filtype->elongoverlap=0;filtype->elongstep=0;filtype->elongenergy=0;filtype->elongstiffness=0;
+		filtype->elongattempted=filtype->elongaccepted=filtype->elongwork=0;
+		filtype->elongstalled=filtype->elongremesh=0;
 		filtype->caprate=0;													// capping off by default
 		filtype->uncaprate=0;
 
@@ -852,7 +860,7 @@ void filOutput(const filamentptr fil) {
 		simLog(sim,2,"   back branched from: %s\n",fil->backend->filname);
 
 	simLog(sim,fil->capped?2:1,"   plus end: %s\n",fil->capped?"capped":"free");
-	simLog(sim,fil->growbank>0?2:1,"   pending growth: %g|L\n",fil->growbank);
+	simLog(sim,fil->growbank>0?2:1,fil->filtype->elongmodel?"   incorporated terminal rest-length excess: %g|L\n":"   pending growth: %g|L\n",fil->growbank);
 
 	simLog(sim,1,"   allocated branches: %i\n",fil->maxbranch);
 	simLog(sim,fil->nbranch>0?2:1,"   number of branches: %i\n",fil->nbranch);
@@ -896,6 +904,12 @@ void filtypeOutput(const filamenttypeptr filtype) {
 	simLog(sim,2,"  dynamics: %s\n",filFD2string(filtype->dynamics,string));
 	if(filtype->dynamics==FDimplicitnetwork)
 		simLog(sim,2,"  implicit tolerance %g (length), Newton limit %i, Krylov limit %i\n",filtype->implicittol,filtype->implicititerations,filtype->implicitkrylov);
+	if(filtype->dynamics==FDimplicitnetwork)
+		simLog(sim,2,"  implicit preconditioner: %s\n",filtype->implicitpreconditioner?"banded":"diagonal");
+	if(filtype->dynamics==FDimplicitnetwork && filtype->implicitmethod)
+		simLog(sim,2,"  implicit method: projected, predictor defect tolerance %g (length); Newton fallback enabled\n",filtype->projectedtol);
+	if(filtype->dynamics==FDimplicitnetwork && filtype->implicitjacobian)
+		simLog(sim,2,"  implicit Jacobian: cached local operator, residual-difference fallback enabled\n");
 	simLog(sim,filtype->bundlevalue!=1?2:1,"  bundle value: %g\n",filtype->bundlevalue);
 
 	simLog(sim,2,"  color: %g %g %g %g\n",filtype->color[0],filtype->color[1],filtype->color[2],filtype->color[3]);
@@ -907,6 +921,7 @@ void filtypeOutput(const filamenttypeptr filtype) {
 
 	simLog(sim,2,"  %s length: %g|L\n",filtype->klen>=0?"standard":"fixed",filtype->stdlen);
 	if(filtype->klen>0) simLog(sim,2,"  length force constant: %g|E/L\n",filtype->klen);
+	if(filtype->klen<0) simLog(sim,2,"  fixed-length constraint tolerance: %g (relative)\n",filtype->constrainttol);
 
 	if(dim==2) {
 		simLog(sim,2,"  %s angle: %g\n",filtype->kypr[0]>=0?"standard":"fixed",filtype->stdypr[0]);
@@ -943,6 +958,9 @@ void filtypeOutput(const filamenttypeptr filtype) {
 
 	simLog(sim,(filtype->elongrate>0 || filtype->caprate>0)?2:1,"  plus end: %s\n",filtype->plusend=='f'?"front":"back");
 	simLog(sim,filtype->elongrate>0?2:1,"  elongation rate: %g|L/T\n",filtype->elongrate);
+	if(filtype->elongmodel) simLog(sim,2,"  mechanochemical elongation: reaction step %g, energy %g, stall growth force %g\n",filtype->elongstep,filtype->elongenergy,filtype->elongenergy/filtype->elongstep);
+	if(filtype->elongmodel && filtype->klen<0) simLog(sim,2,"  completed segments constrained; growing tip stiffness %g\n",filtype->elongstiffness);
+	if(filtype->elongoverlap) simLog(sim,2,"  overlap elongation: prescribed geometric growth; capsule and surface rejection disabled for elongation, existing forces relax overlaps\n");
 	if(filtype->elongrate>0 && filtype->elongmaxlen>0)
 		simLog(sim,2,"  elongation max length: %g|L\n",filtype->elongmaxlen);
 	simLog(sim,filtype->caprate>0?2:1,"  capping rate: %g|/T\n",filtype->caprate);
@@ -956,7 +974,7 @@ void filtypeOutput(const filamenttypeptr filtype) {
 	if(filtype->stericradius>0)
 		simLog(sim,2,"  steric radius %g, stiffness %g, skin %g, mechanical substeps %i\n",filtype->stericradius,filtype->sterick,filtype->stericskin,filtype->stericsubsteps);
 	if(filtype->stericradius>0)
-		simLog(sim,2,"  steric growth overlap check: %s\n",filtype->stericgrowth?"on":"off");
+		simLog(sim,2,"  steric growth overlap check: %s%s\n",filtype->stericgrowth?"on":"off",filtype->elongoverlap?" (branch/treadmill only; elongation permits overlaps)":"");
 
 	if(filtype->nface>0) {
 		simLog(sim,2,"  %i faces with twist of %g:",filtype->nface,filtype->facetwist);
@@ -1035,6 +1053,9 @@ int filCheckParams(const simptr sim,int *warnptr) {
 
 		if(filtype->elongrate>0 && filtype->stdlen<=0) {		// otherwise the banked-growth loop has a zero threshold
 			error++;simLog(sim,9,"ERROR: filament type %s has elongation_rate>0 but standard_length<=0; elongation needs a positive standard_length\n",filtype->ftname);}
+		error+=filGrowthValidate(filtype);
+		if(filtype->elongmodel && filtype->elongrate*sim->dt>0.25*filtype->stdlen) {
+			error++;simLog(sim,9,"ERROR: mechanochemical elongation_rate*time_step must be <= standard_length/4\n");}
 		if(filtype->treadrate!=0 && filtype->elongrate>0) {
 			warn++;simLog(sim,5,"WARNING: filament type %s has both treadmill_rate and elongation_rate set; these compose as turnover plus net growth\n",filtype->ftname);}
 		if(filtype->branchrate>0 && filtype->plusend!='b') {		// filAddBranch always anchors a daughter by its front
@@ -1485,6 +1506,49 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		else filtype->stericskin=f1;
 		filSetCondition(filtype->filss,SCparams,0); }
 
+	else if(!strcmp(word,"implicit_jacobian")) {
+		CHECKS(filtype,"implicit_jacobian requires a filament type");
+		CHECKS(line2,"implicit_jacobian requires finite_difference or cached");
+		itct=sscanf(line2,"%255s",nm);
+		CHECKS(itct==1 && (!strcmp(nm,"finite_difference") || !strcmp(nm,"cached")),"implicit_jacobian requires finite_difference or cached");
+		CHECKS(!strnword(line2,2),"unexpected text following implicit_jacobian");
+		filtype->implicitjacobian=!strcmp(nm,"cached");
+		filSetCondition(filtype->filss,SCparams,0); }
+
+	else if(!strcmp(word,"implicit_method")) {
+		CHECKS(filtype,"implicit_method requires a filament type");
+		CHECKS(line2,"implicit_method requires newton or projected");
+		itct=sscanf(line2,"%255s",nm);
+		CHECKS(itct==1 && (!strcmp(nm,"newton") || !strcmp(nm,"projected")),"implicit_method requires newton or projected");
+		CHECKS(!strnword(line2,2),"unexpected text following implicit_method");
+		filtype->implicitmethod=!strcmp(nm,"projected");
+		filSetCondition(filtype->filss,SCparams,0); }
+
+	else if(!strcmp(word,"projected_tolerance")) {
+		CHECKS(filtype,"projected_tolerance requires a filament type");
+		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"projected_tolerance requires a positive length");
+		CHECKS(isfinite(f1) && f1>0,"projected_tolerance must be finite and positive");
+		CHECKS(!strnword(line2,2),"unexpected text following projected_tolerance");
+		filtype->projectedtol=f1;filSetCondition(filtype->filss,SCparams,0); }
+
+	else if(!strcmp(word,"implicit_preconditioner")) {
+		CHECKS(filtype,"implicit_preconditioner requires a filament type");
+		CHECKS(line2,"implicit_preconditioner requires diagonal or banded");
+		itct=sscanf(line2,"%255s",nm);
+		CHECKS(itct==1 && (!strcmp(nm,"diagonal") || !strcmp(nm,"banded")),"implicit_preconditioner requires diagonal or banded");
+		CHECKS(!strnword(line2,2),"unexpected text following implicit_preconditioner");
+		filtype->implicitpreconditioner=!strcmp(nm,"banded");
+		filSetCondition(filtype->filss,SCparams,0); }
+
+	else if(!strcmp(word,"constraint_tolerance")) {
+		CHECKS(filtype,"constraint_tolerance requires a filament type");
+		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"constraint_tolerance requires one relative length tolerance");
+		CHECKS(isfinite(f1) && f1>0 && f1<1,"constraint_tolerance must be finite and between 0 and 1");
+		CHECKS(!strnword(line2,2),"unexpected text following constraint_tolerance");
+		filtype->constrainttol=f1;filSetCondition(filtype->filss,SCparams,0); }
+
 	else if(!strcmp(word,"implicit_tolerance")) {
 		CHECKS(filtype,"implicit_tolerance requires a filament type");
 		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&f1);
@@ -1493,14 +1557,15 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(!strnword(line2,2),"unexpected text following implicit_tolerance");
 		filtype->implicittol=f1;filSetCondition(filtype->filss,SCparams,0); }
 
-	else if(!strcmp(word,"implicit_iterations") || !strcmp(word,"implicit_krylov")) {
+	else if(!strcmp(word,"implicit_iterations") || !strcmp(word,"implicit_krylov") || !strcmp(word,"constraint_iterations")) {
 		CHECKS(filtype,"implicit solver setting requires a filament type");
 		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
 		CHECKM(itct==1,"implicit solver setting requires an integer");
 		CHECKS(i1>=1 && i1<=1000,"implicit iteration limit must be between 1 and 1000");
 		CHECKS(!strnword(line2,2),"unexpected text following implicit solver setting");
 		if(!strcmp(word,"implicit_iterations")) filtype->implicititerations=i1;
-		else filtype->implicitkrylov=i1;
+		else if(!strcmp(word,"implicit_krylov")) filtype->implicitkrylov=i1;
+		else filtype->constraintiterations=i1;
 		filSetCondition(filtype->filss,SCparams,0); }
 
 	else if(!strcmp(word,"steric_substeps")) {
@@ -1728,6 +1793,30 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(!er,"plus_end options: back, front");
 		CHECKS(!strnword(line2,2),"unexpected text following plus_end"); }
 
+	else if(!strcmp(word,"elongation_model")) {
+		CHECKS(filtype,"need filament type before elongation_model");
+		itct=sscanf(line2,"%s",nm1);
+		CHECKS(itct==1 && (!strcmp(nm1,"legacy") || !strcmp(nm1,"mechanochemical") || !strcmp(nm1,"overlap")),"elongation_model: legacy, mechanochemical or overlap");
+		CHECKS(!strnword(line2,2),"unexpected text after elongation_model");
+		CHECKS(filtype->nfil==0,"select elongation_model before creating filaments; active growth banks cannot be reinterpreted");
+		filtype->elongmodel=!strcmp(nm1,"mechanochemical");
+		filtype->elongoverlap=!strcmp(nm1,"overlap");filSetCondition(filtype->filss,SCparams,0); }
+
+	else if(!strcmp(word,"elongation_stiffness")) {
+		CHECKS(filtype,"need filament type before elongation_stiffness");
+		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"elongation_stiffness format: positive value. ");
+		CHECKS(isfinite(f1) && f1>0 && !strnword(line2,2),"elongation_stiffness must be finite and positive");
+		filtype->elongstiffness=f1;filSetCondition(filtype->filss,SCparams,0); }
+
+	else if(!strcmp(word,"elongation_step") || !strcmp(word,"elongation_energy")) {
+		CHECKS(filtype,"need filament type before mechanochemical parameters");
+		itct=strmathsscanf(line2,!strcmp(word,"elongation_step")?"%mlg|L":"%mlg|E",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"elongation_step/energy format: positive value. ");
+		CHECKS(isfinite(f1) && f1>0 && !strnword(line2,2),"elongation_step/energy must be finite and positive");
+		if(!strcmp(word,"elongation_step")) filtype->elongstep=f1;else filtype->elongenergy=f1;
+		filSetCondition(filtype->filss,SCparams,0); }
+
 	else if(!strcmp(word,"elongation_rate")) {	// elongation_rate: plus-end velocity, length/time
 		CHECKS(filtype,"need to enter filament type name before elongation_rate");
 		itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&f1);
@@ -1794,6 +1883,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(filtype,"need to enter filament type name before force_length");
 		itct=strmathsscanf(line2,"%mlg|E/L",varnames,varvalues,nvar,&f1);
 		CHECKM(itct==1,"force_length format: value. ");
+		CHECKS(isfinite(f1),"force_length must be finite (negative selects fixed length)");
 		filtypeSetParam(filtype,"klen",0,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following force_length"); }
 
@@ -1930,7 +2020,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 	else if(!strcmp(word,"random_segments")) {		// random_segments
 		CHECKS(fil,"need to enter filament name before random_segments");
 		CHECKS(fil->filtype,"need to enter filament type before random_segments");
-		CHECKS(fil->filtype->klen==-1 || fil->filtype->klen>0,"cannot compute random segments because the filament type has length force constant equal to 0");
+		CHECKS(fil->filtype->klen!=0,"cannot compute random segments because the filament type has length force constant equal to 0");
 		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
 		CHECKM(itct==1,"random_segments format: number [x y z phi theta psi] [thickness]. ");
 		CHECKS(i1>0,"number needs to be >0");
@@ -2310,7 +2400,7 @@ double filStretchEnergy(const filamentptr fil,int seg1,int seg2) {
 	filtype=fil->filtype;
 	stdlen=filtype->stdlen;
 	klen=filtype->klen;
-	if(klen<=0) return 0;
+	if(klen<=0 && !filtype->elongmodel) return 0;
 
 	energy=0;
 	if(seg1==-1) seg1=0;
@@ -2318,6 +2408,7 @@ double filStretchEnergy(const filamentptr fil,int seg1,int seg2) {
 	for(seg=seg1;seg<seg2;seg++) {
 		thk=fil->segments[seg]->thk;
 		len=fil->segments[seg]->len;
+		if(filtype->elongmodel) {stdlen=filSegmentRestLength(fil,seg);klen=filSegmentStiffness(fil,seg);thk=1;}
 		energy+=0.5*thk*klen*(len-stdlen)*(len-stdlen); }
 	return energy; }
 
@@ -3352,7 +3443,10 @@ double filContourLength(const filamentptr fil) {
 // carries the remainder forward; debiting the length actually drawn keeps total length
 // tracking rate*time with bounded rather than accumulating error. A blocked end drops the
 // growth it was denied rather than banking it, so it stalls at zero instead of surging
-// when it clears. Returns segments added, or -1 on a configuration error.
+// when it clears. In overlap mode no collision veto is applied: insert the geometry
+// and let existing capsule/confinement forces act in the mechanical phase. This is
+// prescribed growth, without a load-dependent rate or chemical-work/stall limit.
+// Returns segments added, or -1 on a configuration error.
 int filElongate(simptr sim,filamentptr fil,double dlength) {
 	filamenttypeptr filtype;
 	char endchar;
@@ -3361,6 +3455,7 @@ int filElongate(simptr sim,filamentptr fil,double dlength) {
 
 	filtype=fil->filtype;
 	if(fil->nseg<1) return 0;												// nothing to grow from
+	if(filtype->elongmodel) return filMechanochemicalElongate(sim,fil,dlength);
 	endchar=filtype->plusend;
 	if(filEndIsCapped(fil,endchar)) return 0;				// a capped plus end accepts no monomer
 	stdlen=filtype->stdlen;
@@ -3380,12 +3475,14 @@ int filElongate(simptr sim,filamentptr fil,double dlength) {
 			if(fil->growbank>stdlen) fil->growbank=stdlen;
 			break; }
 
-		er=filAddOneRandomSegment(sim,fil,NULL,fil->segments[(endchar=='b')?fil->nseg-1:0]->thk,endchar,1);
-		if(!er && filtype->stericgrowth && filtype->stericradius>0 && filStericSegmentBlocked(sim,fil->segments[endchar=='b'?fil->nseg-1:0])) {
+		er=filAddOneRandomSegment(sim,fil,NULL,fil->segments[(endchar=='b')?fil->nseg-1:0]->thk,endchar,filtype->elongoverlap?0:1);
+		if(!er && !filtype->elongoverlap && filtype->stericgrowth && filtype->stericradius>0 && filStericSegmentBlocked(sim,fil->segments[endchar=='b'?fil->nseg-1:0])) {
 			filRemoveSegment(fil,endchar);er=2;
 			if(!sim->filss->steric) filStericPrepare(sim);
 			if(sim->filss->steric) sim->filss->steric->blockedgrowth++; }
-		if(!er && !filtype->stericgrowth && filStericRegisterSegment(sim,fil->segments[endchar=='b'?fil->nseg-1:0])) {
+		/* Checked growth registers itself. Unchecked growth must also be visible
+		   to later tips/branch births before the normal mechanical index rebuild. */
+		if(!er && (filtype->elongoverlap || !filtype->stericgrowth) && filStericRegisterSegment(sim,fil->segments[endchar=='b'?fil->nseg-1:0])) {
 			filRemoveSegment(fil,endchar);er=2; }
 		if(er) {																						// blocked plus end
 			fil->growbank-=dlength;														// this step's growth did not happen
@@ -3580,6 +3677,7 @@ void filAddStretchForces(filamentptr fil,int nodemin,int nodemax) {
 	klen=fil->filtype->klen;
 	stdlen=fil->filtype->stdlen;
 	dim=fil->filtype->filss->sim->dim;
+	if(klen<=0 && !fil->filtype->elongmodel) return; // constrained interiors; optional growing tip remains compliant
 
 	if(nodemin<0) nodemin=0;
 	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
@@ -3589,7 +3687,7 @@ void filAddStretchForces(filamentptr fil,int nodemin,int nodemax) {
 			xvect[0]=nodes[node+1][0]-nodes[node][0];
 			xvect[1]=nodes[node+1][1]-nodes[node][1];
 			len=sqrt(xvect[0]*xvect[0]+xvect[1]*xvect[1]);
-			sforce=-klen*(len-stdlen)/len;			// this is force/length
+			sforce=fil->filtype->elongmodel?-filSegmentStiffness(fil,node)*(len-filSegmentRestLength(fil,node))/len:-klen*(len-stdlen)/len;
 			fdx=sforce*xvect[0];
 			forces[node][0]-=fdx;
 			forces[node+1][0]+=fdx;
@@ -3602,7 +3700,7 @@ void filAddStretchForces(filamentptr fil,int nodemin,int nodemax) {
 			xvect[1]=nodes[node+1][1]-nodes[node][1];
 			xvect[2]=nodes[node+1][2]-nodes[node][2];
 			len=sqrt(xvect[0]*xvect[0]+xvect[1]*xvect[1]+xvect[2]*xvect[2]);
-			sforce=-klen*(len-stdlen)/len;			// this is force/length
+			sforce=fil->filtype->elongmodel?-filSegmentStiffness(fil,node)*(len-filSegmentRestLength(fil,node))/len:-klen*(len-stdlen)/len;
 			fdx=sforce*xvect[0];
 			forces[node][0]-=fdx;
 			forces[node+1][0]+=fdx;
@@ -3626,13 +3724,14 @@ void filAddStretchForceMat(filamentptr fil) {
 	klen=fil->filtype->klen;
 	stdlen=fil->filtype->stdlen;
 	dim=fil->filtype->filss->sim->dim;
+	if(klen<=0 && !fil->filtype->elongmodel) return;
 
 	if(dim==2) {
 		for(node=0;node<fil->nseg;node++) {
 			xvect[0]=nodes[node+1][0]-nodes[node][0];
 			xvect[1]=nodes[node+1][1]-nodes[node][1];
 			len=sqrt(xvect[0]*xvect[0]+xvect[1]*xvect[1]);
-			sforce=-klen*(len-stdlen)/len;			// this is force/length
+			sforce=fil->filtype->elongmodel?-filSegmentStiffness(fil,node)*(len-filSegmentRestLength(fil,node))/len:-klen*(len-stdlen)/len;
 			sparseAddToM(forcemat,2*node+0,2*node+0,sforce);
 			sparseAddToM(forcemat,2*node+1,2*node+1,sforce);
 			sparseAddToM(forcemat,2*node+0,2*(node+1)+0,-sforce);
@@ -3647,7 +3746,7 @@ void filAddStretchForceMat(filamentptr fil) {
 			xvect[1]=nodes[node+1][1]-nodes[node][1];
 			xvect[2]=nodes[node+1][2]-nodes[node][2];
 			len=sqrt(xvect[0]*xvect[0]+xvect[1]*xvect[1]+xvect[2]*xvect[2]);
-			sforce=-klen*(len-stdlen)/len;			// this is force/length
+			sforce=fil->filtype->elongmodel?-filSegmentStiffness(fil,node)*(len-filSegmentRestLength(fil,node))/len:-klen*(len-stdlen)/len;
 			sparseAddToM(forcemat,4*node+0,4*node+0,sforce);
 			sparseAddToM(forcemat,4*node+1,4*node+1,sforce);
 			sparseAddToM(forcemat,4*node+2,4*node+2,sforce);
@@ -4405,6 +4504,8 @@ int filDynamics(simptr sim) {
 	filss=sim->filss;
 	if(!filss) return 0;
 	steric=filStericEnabled(sim) || filImplicitEnabled(sim);
+	if(filLengthEnabled(sim) && !filImplicitEnabled(sim)) {
+		simLog(sim,9,"ERROR: negative force_length requires coupled implicit_network dynamics in this branch\n");return 1;}
 	if(sim->srfss && sim->srfss->nforceclamp && !filImplicitEnabled(sim)) {
 		simLog(sim,9,"ERROR: force_clamp requires implicit_network; no panel was moved\n");return 1;}
 	if(steric) {
@@ -4423,7 +4524,14 @@ int filDynamics(simptr sim) {
 
 		SMOL_PROFILE_RUN(SP_BRANCH,filBranchDynamics(sim,filtype));  // Arp2/3-style branch nucleation
 		SMOL_PROFILE_RUN(SP_CAP,filCappingDynamics(sim,filtype));    // cap before elongation
-		SMOL_PROFILE_RUN(SP_ELONGATE,filElongationDynamics(sim,filtype)); // relax new segments this step
+		if(filtype->elongmodel) {
+			/* Rest length changes without moving any node. Existing coupled
+			   mechanics then transfers the polymerization stress to obstacles. */
+			SMOL_PROFILE_RUN(SP_ELONGATE,for(f=0;f<filtype->nfil;f++) {
+				if(filElongate(sim,filtype->fillist[f],filtype->elongrate*sim->dt)<0) profileerror=1;
+			});
+			if(profileerror) {if(steric) filStericChemistry(sim,0);return 1;}
+		} else SMOL_PROFILE_RUN(SP_ELONGATE,filElongationDynamics(sim,filtype));
 
 		if(steric) continue;
 		if(filtype->dynamics==FDeuler)

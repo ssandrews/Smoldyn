@@ -49,6 +49,60 @@ cmd i 10 10 0.1 set surface chamber force_clamp rect ceiling off
 These are alternative examples, not instructions to apply both automatically.
 A zero load is supported; its position is not unique once contact force is zero.
 
+## Finite approach followed by constant load
+
+Append `approach SPEED` to avoid jumping from the initial plate position to the
+network on the first mechanical step:
+
+```text
+panel rect -2 -0.5 -0.5 -1.7 1 1 ceiling
+force_clamp rect ceiling 0.1 1e-8 -1.99 2 approach 0.1
+```
+
+Here the fixed floor is at z=-2 um, so the initial plate clearance is 0.3 um.
+The plate approaches inward at 0.1 um/s until the predicted next position has
+filament reaction greater than the force tolerance. The controller then latches
+into the existing ideal constant-load solve. Reaction below the target moves the
+plate inward, reaction above it moves the plate outward, and a supported target
+holds the plate at the force-balance position. After contact the required speed
+comes from the coupled network mechanics, not the initial approach speed. There
+is no added plate inertia, drag or proportional-gain controller. Force is not
+maintained before contact; it cannot be applied to a network across an empty gap.
+
+An unloaded approach stops at its inward travel limit and waits for contact.
+With this option, travel limits remain physical stops after engagement: the
+plate holds at a stop when the target is unreachable, reports the actual
+filament reaction, and resumes force-balanced motion when support permits.
+Force error can therefore be nonzero at a stop. Omitting `approach` retains
+the original strict infeasibility error. Numerical failures still roll back the
+whole interval. A contact appearing during a mechanical step can engage
+the load controller on the following substep. The initial approach switch can
+also produce a small displacement to establish the prescribed load.
+
+The contact probe reuses the confinement force reduction once per mechanical
+substep, from its accepted starting geometry. While approaching, the proposed
+plate position is frozen across Newton/GMRES trials: those trials do not perform
+extra plate force scans or change phase. After engagement the existing force
+balance is required for each nonlinear residual; skipping it would make the
+filament solve inconsistent. The cached analytical operator treats an approaching
+panel or active travel stop as a fixed wall, and a freely moving engaged clamp
+with its original height derivative.
+No new filament collision searches, spatial grids or worker pools are added.
+Small normal translations also skip panel-to-box membership updates when both
+positions lie strictly within the same grid layer. Crossing or touching a grid
+face retains the original membership checks and panel ordering.
+
+The panel owns the approach speed and contact phase. Outer-interval rollback
+restores both position and phase, including failures after earlier substeps.
+`writesurfaces` includes `approach SPEED loaded` after engagement to preserve
+that phase on serialization; `loaded` can also be specified explicitly to start
+in force control. The nine existing `printForceClamps` columns are unchanged,
+so recorded plate trajectories and the Simularium converter remain compatible.
+Omitting the optional suffix selects the original immediate ideal clamp.
+
+Project `Standard_experiment_force_clamp_approach.txt` uses this option with
+separate output filenames, preserving the previous compression trajectory.
+
 ## How it couples to the implicit solve
 
 For inward panel sign `s`, normal-axis coordinate `H`, node coordinate `z_i`,

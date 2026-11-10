@@ -37,14 +37,49 @@ int filStericEnabled(const simptr sim) {
 }
 
 int filStericValidate(const simptr sim) {
- int ft,d,ps;filamenttypeptr t;
- if(!filStericEnabled(sim) && !filImplicitEnabled(sim)) return 0;
+ int ft,d,ps,preconditioner=-1,method=-1,jacobian=-1;filamenttypeptr t;
+ if(!filStericEnabled(sim) && !filImplicitEnabled(sim) && !filLengthEnabled(sim)) {
+  /* Do not silently ignore a projected request on an uncoupled old method. */
+  if(sim->filss) for(ft=0;ft<sim->filss->ntype;ft++) if(sim->filss->filtypes[ft]->implicitmethod || sim->filss->filtypes[ft]->implicitjacobian) {
+   simLog(sim,9,"ERROR: projected or cached solver options require implicit_network dynamics\n");return 1;
+  }
+  return 0;
+ }
  if(sim->dim!=2 && sim->dim!=3) return 1;
  for(d=0;d<2*sim->dim;d++) if(sim->wlist[d]->type=='p') {
   simLog(sim,9,"ERROR: filament sterics does not yet support periodic boundaries\n");return 1;
  }
  for(ft=0;ft<sim->filss->ntype;ft++) {
   t=sim->filss->filtypes[ft];
+  if(t->implicitjacobian && t->dynamics!=FDimplicitnetwork) {
+   simLog(sim,9,"ERROR: implicit_jacobian cached requires implicit_network dynamics\n");return 1;
+  }
+  if(t->implicitmethod && (t->dynamics!=FDimplicitnetwork || t->klen>=0)) {
+   simLog(sim,9,"ERROR: implicit_method projected requires implicit_network with negative force_length on every mobile type\n");return 1;
+  }
+  if(t->klen<0 && t->dynamics!=FDnone && (t->dynamics!=FDimplicitnetwork ||
+      !(t->constrainttol>0 && t->constrainttol<1) || !isfinite(t->constrainttol) || t->constraintiterations<1 || t->constraintiterations>1000)) {
+   simLog(sim,9,"ERROR: negative force_length requires implicit_network and a finite constraint_tolerance between 0 and 1\n");return 1;
+  }
+  if(t->klen<0 && t->dynamics!=FDnone && (t->kypr[0]<0 || (sim->dim==3 && (t->kypr[1]<0 || t->kypr[2]<0)))) {
+   simLog(sim,9,"ERROR: coupled fixed-length mode supports length constraints only; fixed-angle constraints require an upstream integrator\n");return 1;
+  }
+  if(t->dynamics==FDimplicitnetwork) {
+   if(t->implicitjacobian<0 || t->implicitjacobian>1 || (jacobian>=0 && jacobian!=t->implicitjacobian)) {
+    simLog(sim,9,"ERROR: mobile implicit_network types must select the same implicit_jacobian (finite_difference or cached)\n");return 1;
+   }
+   jacobian=t->implicitjacobian;
+   if(t->implicitmethod<0 || t->implicitmethod>1 || (method>=0 && method!=t->implicitmethod) ||
+       !(t->projectedtol>0) || !isfinite(t->projectedtol)) {
+    simLog(sim,9,"ERROR: mobile implicit_network types must select the same implicit_method and finite positive projected_tolerance\n");return 1;
+   }
+   method=t->implicitmethod;
+   if(t->implicitpreconditioner<0 || t->implicitpreconditioner>1 ||
+       (preconditioner>=0 && preconditioner!=t->implicitpreconditioner)) {
+    simLog(sim,9,"ERROR: all mobile implicit_network types must select the same implicit_preconditioner (diagonal or banded)\n");return 1;
+   }
+   preconditioner=t->implicitpreconditioner;
+  }
   if(t->dynamics!=FDnone && t->dynamics!=(filImplicitEnabled(sim)?FDimplicitnetwork:FDeuler)) {
    simLog(sim,9,"ERROR: coupled filament dynamics requires all mobile types to use the same method (euler or implicit_network)\n");return 1;
   }
@@ -54,6 +89,7 @@ int filStericValidate(const simptr sim) {
   if(t->branchazimuthfix) {
    simLog(sim,9,"ERROR: filament sterics requires branch_azimuth_fix off (use branch_force_azimuth)\n");return 1;
   }
+  if(filGrowthValidate(t)) return 1;
   if(t->stericradius>0 && (!(t->sterick>0) || !(t->stericskin>0))) {
    simLog(sim,9,"ERROR: filament steric_radius requires positive steric_stiffness and steric_skin\n");return 1;
   }
@@ -81,7 +117,7 @@ int filStericExcluded(segmentptr a,segmentptr b) {
 /* Direct bonded pairs share volume only near their junction. Trim a bounded
    daughter contour region only when the mother's segment is local in contour
    distance; remote mother segments still contact the daughter's base. */
-static double filJunctionTrim(segmentptr daughter,segmentptr mother) {
+double filStericTrim(segmentptr daughter,segmentptr mother) {
  filamentptr mf=mother->fil,df=daughter->fil;
  int br,spot=-1,i;double reach,md=0,dd=0;
  if(df->frontend!=mf) return 0;
@@ -97,7 +133,7 @@ static double filJunctionTrim(segmentptr daughter,segmentptr mother) {
 }
 
 double filStericGeometry(segmentptr a,segmentptr b,double *s,double *t,double *normal) {
- double trimA=filJunctionTrim(a,b),trimB=filJunctionTrim(b,a),a0[3],b0[3],dist;
+ double trimA=filStericTrim(a,b),trimB=filStericTrim(b,a),a0[3],b0[3],dist;
  int d,dim=a->fil->filtype->filss->sim->dim;
  if(trimA>=1 || trimB>=1) return DBL_MAX;
  for(d=0;d<3;d++) {
@@ -657,5 +693,6 @@ void filStericReport(simptr sim) {
  simLog(sim,2,"Filament sterics (last force evaluation): %i segments, %i neighbor pairs, %llu contacts, max penetration %g, energy %g\n",w->nsegment,w->npair,w->contacts,w->maxpenetration,w->energy);
  simLog(sim,2,"  %llu neighbor rebuilds, %llu force evaluations, %llu blocked growth segments, %llu blocked branches\n",w->rebuilds,w->evaluations,w->blockedgrowth,w->blockedbranches);
  filImplicitReport(sim);
+ filGrowthReport(sim);
  simLog(sim,2,"  %llu movement topology rebuilds, mechanical workers selected %i (requested %i)\n",w->movementrebuilds,w->workersused,sim->filss->workers);
 }
