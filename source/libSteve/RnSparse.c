@@ -4,6 +4,7 @@ Copyright 2025 by Steven Andrews.  This work is distributed under the terms
 of the Gnu Lesser General Public License (LGPL). */
 
 #include <string.h>
+#include <math.h>
 #include "RnSparse.h"
 
 
@@ -247,3 +248,64 @@ void sparseBiCGSTAB(const sparsematrix sprs,const double *b,double *x,double tol
 	return; }
 
 
+/* sparseBandSolve */
+int sparseBandSolve(const sparsematrix sprs,const double *b,double *x) {
+	int n,bw,width,i,j,k,p,jmax,imax;
+	double *a,*rhs,big,val,factor,sum;
+
+	n=sprs->nrows;
+	if(n<=0) return 0;
+	bw=(sprs->ccols-1)/2;
+	width=3*bw+1;															// row i holds columns i-bw to i+2bw, for fill-in from pivoting
+	a=(double*) calloc((size_t)n*width,sizeof(double));
+	rhs=(double*) calloc(n,sizeof(double));
+	if(!a || !rhs) {
+		free(a);
+		free(rhs);
+		return 2; }
+	for(i=0;i<n;i++) {
+		rhs[i]=b[i];
+		for(j=(i-bw<0?0:i-bw);j<=i+bw && j<n;j++)
+			a[(size_t)i*width+j-i+bw]=sparseReadM(sprs,i,j); }
+
+#define BANDA(i,j) a[(size_t)(i)*width+(j)-(i)+bw]
+	for(k=0;k<n;k++) {
+		imax=(k+bw<n)?k+bw:n-1;
+		jmax=(k+2*bw<n)?k+2*bw:n-1;
+		p=k;																		// partial pivoting
+		big=fabs(BANDA(k,k));
+		for(i=k+1;i<=imax;i++)
+			if(fabs(BANDA(i,k))>big) {
+				big=fabs(BANDA(i,k));
+				p=i; }
+		if(big==0) {
+			free(a);
+			free(rhs);
+			return 1; }
+		if(p!=k) {
+			for(j=k;j<=jmax;j++) {
+				val=BANDA(k,j);
+				BANDA(k,j)=BANDA(p,j);
+				BANDA(p,j)=val; }
+			val=rhs[k];
+			rhs[k]=rhs[p];
+			rhs[p]=val; }
+		for(i=k+1;i<=imax;i++) {
+			factor=BANDA(i,k)/BANDA(k,k);
+			if(factor==0) continue;
+			BANDA(i,k)=0;
+			for(j=k+1;j<=jmax;j++)
+				BANDA(i,j)-=factor*BANDA(k,j);
+			rhs[i]-=factor*rhs[k]; }}
+
+	for(i=n-1;i>=0;i--) {										// back substitution
+		jmax=(i+2*bw<n)?i+2*bw:n-1;
+		sum=rhs[i];
+		for(j=i+1;j<=jmax;j++)
+			sum-=BANDA(i,j)*x[j];
+		x[i]=sum/BANDA(i,i); }
+#undef BANDA
+
+	free(a);
+	free(rhs);
+	return 0; }

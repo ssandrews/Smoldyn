@@ -647,7 +647,7 @@ typedef struct filamentworkstruct {
     struct filamentstruct *fil;       // owning filament
     double ***wnodes;                 // working nodes (3,nseg+1,3)
     double **wroll;                   // working rolls (3,nseg)
-    double **flatnodes;               // flattened nodes (2,~(2 or 4)*nseg)
+    double **flatnodes;               // flattened nodes (5,~(2 or 4)*nseg); 3 and 4 hold thermal forces for substeps
     double **flatforces;              // flattened forces (2,~(2 or 4)*nseg)
     double **wseg0up;                 // seg. 0 up vector (3,3)
     double **forces;                  // forces on nodes (nseg+1,3)
@@ -787,6 +787,7 @@ typedef struct filamenttypestruct {
     double persisttwist;               // torsional persistence length; >0 sets kypr[2], negative = unset
     int kpsiset;                       // 1 if the roll force constant was entered
     int constraintwarn;                // 1 if a constraint convergence warning was given
+    int substepwarn;                   // 1 if an implicit substep limit warning was given
     double treadrate;                  // treadmilling rate constant
     double mobility;                   // translational mobility, length^2/(energy*time)
     int mobilityset;                   // 1 if the mobility was entered, so it isn't computed from the viscosity

@@ -248,6 +248,12 @@ void filScaleMatrixRows(sparsematrix sprs,const double *wt,int nrows);
 void filEulerMatDynamics(simptr sim,filamenttypeptr filtype);
 void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype);
 void filImplicitDynamics(simptr sim,filamenttypeptr filtype);
+void filImplicitSolve(filamentptr fil,double dtmu);
+double filImplicitMoveRatio(filamentptr fil);
+double filThermalRms(filamentptr fil,int i);
+void filThermalBridgeStart(filamentptr fil,int nsub);
+void filThermalBridgeNext(filamentptr fil,int nsub,int sub);
+void filThermalBridgeEnd(filamentptr fil);
 int filConstrained(filamenttypeptr filtype);
 int filConstraintGrad(filamentptr fil,int c,int *idx,double *g,double *res);
 void filConstraintStart(filamentptr fil);
@@ -561,13 +567,10 @@ filamentworkptr filWorkAlloc(filamentptr fil,int maxseg) {
 	CHECKMEM(filwork->cng=(int*) calloc(4*(maxseg>0?maxseg:1),sizeof(int)));
 	CHECKMEM(filwork->cg=(double*) calloc(44*(maxseg>0?maxseg:1),sizeof(double)));
 
-	CHECKMEM(filwork->flatnodes=(double**) calloc(3,sizeof(double*)));
-	filwork->flatnodes[0]=filwork->flatnodes[1]=filwork->flatnodes[2]=NULL;
-	CHECKMEM(filwork->flatnodes[0]=(double*) calloc(flatsize,sizeof(double)));
-	CHECKMEM(filwork->flatnodes[1]=(double*) calloc(flatsize,sizeof(double)));
-	CHECKMEM(filwork->flatnodes[2]=(double*) calloc(flatsize,sizeof(double)));
-	for(i=0;i<flatsize;i++)
-		filwork->flatnodes[0][i]=filwork->flatnodes[1][i]=filwork->flatnodes[2][i]=0;
+	CHECKMEM(filwork->flatnodes=(double**) calloc(5,sizeof(double*)));
+	for(i=0;i<5;i++) filwork->flatnodes[i]=NULL;
+	for(i=0;i<5;i++)
+		CHECKMEM(filwork->flatnodes[i]=(double*) calloc(flatsize,sizeof(double)));
 
 	CHECKMEM(filwork->flatforces=(double**) calloc(2,sizeof(double*)));
 	filwork->flatforces[0]=filwork->flatforces[1]=NULL;
@@ -607,7 +610,7 @@ filamentworkptr filWorkAlloc(filamentptr fil,int maxseg) {
 
 /* filWorkFree */
 void filWorkFree(filamentworkptr filwork,int maxseg) {
-	int seg;
+	int seg,i;
 
 	if(!filwork) return;
 
@@ -635,9 +638,8 @@ void filWorkFree(filamentworkptr filwork,int maxseg) {
 	free(filwork->cg);
 
 	if(filwork->flatnodes) {
-		free(filwork->flatnodes[0]);
-		free(filwork->flatnodes[1]);
-		free(filwork->flatnodes[2]);
+		for(i=0;i<5;i++)
+			free(filwork->flatnodes[i]);
 		free(filwork->flatnodes); }
 
 	if(filwork->flatforces) {
@@ -846,6 +848,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->ftname=NULL;
 		filtype->dynamics=FDnone;
 		filtype->constraintwarn=0;
+		filtype->substepwarn=0;
 		filtype->bundlevalue=1;
 
 		filtype->color[0]=filtype->color[1]=filtype->color[2]=0;
@@ -1533,7 +1536,7 @@ int filCheckParams(const simptr sim,int *warnptr) {
 				for(f=0;f<filtype->nfil;f++)
 					for(seg=0;seg<filtype->fillist[f]->nseg;seg++)
 						if(filtype->fillist[f]->segments[seg]->thk>fval) fval=filtype->fillist[f]->segments[seg]->thk;
-				if(filtype->mobility*fsi->kforce*fval*sim->dt>0.5) {		// explicit relaxation of the wall spring must be resolved; per-node mobility factors multiply this further
+				if(filtype->dynamics!=FDimplicit && filtype->mobility*fsi->kforce*fval*sim->dt>0.5) {		// explicit relaxation of the wall spring must be resolved; per-node mobility factors multiply this further; Implicit includes the wall in its Jacobian
 					warn++;simLog(sim,5,"WARNING: filament type %s %s interaction with surface %s is stiff for this time step (mobility*force*thickness*dt = %g > 0.5, for the thickest node and before any node mobility factors); explicit integration may oscillate or blow up at the wall\n",filtype->ftname,filFSA2string(fsi->action,string),fsi->othersurf->sname,filtype->mobility*fsi->kforce*fval*sim->dt);}}}
 
 		for(f=0;f<filtype->nfil;f++) {
@@ -7189,44 +7192,230 @@ void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype) {
 
 
 
+#define FILSUBSTEPMOVE 0.2		// largest change of a segment vector in one implicit step, relative to the segment's length
+#define FILSUBSTEPROLL 0.2		// largest change of a segment's roll relative to the previous segment in one implicit step, in radians (3D)
+#define FILSUBSTEPMAX 10000		// most implicit substeps in one time step
+
 /* filImplicitDynamics */
+// Moves the filaments of type filtype by one time step with linearized backward Euler
+// (filImplicitSolve), which is stable for stiff forces. The linearization only holds for
+// small moves, though, and thermal kicks can be much larger than a segment for short,
+// mobile segments, which makes the filament blow up. So if the step would change a segment
+// vector or a relative roll by more than the limits in filImplicitMoveRatio, the step is
+// discarded and redone as substeps, with the thermal forces split among them by a Brownian
+// bridge (filThermalBridgeNext), so the total thermal displacement and its statistics are
+// unchanged. Steps within the limits draw the same random numbers as before and give the
+// same results.
 void filImplicitDynamics(simptr sim,filamenttypeptr filtype) {
-	double dtmu,**flatnodes,**flatforces,bnorm2,*wt;
-	int f,flatsize,dim,i;
+	double dtmu,ratio;
+	int f,flatsize,dim,i,nsub,sub;
 	filamentptr fil;
 	filamentworkptr filwork;
-	sparsematrix forcemat;
 
 	dim=filtype->filss->sim->dim;
+	dtmu=filtype->mobility*sim->dt;
 	for(f=0;f<filtype->nfil;f++) {
 		fil=filtype->fillist[f];
 		filwork=fil->filwork;
-		forcemat=filwork->forcemat;
-		flatnodes=filwork->flatnodes;
-		flatforces=filwork->flatforces;
 		flatsize=(dim==2) ? 2*(fil->nseg+1) : 4*(fil->nseg+1)-1;
-		if(!forcemat->BiCGSTAB)
-			sparseAllocBandM(forcemat,-1,-1,1);
+		filImplicitSolve(fil,dtmu);																			// flatnodes[1] is the displacement for the full step
+		ratio=filImplicitMoveRatio(fil);
+		if(ratio<=1) {
+			for(i=0;i<flatsize;i++)
+				filwork->flatnodes[1][i]+=filwork->flatnodes[0][i];					// flatnodes[1] is the next state
+			filUnflattenNodes(fil,1,0);
+			filNodes2Angles(fil,-1,-1); }
+		else {																												// too large a move to linearize: substeps
+			nsub=(ratio*ratio<FILSUBSTEPMAX)?(int)ceil(ratio*ratio):FILSUBSTEPMAX;
+			if(nsub==FILSUBSTEPMAX && !filtype->substepwarn) {
+				simLog(sim,5,"WARNING: filament %s needed at least %i implicit substeps at time %g; the time step may be too long\n",fil->filname,FILSUBSTEPMAX,sim->time);
+				filtype->substepwarn=1; }
+			filThermalBridgeStart(fil,nsub);
+			for(sub=nsub;sub>0;sub--) {
+				filThermalBridgeNext(fil,nsub,sub);
+				filImplicitSolve(fil,dtmu/nsub);
+				for(i=0;i<flatsize;i++)
+					filwork->flatnodes[1][i]+=filwork->flatnodes[0][i];
+				filUnflattenNodes(fil,1,0);
+				filNodes2Angles(fil,-1,-1); }
+			filThermalBridgeEnd(fil); }}
 
-		dtmu=filtype->mobility*sim->dt;
-		filComputeDerivForceMat(fil,dtmu);															// nodes are in flatnodes[0], forces are in flatforces[0], and J is in forcemat
-		wt=flatforces[1];																								// effective mobility factors W (filNodeMobility), in scratch space
-		filMobilityWeights(fil,wt);
-		filScaleMatrixRows(forcemat,wt,flatsize);												// forcemat is W J
-		bnorm2=0;
-		for(i=0;i<flatsize;i++) {
-			flatnodes[2][i]=dtmu*wt[i]*flatforces[0][i];									// flatnodes[2] is the forward Euler displacement
-			flatnodes[1][i]=flatnodes[2][i];															// which is the initial guess
-			bnorm2+=flatnodes[2][i]*flatnodes[2][i]; }
-		if(bnorm2>0) {
-			sparseMultiplyScalarM(forcemat,-dtmu);
-			sparseAddIdentityM(forcemat,1);																// forcemat is 1-dtmu*W*J
-			sparseBiCGSTAB(forcemat,flatnodes[2],flatnodes[1],1e-20*bnorm2); }	// flatnodes[1] is the backward Euler displacement, to relative residual 1e-10
-		for(i=0;i<flatsize;i++)
-			flatnodes[1][i]+=flatnodes[0][i];															// flatnodes[1] is the next state
-		filUnflattenNodes(fil,1,0);
-		filNodes2Angles(fil,-1,-1); }
+	return; }
 
+
+/* filImplicitSolve */
+// Computes one linearized backward Euler step of filament fil, for step dtmu, which is the
+// mobility times the time step. The start state is left in flatnodes[0] and the
+// displacement in flatnodes[1]; the filament isn't moved.
+void filImplicitSolve(filamentptr fil,double dtmu) {
+	double **flatnodes,**flatforces,bnorm2,*wt;
+	int flatsize,dim,i;
+	filamentworkptr filwork;
+	sparsematrix forcemat;
+
+	dim=fil->filtype->filss->sim->dim;
+	filwork=fil->filwork;
+	forcemat=filwork->forcemat;
+	flatnodes=filwork->flatnodes;
+	flatforces=filwork->flatforces;
+	flatsize=(dim==2) ? 2*(fil->nseg+1) : 4*(fil->nseg+1)-1;
+	if(!forcemat->BiCGSTAB)
+		sparseAllocBandM(forcemat,-1,-1,1);
+
+	filComputeDerivForceMat(fil,dtmu);															// nodes are in flatnodes[0], forces are in flatforces[0], and J is in forcemat
+	wt=flatforces[1];																								// effective mobility factors W (filNodeMobility), in scratch space
+	filMobilityWeights(fil,wt);
+	filScaleMatrixRows(forcemat,wt,flatsize);												// forcemat is W J
+	bnorm2=0;
+	for(i=0;i<flatsize;i++) {
+		flatnodes[2][i]=dtmu*wt[i]*flatforces[0][i];									// flatnodes[2] is the forward Euler displacement
+		flatnodes[1][i]=flatnodes[2][i];															// which is the initial guess
+		bnorm2+=flatnodes[2][i]*flatnodes[2][i]; }
+	if(bnorm2>0) {
+		sparseMultiplyScalarM(forcemat,-dtmu);
+		sparseAddIdentityM(forcemat,1);																// forcemat is 1-dtmu*W*J
+		if(sparseBandSolve(forcemat,flatnodes[2],flatnodes[1]))					// flatnodes[1] is the backward Euler displacement, from a direct solve
+			sparseBiCGSTAB(forcemat,flatnodes[2],flatnodes[1],1e-20*bnorm2); }	// if that fails, iterate from the forward Euler guess
+	return; }
+
+
+/* filImplicitMoveRatio */
+// Returns how large the displacement in flatnodes[1], from the state in flatnodes[0], is
+// compared to what a linearized step can take. This is the largest of the change of each
+// segment vector divided by FILSUBSTEPMOVE times the segment's length, and in 3D, the
+// change of the roll of each segment relative to the previous segment divided by
+// FILSUBSTEPROLL. Relative rolls are only checked if the roll force constant isn't 0,
+// since otherwise they don't change the energy. The displacement of an adsorbed node
+// normal to its panel isn't counted, since the node is put back on its surface after the
+// step. A value above 1 means that the step should be divided into substeps.
+// Thermal displacements grow as the square root of the step, so about ratio^2 substeps
+// bring each one within the limits.
+double filImplicitMoveRatio(filamentptr fil) {
+	double *x0,*dx,ratio,len2,dv2,r,diff,dn[2][3],norm[3],dot;
+	int dim,stride,seg,d,end,node;
+
+	dim=fil->filtype->filss->sim->dim;
+	stride=(dim==2)?2:4;
+	x0=fil->filwork->flatnodes[0];
+	dx=fil->filwork->flatnodes[1];
+	ratio=0;
+	for(seg=0;seg<fil->nseg;seg++) {
+		for(end=0;end<2;end++) {											// node displacements, without the normal part for adsorbed nodes
+			node=seg+end;
+			for(d=0;d<dim;d++) dn[end][d]=dx[stride*node+d];
+			if(fil->nodepnl[node]) {
+				getpanelnormal(fil->nodes[node],fil->nodepnl[node],dim,norm);
+				dot=0;
+				for(d=0;d<dim;d++) dot+=dn[end][d]*norm[d];
+				for(d=0;d<dim;d++) dn[end][d]-=dot*norm[d]; }}
+		len2=dv2=0;
+		for(d=0;d<dim;d++) {
+			diff=x0[stride*(seg+1)+d]-x0[stride*seg+d];
+			len2+=diff*diff;
+			diff=dn[1][d]-dn[0][d];
+			dv2+=diff*diff; }
+		if(len2>0) {
+			r=sqrt(dv2/len2)/FILSUBSTEPMOVE;
+			if(!(r<=ratio)) ratio=r; }																// also catches NaN
+		if(dim==3 && seg>0 && fil->filtype->kypr[2]!=0) {
+			r=fabs(dx[4*seg+3]-dx[4*(seg-1)+3])/FILSUBSTEPROLL;
+			if(!(r<=ratio)) ratio=r; }}
+	if(!isfinite(ratio)) ratio=FILSUBSTEPMAX;
+	return ratio; }
+
+
+/* filThermalRms */
+// Returns the rms thermal force on node coordinate i of the flattened state of filament
+// fil, or in 3D, the rms thermal torque if i is a segment roll, for a full time step, as
+// in filDrawThermalForces.
+double filThermalRms(filamentptr fil,int i) {
+	filamenttypeptr filtype;
+	double famp,mob,dt;
+	int dim,stride;
+
+	filtype=fil->filtype;
+	dim=filtype->filss->sim->dim;
+	stride=(dim==2)?2:4;
+	dt=filtype->filss->sim->dt;
+	famp=(dt>0 && filtype->mobility>0)?2*filtype->kT/(filtype->mobility*dt):0;
+	if(dim==3 && i%4==3) mob=filSegRollMobility(fil,i/4);
+	else mob=filNodeMobility(fil,i/stride);
+	return (famp>0 && mob>0)?sqrt(famp/mob):0; }
+
+
+/* filThermalBridgeStart */
+// Prepares the thermal forces of filament fil for nsub implicit substeps, which split the
+// full step's thermal forces (from filDrawThermalForces) into nsub parts with a Brownian
+// bridge, so that their average equals the full step's force and the substeps together
+// have the same thermal displacement. This saves the full step's forces in flatnodes[3]
+// and sets the remaining sum, nsub times them, in flatnodes[4], in flattened order.
+void filThermalBridgeStart(filamentptr fil,int nsub) {
+	filamentworkptr filwork;
+	int dim,stride,node,seg,d;
+
+	filwork=fil->filwork;
+	dim=fil->filtype->filss->sim->dim;
+	stride=(dim==2)?2:4;
+	for(node=0;node<=fil->nseg;node++)
+		for(d=0;d<dim;d++) {
+			filwork->flatnodes[3][stride*node+d]=filwork->thermforce[node][d];
+			filwork->flatnodes[4][stride*node+d]=nsub*filwork->thermforce[node][d]; }
+	if(dim==3)
+		for(seg=0;seg<fil->nseg;seg++) {
+			filwork->flatnodes[3][4*seg+3]=filwork->thermtorque[seg];
+			filwork->flatnodes[4][4*seg+3]=nsub*filwork->thermtorque[seg]; }
+	return; }
+
+
+/* filThermalBridgeNext */
+// Sets the thermal forces of filament fil for the next of nsub substeps, where sub is the
+// number of substeps that remain, including this one. Each force is drawn from the
+// Brownian bridge for the remaining sum R, as R/sub plus a Gaussian with variance
+// (sub-1)/sub times the variance of a substep force, which is nsub times that of a full
+// step force. The last substep takes the remainder, so that the forces add up exactly.
+// This draws random numbers for every substep but the last.
+void filThermalBridgeNext(filamentptr fil,int nsub,int sub) {
+	filamentworkptr filwork;
+	double *rem,f,scale;
+	int dim,stride,node,seg,d,i;
+
+	filwork=fil->filwork;
+	dim=fil->filtype->filss->sim->dim;
+	stride=(dim==2)?2:4;
+	rem=filwork->flatnodes[4];
+	scale=(sub>1)?sqrt((double)(sub-1)/sub*nsub):0;
+	for(node=0;node<=fil->nseg;node++)
+		for(d=0;d<dim;d++) {
+			i=stride*node+d;
+			f=rem[i]/sub;
+			if(sub>1) f+=scale*filThermalRms(fil,i)*gaussrandD();
+			rem[i]-=f;
+			filwork->thermforce[node][d]=f; }
+	if(dim==3)
+		for(seg=0;seg<fil->nseg;seg++) {
+			i=4*seg+3;
+			f=rem[i]/sub;
+			if(sub>1) f+=scale*filThermalRms(fil,i)*gaussrandD();
+			rem[i]-=f;
+			filwork->thermtorque[seg]=f; }
+	return; }
+
+
+/* filThermalBridgeEnd */
+// Restores the full step's thermal forces of filament fil after substeps, from flatnodes[3].
+void filThermalBridgeEnd(filamentptr fil) {
+	filamentworkptr filwork;
+	int dim,stride,node,seg,d;
+
+	filwork=fil->filwork;
+	dim=fil->filtype->filss->sim->dim;
+	stride=(dim==2)?2:4;
+	for(node=0;node<=fil->nseg;node++)
+		for(d=0;d<dim;d++)
+			filwork->thermforce[node][d]=filwork->flatnodes[3][stride*node+d];
+	if(dim==3)
+		for(seg=0;seg<fil->nseg;seg++)
+			filwork->thermtorque[seg]=filwork->flatnodes[3][4*seg+3];
 	return; }
 
 

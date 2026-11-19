@@ -49,6 +49,7 @@ void sparseMultiplyMV(const sparsematrix sprs,const double *vect,double *ans);
 void sparseAddIdentityM(sparsematrix sprs,double factor);
 void sparseMultiplyScalarM(sparsematrix sprs,double scalar);
 void sparseBiCGSTAB(const sparsematrix sprs,const double *b,double *x,double tolerance);
+int sparseBandSolve(const sparsematrix sprs,const double *b,double *x);
 
 #ifdef __cplusplus
 }

@@ -4245,7 +4245,7 @@ typedef struct filworkstruct {
     struct filamentstruct *fil;       // owning filament
     double ***wnodes;                 // working nodes (3,nseg+1,3)
     double **wroll;                   // working rolls (3,nseg)
-    double **flatnodes;               // flattened nodes (2,(2or4)*nseg)
+    double **flatnodes;               // flattened nodes (5,(2or4)*nseg); 3 and 4 hold thermal forces for substeps
     double **flatforces;              // flattened forces (2,(2or4)*nseg)
     double **wseg0up;                 // seg. 0 up vector (3,3)
     double **forces;                  // forces on nodes (nseg+1)
@@ -4367,6 +4367,7 @@ typedef struct filamenttypestruct {
     double persisttwist;               // torsional persistence length; >0 sets kypr[2], negative = unset
     int kpsiset;                       // 1 if the roll force constant was entered
     int constraintwarn;                // 1 if a constraint convergence warning was given
+    int substepwarn;                   // 1 if an implicit substep limit warning was given
     double treadrate;                  // treadmilling rate constant
     double mobility;                   // translational mobility, length^2/(energy*time)
     int mobilityset;                   // 1 if the mobility was entered, so it isn't computed from the viscosity
@@ -5423,7 +5424,31 @@ Integrates filament dynamics over one time step using the Euler method, but with
 
 \item[\ttt{void filImplicitDynamics(simptr sim,filamenttypeptr filtype)}]
 \hfill \\
-Integrates filament dynamics over one time step using the linearized implicit Euler method. This loops over all filaments of the filament type. For each one, \ttt{filComputeDerivForceMat} computes an approximate Jacobian of the forces and torques, $\bm{J}$, which is negative semidefinite for the internal forces, and the next state is $\bm{x}_1=\bm{x}_0+\Delta\bm{x}$, where $\Delta\bm{x}$ is the solution of $(\bm{I}-\mu\Delta t\bm{W}\bm{J})\Delta\bm{x}=\mu\Delta t\bm{W}\bm{f}(\bm{x}_0)$. $\bm{W}$ is the diagonal matrix of effective node mobility factors from \ttt{filNodeMobility}, and of their averages for segment rotations, which is applied by scaling the rows of $\bm{J}$; because $\bm{W}\bm{J}$ is similar to $\bm{W}^{1/2}\bm{J}\bm{W}^{1/2}$, which is negative semidefinite, the method stays stable, and rows with mobility factor 0 give $\Delta x=0$, so fixed nodes stay fixed. This is found with \ttt{sparseBiCGSTAB}, starting from the forward Euler step and continuing to a residual that is $10^{-10}$ of the norm of the right side; solving for the displacement rather than the state keeps this relative tolerance meaningful for filaments that are small compared to their coordinates. In 3D, the state includes each segment's rotation about its own axis (see \ttt{filFlattenNodes}), and the segment frames are then moved with \ttt{filTransportFrames}. This is stable for time steps that are much longer than the explicit methods allow, although, as is usual for implicit Euler, it relaxes more slowly than the true dynamics at long time steps. An earlier version ignored node mobility factors, so nodes with mobility 0 moved.
+Integrates filament dynamics over one time step using the linearized implicit Euler method. This loops over all filaments of the filament type. For each one, \ttt{filImplicitSolve} computes the displacement for the whole time step. If \ttt{filImplicitMoveRatio} is at most 1, the displacement is added to the state. Otherwise, the step is too large for the linearization, so it is discarded and redone as $n$ substeps, where $n$ is the ceiling of the square of the ratio, up to \ttt{FILSUBSTEPMAX} (10000), with a warning the first time that this limit is reached (\ttt{filtype->substepwarn}). Thermal displacements grow as the square root of the step, so this brings each substep within the limits. For the substeps, \ttt{filThermalBridgeStart} saves the step's thermal forces, \ttt{filThermalBridgeNext} sets the thermal forces for each substep from a Brownian bridge, and \ttt{filThermalBridgeEnd} restores the step's thermal forces. Each substep calls \ttt{filImplicitSolve} with $\mu\Delta t/n$ and recomputes the Jacobian at the current state. Steps that don't need substeps draw the same random numbers as before and give the same results. In 3D, the state includes each segment's rotation about its own axis (see \ttt{filFlattenNodes}), and the segment frames are then moved with \ttt{filTransportFrames}. This is stable for time steps that are much longer than the explicit methods allow, although, as is usual for implicit Euler, it relaxes more slowly than the true dynamics at long time steps. An earlier version ignored node mobility factors, so nodes with mobility 0 moved. Another earlier version solved the linear equation with \ttt{sparseBiCGSTAB}, without a preconditioner, which often didn't converge for stiff filaments at long time steps, such as short actin segments in water at a time step of 1 ms; it stopped with residuals that were comparable to the right side, which gave meaningless displacements and made the filaments blow up.
+
+\item[\ttt{void filImplicitSolve(filamentptr fil,double dtmu)}]
+\hfill \\
+Computes one linearized backward Euler step of filament \ttt{fil}, for \ttt{dtmu}, which is the mobility times the step. \ttt{filComputeDerivForceMat} computes an approximate Jacobian of the forces and torques, $\bm{J}$, which is negative semidefinite for the internal forces, and the displacement $\Delta\bm{x}$ is the solution of $(\bm{I}-\mu\Delta t\bm{W}\bm{J})\Delta\bm{x}=\mu\Delta t\bm{W}\bm{f}(\bm{x}_0)$. $\bm{W}$ is the diagonal matrix of effective node mobility factors from \ttt{filNodeMobility}, and of their averages for segment rotations, which is applied by scaling the rows of $\bm{J}$; because $\bm{W}\bm{J}$ is similar to $\bm{W}^{1/2}\bm{J}\bm{W}^{1/2}$, which is negative semidefinite, the method stays stable, and rows with mobility factor 0 give $\Delta x=0$, so fixed nodes stay fixed. The equation is banded, so it is solved directly with \ttt{sparseBandSolve}; if that fails, which only happens for a singular matrix or a memory allocation failure, it is solved with \ttt{sparseBiCGSTAB}, starting from the forward Euler step. The start state is left in \ttt{flatnodes[0]} and the displacement in \ttt{flatnodes[1]}; the filament isn't moved.
+
+\item[\ttt{double filImplicitMoveRatio(filamentptr fil)}]
+\hfill \\
+Returns how large the displacement in \ttt{flatnodes[1]}, from the state in \ttt{flatnodes[0]}, is compared to what a linearized step can take. This is the largest of the change of each segment vector divided by \ttt{FILSUBSTEPMOVE} (0.2) times the segment's length, and in 3D, the change of each segment's roll relative to the previous segment divided by \ttt{FILSUBSTEPROLL} (0.2 radians). Relative rolls are only checked if the roll force constant isn't 0, since otherwise they don't change the energy. The displacement of an adsorbed node normal to its panel isn't counted, since the node is put back on its surface after the step. A non-finite ratio is returned as \ttt{FILSUBSTEPMAX}.
+
+\item[\ttt{double filThermalRms(filamentptr fil,int i)}]
+\hfill \\
+Returns the rms thermal force on coordinate \ttt{i} of the flattened state of filament \ttt{fil}, or in 3D, the rms thermal torque if \ttt{i} is a segment roll, for a full time step, as in \ttt{filDrawThermalForces}.
+
+\item[\ttt{void filThermalBridgeStart(filamentptr fil,int nsub)}]
+\hfill \\
+Prepares the thermal forces of filament \ttt{fil} for \ttt{nsub} implicit substeps. This saves the full step's thermal forces and torques in \ttt{flatnodes[3]}, in flattened order, and sets the remaining sum, which is \ttt{nsub} times them, in \ttt{flatnodes[4]}.
+
+\item[\ttt{void filThermalBridgeNext(filamentptr fil,int nsub,int sub)}]
+\hfill \\
+Sets the thermal forces and torques of filament \ttt{fil} for the next of \ttt{nsub} substeps, where \ttt{sub} is the number of substeps that remain, including this one. A substep force has \ttt{nsub} times the variance of a full step force, because the step is \ttt{nsub} times shorter, and the substep forces need to average to the full step's force, so that the substeps together have the same thermal displacement as the full step. Each force is drawn from the Brownian bridge for the remaining sum $R$, as $R/sub$ plus a Gaussian with variance $(sub-1)/sub$ times the variance of a substep force, and $R$ is reduced by it. The last substep takes the remainder, so the forces add up exactly. This draws random numbers for every substep but the last.
+
+\item[\ttt{void filThermalBridgeEnd(filamentptr fil)}]
+\hfill \\
+Restores the full step's thermal forces and torques of filament \ttt{fil} after substeps, from \ttt{flatnodes[3]}.
 
 \item[\ttt{void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype)}]
 \hfill \\
@@ -8458,6 +8483,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added an optional end state to the parts of \ttt{surface\_interaction}, entered in parentheses as in \ttt{plus(open)}, so that the interaction only applies to the listed ends while they are in that state. Added the \ttt{endstate} element to \ttt{filsurfinteractstruct}, an \ttt{endstate} argument to \ttt{filtypeAddSurfInteract}, and the function \ttt{filSurfInteractApplies}, which replaces the direct \ttt{filpart} tests.
 \item Added the ``branch'' surface interaction action, \ttt{FSAbranch}, with a distance (stored in \ttt{capdist}) and a branching rate (stored in \ttt{rate}), so that filament nodes within the distance of a surface branch at that rate. Split \ttt{filBranchAtNode} out of \ttt{filBranchDynamics}, without changing \ttt{branch\_rate} results, and added \ttt{filSurfBranchOn} and \ttt{filSurfBranchDynamics}. \ttt{branch\_min\_spacing} and reflect interactions apply to these branches too.
 \item Capped the exponential factor of the barbed end elongation rate at 2, so the rate is now \ttt{a*min(exp(-k*F),2)-b} and pulling forces can at most double $a$ (\ttt{filEndVelocity}).
+\item Made the Implicit filament integrator robust to large thermal kicks. Its linear equation was solved with unpreconditioned BiCGSTAB, which often didn't converge for stiff filaments at long time steps, so filaments with short segments in water blew up; it is now solved directly with the new \ttt{sparseBandSolve} in RnSparse. Also, steps that would move a segment too far for the linearization are now redone as substeps, with the thermal forces split by a Brownian bridge (\ttt{filImplicitSolve}, \ttt{filImplicitMoveRatio}, \ttt{filThermalRms}, and \ttt{filThermalBridgeStart}, \ttt{Next}, and \ttt{End}). In a 3D persistence length test at a long time step, this reduced the errors from about 40\% to about 10\%. The surface force stiffness warning in \ttt{filCheckParams} is no longer given for Implicit dynamics, since its Jacobian includes surface forces.
 \end{itemize}
 
 

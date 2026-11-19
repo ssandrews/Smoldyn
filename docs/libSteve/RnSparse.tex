@@ -261,6 +261,12 @@ The math is from Wikipedia ``Biconjugate gradient stabilized method''. It is as 
 \bm{p}_i &= \bm{r}_i + \beta(\bm{p}_{i-1}-\omega\bm{\nu})
 \end{align*}
 
+BiCGSTAB doesn't have a preconditioner here, so it can converge slowly or not at all for ill-conditioned matrices, in which case it stops at the iteration limit with a residual that isn't small. For banded matrices of moderate size, \ttt{sparseBandSolve} is more reliable.
+
+\item[\ttt{int sparseBandSolve(const sparsematrix sprs,const double *b,double *x)}]
+\hfill \\
+Solves the matrix equation $\bm{A}\cdot \bm{x} = \bm{b}$ for $\bm{x}$ directly, where $\bm{A}$ is the square band matrix in \ttt{sprs}, with \ttt{sprs->nrows} rows, and $\bm{b}$ is in \ttt{b}. The result is returned in \ttt{x}, which doesn't need an initial guess. This uses Gaussian elimination with partial pivoting within the band, so it is reliable for ill-conditioned matrices. Pivoting can fill in up to twice the bandwidth above the diagonal, so this copies the matrix into a work array with that extra width, which it allocates and frees; \ttt{sprs} isn't changed. For $n$ rows and half-bandwidth $w$, this takes about $2nw^2$ operations and $n(3w+1)$ numbers of memory. This returns 0 for success, 1 if the matrix is singular, and 2 if memory allocation fails; \ttt{x} is only changed for success.
+
 
 
 
