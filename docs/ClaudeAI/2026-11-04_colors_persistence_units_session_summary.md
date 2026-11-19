@@ -1,14 +1,15 @@
-# Claude Code session summary: colors, translucency, persistence length, and units, November 4–6, 2026
+# Claude Code session summary: colors, translucency, persistence length, and units, November 4–19, 2026
 
 This file summarizes a Claude Code session (Claude Opus 5.5) with the Smoldyn
-maintainer on November 4–6, 2026. The work covered color names in input and
+maintainer on November 4–19, 2026. The work covered color names in input and
 output, rendering of translucent 3-D surfaces, a new libSteve filament
 statistics library with persistence-length statements, a review of measurement
 units across the input and output code, a filament viscosity parameter, a new
 barbed-end elongation equation, surface interactions that depend on a
-filament end's state, and a surface interaction that causes branching.
+filament end's state, a surface interaction that causes branching, and an
+example of branching near a surface.
 Everything below was committed and pushed to `master` on
-github.com/ssandrews/Smoldyn, in commits 33c376d through 0b6581e.
+github.com/ssandrews/Smoldyn, in commits 33c376d through 381345a.
 
 ## Working conventions used
 
@@ -323,6 +324,33 @@ edited, which had been kept out of earlier commits.
   faces instead of edges (0b6581e). The membrane in `adsorbDesorb3D.txt` was
   also shrunk from 100 by 100 to 40 by 40. The commit message only mentions
   the faces.
+
+## Part 10: an example of branching near a lid (commit 381345a, November 19)
+
+- **New example:** `examples/S13_filaments/dynamics/barbedEnd2D_2.txt`, copied
+  from `barbedEnd2D.txt`. The space is 60 wide, with three lanes 20 wide in
+  place of two lanes 33 wide. Each lane has three filaments growing up from
+  the floor toward an 18-wide mobile lid, and the same load pushes on all
+  three lids.
+  - The left lane has open plus ends (red), and the middle lane has barbed
+    plus ends (blue), as before.
+  - The right lane has a new `branched` type (green). It is barbed and adds
+    `surface_interaction lid3 front all branch 3 0.1`, so only nodes within 3
+    of the lid's underside branch. Its branch settings are `branch_angle 1.22`,
+    `branch_force_angle 30`, `branch_segments 1`, and
+    `branch_min_spacing 2`.
+- **Test run:** 60 s, about 5 s of computing time, with no errors or
+  warnings. The left lane ended with 3 filaments and a lid rise of 31.7. The
+  middle lane ended with 3 filaments and a rise of 19.3. The right lane ended
+  with 60 filaments and a rise of 35.5. No branches formed near the floor.
+  Branch points were spread between heights of about 18 and 54, following the
+  lid as it rose from 22 to about 57.
+- **Push:** the first push was rejected because GitHub had a dependabot
+  commit (pull request #181, a version bump in
+  `source/pybind11/docs/requirements.txt`). Claude rebased onto it with
+  `--autostash`. That set aside the user's uncommitted edits to the manuals,
+  their PDFs, and two files in `examples/S13_filaments/actin/`, then restored
+  them unchanged.
 
 ## Left as is
 
