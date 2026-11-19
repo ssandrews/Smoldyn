@@ -1,0 +1,171 @@
+# Branched actin network in a 3D box, pushing a lid upward against a load.
+#
+# The box is 0.5 um wide in x and z and 2 um tall in y. It starts with 40 actin
+# filaments whose minus ends are adsorbed to the floor at random positions and that point
+# up toward a mobile lid. A constant downward force acts on the lid. The filaments'
+# plus ends are barbed, so they elongate at rate v=a*min(exp(-k*F),2)-b, with
+# a=0.122 um/s, k=0.00063 um/zJ, and b=0.0038 um/s, where F is the force pushing
+# back on the end. Barbed ends get capped at rate 0.35/s, after which they stop
+# growing. Filaments branch only within 0.05 um of the lid, at rate 0.425/s per node.
+# Branches are new actin filaments, so they also grow, push, get capped, and branch.
+#
+# Units are um, s, and zJ, so forces are in zJ/um = fN.
+#
+# The mobility comes from the viscosity, but the rotational mobility is entered
+# separately, because the value that the viscosity gives for 7 nm diameter segments,
+# about 5e5 /(s zJ), makes segments roll by tens of radians in each time step, and twist
+# relaxes in about a nanosecond. The twist dynamics don't matter here, and the rotational
+# mobility doesn't change the equilibrium twist, so this uses a much smaller value.
+# Even so, short actin filaments tumble by several radians per millisecond in a fluid this
+# thin, so the Implicit integrator divides most time steps into many substeps, and the
+# simulation is slow, taking well over 30 minutes for 20 s.
+#
+# smoldyn actinBox3D.txt
+
+units um s zJ
+graphics opengl_good
+
+dim 3
+boundaries x 0 0.5
+boundaries y 0 2
+boundaries z 0 0.5
+
+time_start 0
+time_stop 20
+time_step 0.001
+random_seed 1
+boxsize 0.1
+
+frame_thickness 0
+
+start_surface floor
+color both black
+polygon both edge
+panel rect +y 0 0 0 0.5 0.5
+end_surface
+
+start_surface walls
+color both 0.7 0.7 0.7
+polygon both edge
+panel rect +x 0 0 0 2 0.5
+panel rect -x 0.5 0 0 2 0.5
+panel rect +z 0 0 0 0.5 2
+panel rect -z 0 0 0.5 0.5 2
+end_surface
+
+start_surface lid
+color both 0.5 0.5 0.5 0.5
+polygon both face
+mobility 1e-4				# um/(s fN)
+panel rect -y 0 0.5 0 0.5 0.5
+end_surface
+
+start_filament_type actin
+color red
+thickness 1				# drawing thickness
+radius 0.0035			# 7 nm diameter
+polygon edge
+dynamics implicit
+kT 4.28					# 37 C
+standard_length 0.05	# 50 nm segments, about 18 monomers
+persistence_length 17
+force_length 1e5		# segment length standard deviation of about 4 nm
+viscosity 0.25			# 0.25 mPa s = 0.25 zJ s/um^3
+rotational_mobility 20	# reduced; see above
+end_state plus barbed
+elongation_rate plus barbed 0.122 0.00063 0.0038
+end_transition plus barbed capped 0.35
+branch_angle 1.22		# 70 degrees
+branch_segments 1
+surface_interaction floor front all softwall 1e5
+surface_interaction walls front all reflect
+surface_interaction lid front all repel 1e5 0.02
+surface_interaction lid front all branch 0.05 0.425
+filament_interaction actin softwall 1e5
+end_filament_type
+
+random_filament actin:f1 2  0.172 0.001 0.096  1.571 0 0
+random_filament actin:f2 2  0.316 0.001 0.062  1.571 0 0
+random_filament actin:f3 2  0.266 0.001 0.191  1.571 0 0
+random_filament actin:f4 2  0.056 0.001 0.253  1.571 0 0
+random_filament actin:f5 2  0.046 0.001 0.221  1.571 0 0
+random_filament actin:f6 2  0.061 0.001 0.070  1.571 0 0
+random_filament actin:f7 2  0.217 0.001 0.394  1.571 0 0
+random_filament actin:f8 2  0.084 0.001 0.128  1.571 0 0
+random_filament actin:f9 2  0.306 0.001 0.447  1.571 0 0
+random_filament actin:f10 2  0.284 0.001 0.205  1.571 0 0
+random_filament actin:f11 2  0.460 0.001 0.050  1.571 0 0
+random_filament actin:f12 2  0.408 0.001 0.157  1.571 0 0
+random_filament actin:f13 2  0.093 0.001 0.082  1.571 0 0
+random_filament actin:f14 2  0.166 0.001 0.389  1.571 0 0
+random_filament actin:f15 2  0.110 0.001 0.286  1.571 0 0
+random_filament actin:f16 2  0.311 0.001 0.194  1.571 0 0
+random_filament actin:f17 2  0.271 0.001 0.058  1.571 0 0
+random_filament actin:f18 2  0.056 0.001 0.121  1.571 0 0
+random_filament actin:f19 2  0.329 0.001 0.218  1.571 0 0
+random_filament actin:f20 2  0.168 0.001 0.288  1.571 0 0
+random_filament actin:f21 2  0.229 0.001 0.162  1.571 0 0
+random_filament actin:f22 2  0.380 0.001 0.338  1.571 0 0
+random_filament actin:f23 2  0.137 0.001 0.283  1.571 0 0
+random_filament actin:f24 2  0.261 0.001 0.415  1.571 0 0
+random_filament actin:f25 2  0.351 0.001 0.157  1.571 0 0
+random_filament actin:f26 2  0.461 0.001 0.082  1.571 0 0
+random_filament actin:f27 2  0.214 0.001 0.363  1.571 0 0
+random_filament actin:f28 2  0.097 0.001 0.245  1.571 0 0
+random_filament actin:f29 2  0.047 0.001 0.324  1.571 0 0
+random_filament actin:f30 2  0.366 0.001 0.282  1.571 0 0
+random_filament actin:f31 2  0.415 0.001 0.168  1.571 0 0
+random_filament actin:f32 2  0.336 0.001 0.292  1.571 0 0
+random_filament actin:f33 2  0.285 0.001 0.231  1.571 0 0
+random_filament actin:f34 2  0.400 0.001 0.446  1.571 0 0
+random_filament actin:f35 2  0.239 0.001 0.322  1.571 0 0
+random_filament actin:f36 2  0.057 0.001 0.339  1.571 0 0
+random_filament actin:f37 2  0.315 0.001 0.467  1.571 0 0
+random_filament actin:f38 2  0.392 0.001 0.155  1.571 0 0
+random_filament actin:f39 2  0.200 0.001 0.324  1.571 0 0
+random_filament actin:f40 2  0.040 0.001 0.233  1.571 0 0
+
+filament actin:f1 adsorb_node 0 floor front
+filament actin:f2 adsorb_node 0 floor front
+filament actin:f3 adsorb_node 0 floor front
+filament actin:f4 adsorb_node 0 floor front
+filament actin:f5 adsorb_node 0 floor front
+filament actin:f6 adsorb_node 0 floor front
+filament actin:f7 adsorb_node 0 floor front
+filament actin:f8 adsorb_node 0 floor front
+filament actin:f9 adsorb_node 0 floor front
+filament actin:f10 adsorb_node 0 floor front
+filament actin:f11 adsorb_node 0 floor front
+filament actin:f12 adsorb_node 0 floor front
+filament actin:f13 adsorb_node 0 floor front
+filament actin:f14 adsorb_node 0 floor front
+filament actin:f15 adsorb_node 0 floor front
+filament actin:f16 adsorb_node 0 floor front
+filament actin:f17 adsorb_node 0 floor front
+filament actin:f18 adsorb_node 0 floor front
+filament actin:f19 adsorb_node 0 floor front
+filament actin:f20 adsorb_node 0 floor front
+filament actin:f21 adsorb_node 0 floor front
+filament actin:f22 adsorb_node 0 floor front
+filament actin:f23 adsorb_node 0 floor front
+filament actin:f24 adsorb_node 0 floor front
+filament actin:f25 adsorb_node 0 floor front
+filament actin:f26 adsorb_node 0 floor front
+filament actin:f27 adsorb_node 0 floor front
+filament actin:f28 adsorb_node 0 floor front
+filament actin:f29 adsorb_node 0 floor front
+filament actin:f30 adsorb_node 0 floor front
+filament actin:f31 adsorb_node 0 floor front
+filament actin:f32 adsorb_node 0 floor front
+filament actin:f33 adsorb_node 0 floor front
+filament actin:f34 adsorb_node 0 floor front
+filament actin:f35 adsorb_node 0 floor front
+filament actin:f36 adsorb_node 0 floor front
+filament actin:f37 adsorb_node 0 floor front
+filament actin:f38 adsorb_node 0 floor front
+filament actin:f39 adsorb_node 0 floor front
+filament actin:f40 adsorb_node 0 floor front
+
+cmd E applysurfaceforce lid 0 -10000 0	# 10 pN load, in fN
+
+end_file
