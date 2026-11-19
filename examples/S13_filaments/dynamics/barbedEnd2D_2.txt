@@ -1,0 +1,151 @@
+# Barbed filament ends, which elongate more slowly when they are pushed against, and
+# branching near a surface.
+#
+# This is like barbedEnd2D.txt, but with narrower lanes and a third lane. In each lane,
+# three filaments grow upward from the floor and push on a lid, which has a mobility
+# (mobility 0.2), and the applysurfaceforce command pushes down on all three lids with
+# the same constant load. The filaments in the left lane have open plus ends, which
+# always elongate at rate 1. The filaments in the middle lane have barbed plus ends
+# (end_state plus barbed), which elongate at rate v=a*min(exp(-k*F),2)-b, entered with
+# elongation_rate plus barbed a k b. Here, a is 1, k is 2, b is 0, and F is the part of
+# the surface force on the end node that is parallel to the end segment and pushes
+# against the end. Thus, barbed ends elongate at rate 1 until they reach the lid, and
+# then more slowly as the force on them rises.
+#
+# The filaments in the right lane are barbed too, and they also branch, but only near
+# the lid. The statement "surface_interaction lid3 front all branch 3 0.1" makes each
+# node within distance 3 of the front of lid3 branch at rate 0.1 per unit time, while
+# nodes farther from the lid don't branch. The branches are new filaments of the same
+# type, so they have barbed plus ends, they push on the lid too, and they can branch
+# when they are near the lid. The result is a branched network just under the lid,
+# which shares the load among more filament ends. branch_min_spacing keeps branches at
+# least 2 apart along each mother filament. The lids' forces and total displacements
+# are listed at the end.
+#
+# smoldyn barbedEnd2D_2.txt
+
+graphics opengl_good
+
+dim 2
+boundaries x 0 60
+boundaries y 0 100
+
+time_start 0
+time_stop 60
+time_step 0.01
+random_seed 1
+boxsize 10
+
+frame_thickness 0
+
+start_surface walls
+color both black
+thickness 1
+panel rect +0 0 0 100
+panel rect +0 20 0 100
+panel rect +0 40 0 100
+panel rect -0 60 0 100
+panel rect -1 0 100 60
+end_surface
+
+start_surface floor
+color both black
+thickness 2
+panel rect +1 0 10 60
+end_surface
+
+start_surface lid1
+color both 0.5 0.5 0.5
+thickness 3
+mobility 0.2
+panel rect -1 1 22 18
+end_surface
+
+start_surface lid2
+color both 0.5 0.5 0.5
+thickness 3
+mobility 0.2
+panel rect -1 21 22 18
+end_surface
+
+start_surface lid3
+color both 0.5 0.5 0.5
+thickness 3
+mobility 0.2
+panel rect -1 41 22 18
+end_surface
+
+start_filament_type open
+color red
+thickness 2
+polygon edge
+dynamics implicit
+kT 0.1
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 30
+mobility 1
+elongation_rate 1
+surface_interaction floor front all softwall 20
+surface_interaction lid1 front all repel 20 2
+surface_interaction walls both all reflect
+end_filament_type
+
+start_filament_type barbed
+color blue
+thickness 2
+polygon edge
+dynamics implicit
+kT 0.1
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 30
+mobility 1
+elongation_rate plus barbed 1 2 0
+end_state plus barbed
+surface_interaction floor front all softwall 20
+surface_interaction lid2 front all repel 20 2
+surface_interaction walls both all reflect
+end_filament_type
+
+start_filament_type branched
+color green
+thickness 2
+polygon edge
+dynamics implicit
+kT 0.1
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 30
+mobility 1
+elongation_rate plus barbed 1 2 0
+end_state plus barbed
+branch_angle 1.22
+branch_force_angle 30
+branch_segments 1
+branch_min_spacing 2
+surface_interaction floor front all softwall 20
+surface_interaction lid3 front all repel 20 2
+surface_interaction lid3 front all branch 3 0.1
+surface_interaction walls both all reflect
+end_filament_type
+
+random_filament open:a1 3    5 11  1.571
+random_filament open:a2 3   10 11  1.571
+random_filament open:a3 3   15 11  1.571
+random_filament barbed:b1 3  25 11  1.571
+random_filament barbed:b2 3  30 11  1.571
+random_filament barbed:b3 3  35 11  1.571
+random_filament branched:c1 3  45 11  1.571
+random_filament branched:c2 3  50 11  1.571
+random_filament branched:c3 3  55 11  1.571
+
+cmd E applysurfaceforce lid1 0 -1.5
+cmd E applysurfaceforce lid2 0 -1.5
+cmd E applysurfaceforce lid3 0 -1.5
+cmd A diagnostics surface
+
+end_file
