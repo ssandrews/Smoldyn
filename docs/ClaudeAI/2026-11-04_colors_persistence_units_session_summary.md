@@ -7,10 +7,10 @@ statistics library with persistence-length statements, a review of measurement
 units across the input and output code, a filament viscosity parameter, a new
 barbed-end elongation equation, surface interactions that depend on a
 filament end's state, a surface interaction that causes branching, and an
-example of branching near a surface, followed by commits of the user's own
-edits.
+example of branching near a surface, commits of the user's own edits, a fix
+to the Implicit filament integrator, and a 3-D actin example.
 Everything below was committed and pushed to `master` on
-github.com/ssandrews/Smoldyn, in commits 33c376d through 0309849.
+github.com/ssandrews/Smoldyn, in commits 33c376d through 2893df0.
 
 ## Working conventions used
 
@@ -373,6 +373,74 @@ they were, after reading the diffs to write the commit message.
   moved from 90 to 40, and a new header comment.
 - Both PDFs were included as the user had rebuilt them.
 
+## Part 12: the Implicit integrator and a 3-D actin example (commits 444ffb1, 2893df0)
+
+The user asked for a 3-D example in `examples/S13_filaments/actin`. It needed
+units of um, s, and zJ, and a 0.5 x 2 x 0.5 um box with a mobile lid under a
+downward load. It needed 40 filaments with minus ends adsorbed to the floor,
+a persistence length of 17 um, and a viscosity of 0.25 zJ s/um^3. Plus ends
+had to be barbed with v = 0.122 exp(-0.00063 F) - 0.0038, with branching
+near the lid at 0.425/s and capping at 0.35/s.
+
+- **Instability:** with 50 nm segments and a 1 ms time step, the filaments
+  blew up within a second.
+  - Claude first told the user that softwall and repel surface forces are
+    explicit, and the user chose to make them implicit. That was wrong: the
+    Implicit Jacobian already includes them by finite differences. The
+    stiffness warning that misled Claude ignored the dynamics type. Claude
+    corrected this and made no change for it.
+  - Isolation tests then showed that thermal noise triggered the failures.
+    Even a free 10-segment filament failed on its first step. Claude first
+    blamed the size of the thermal kicks.
+  - **Root cause:** the linear equation was solved with unpreconditioned
+    BiCGSTAB, which stopped with residuals of 40-280% of the right side for
+    these stiff systems. That gave meaningless displacements.
+- **Fixes (444ffb1), which the user approved as "fix the solver":**
+  - A new direct banded solver, `sparseBandSolve`, in libSteve's
+    `RnSparse.c`, using Gaussian elimination with partial pivoting.
+    BiCGSTAB remains as a fallback.
+  - Substeps: a step is redone as about ratio^2 substeps, up to 10,000, if
+    it would change a segment vector by more than 0.2 of its length, or a
+    relative roll by more than 0.2 rad. The roll check only applies when the
+    roll force constant isn't 0. An adsorbed node's motion normal to its
+    surface isn't counted. A Brownian bridge splits the thermal forces among
+    the substeps, so the total noise and its statistics are unchanged, and
+    steps within the limits draw the same random numbers as before. The new
+    functions are `filImplicitSolve`, `filImplicitMoveRatio`,
+    `filThermalRms`, and `filThermalBridgeStart`, `Next`, and `End`.
+    `flatnodes` grew from 3 to 5 arrays, and a new `substepwarn` field
+    flags a warning at the substep limit.
+  - The surface force stiffness warning is no longer given for Implicit
+    dynamics.
+- **Tests:**
+  - All earlier failing cases now run.
+  - A 3-D persistence test with implicit dynamics at dt = 0.2 (predicted
+    10, 16, 16) gave 14.2, 21.9, 22.6 with the old build and 11.1, 17.1,
+    18.2 with the new one. The gain comes from the substeps; limits of 0.5
+    or 1 lose it.
+  - The 8 examples with Implicit dynamics ran without errors on both
+    builds. Most ran at about the same speed or faster, but
+    `actinLayer2D.txt` went from 35 s to 99 s because of accuracy substeps.
+    The direct solver alone is as fast as BiCGSTAB was.
+- **Example (2893df0):** `examples/S13_filaments/actin/actinBox3D.txt`
+  - Claude chose a 10 pN load (with the user), branching within 0.05 um of
+    the lid, 50 nm segments with a 7 nm diameter, and kT = 4.28 zJ.
+    Branches come off at 70 degrees. The floor softwall and lid repel
+    constants are 1e5 zJ/um^2, the walls reflect, and filaments have contact
+    forces.
+  - It uses `rotational_mobility 20`. The viscosity gives about 5e5 /(s zJ),
+    which means roll kicks of tens of radians per step, and the linearized
+    roll-bend coupling turns those into micrometers of node motion. Twist
+    relaxes in about 1 ns, and the rotational mobility doesn't change the
+    equilibrium twist.
+  - The example is stable, but slow: 100 nm filaments tumble about 9 rad per
+    1 ms step in this viscosity, so most steps need many substeps. A partial
+    run reached 4 s of simulated time in about 25 minutes. Over that time,
+    the lid rose 0.21 um and drifted sideways about 1 nm. Anchoring the minus
+    ends, a branch angle spring, and longer segments didn't help much. Claude
+    asked whether to trade realism for speed with a higher viscosity, a lower
+    mobility, or a shorter run, and the user hasn't answered.
+
 ## Left as is
 
 - `difm` matrix elements have units of L/√T, which the unit system can't
@@ -399,3 +467,7 @@ they were, after reading the diffs to write the commit message.
   then stopped them by PID.
 - A `grep -m` on smoldyn output left the simulation running in the background
   until it was stopped.
+- Claude misdiagnosed the actin example's instability twice before finding the
+  non-converging linear solver. First it blamed explicit surface forces, which
+  led the user to choose an option based on a false premise. Then it blamed
+  the size of the thermal kicks.
