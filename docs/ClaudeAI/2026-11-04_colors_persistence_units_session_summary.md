@@ -7,9 +7,10 @@ statistics library with persistence-length statements, a review of measurement
 units across the input and output code, a filament viscosity parameter, a new
 barbed-end elongation equation, surface interactions that depend on a
 filament end's state, a surface interaction that causes branching, and an
-example of branching near a surface.
+example of branching near a surface, followed by commits of the user's own
+edits.
 Everything below was committed and pushed to `master` on
-github.com/ssandrews/Smoldyn, in commits 33c376d through 381345a.
+github.com/ssandrews/Smoldyn, in commits 33c376d through 0309849.
 
 ## Working conventions used
 
@@ -351,6 +352,26 @@ edited, which had been kept out of earlier commits.
   `--autostash`. That set aside the user's uncommitted edits to the manuals,
   their PDFs, and two files in `examples/S13_filaments/actin/`, then restored
   them unchanged.
+
+## Part 11: the user's manual and actin example edits (commit 0309849)
+
+At the user's request, Claude committed the user's own uncommitted edits as
+they were, after reading the diffs to write the commit message.
+
+- **Manual:** "heirarchy" was corrected to "hierarchy", a paragraph on
+  segment roll in 3D was added, kT was written as k_B T, and the
+  filament-surface interaction types (softwall, repel, reflect, adsorb and
+  desorb, and branch) became an itemized list.
+- **Code documentation:** the version modification lists changed from
+  subsections to sections.
+- **`examples/S13_filaments/actin/actin2.txt`:** barbed plus ends, set with
+  `end_state plus barbed` and `elongation_rate plus barbed 1`, a stop time
+  of 100 in place of 150, a filament-filament softwall strength of 20 in
+  place of 100, and a new header comment.
+- **`examples/S13_filaments/actin/actinLayer2D.txt`:** a branch interaction
+  at the lid (`surface_interaction lid front all branch 0.5 0.1`), the lid
+  moved from 90 to 40, and a new header comment.
+- Both PDFs were included as the user had rebuilt them.
 
 ## Left as is
 
