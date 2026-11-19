@@ -1,4 +1,4 @@
-# Growing filaments pushing against surfaces that carry different loads.
+# Growing filaments pushing against a surface. This is an attempt at actual values.
 
 units um s zJ
 graphics opengl_good
@@ -28,7 +28,7 @@ start_surface lid
 color both gray
 thickness 3
 mobility 0.2
-panel rect -y 0 90 100
+panel rect -y 0 40 100
 end_surface
 
 
@@ -51,6 +51,7 @@ branch_angle 1.22		# 70 degrees is 1.22 radians
 elongation_rate plus barbed 0.122 0.00063 0.0038	# a: 7.33 um/min; k: 2.7 nm/kT; b: 1.4/s * 2.7 nm
 surface_interaction floor front all repel 20 0.5	# 0.5 um
 surface_interaction lid front all repel 20 0.5		# 0.5 um
+surface_interaction lid front all branch 0.5 0.1
 filament_interaction pusher1 softwall 100
 end_filament_type
 

@@ -7268,7 +7268,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 
 \renewcommand{\labelitemi}{$\cdot$}
 
-\subsection{Modifications for version 1.5 (released 7/03)}
+\section{Modifications for version 1.5 (released 7/03)}
 \begin{itemize}
 \item Added hierarchical configuration file name support.
 \item \ttt{Zeroreact} assigns the correct box for new molecules.
@@ -7294,7 +7294,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added the routine \ttt{checkparams} to check that the simulation parameters are reasonable.
 \end{itemize}
 
-\subsection{Modifications for version 1.51 (released 9/5/03)}
+\section{Modifications for version 1.51 (released 9/5/03)}
 \begin{itemize}
 \item Fixed a minor bug in \ttt{doreact} which allowed the molecule superstructure indices to become illegal if not enough molecules were allocated.
 \item Fixed a minor bug in \ttt{cmdreact1} which did not check for errors from \ttt{doreact}.
@@ -7310,7 +7310,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Fixed a major bug in \ttt{rxnfree}, regarding the freeing of the \ttt{table} elements.
 \end{itemize}
 
-\subsection{Modifications for version 1.52 (released 10/24/03)}
+\section{Modifications for version 1.52 (released 10/24/03)}
 \begin{itemize}
 \item Changed comments in rxnparam.h and rxnparam.c, but no changes in code.
 \item Changed \ttt{cmdsavesim} in smollib2.c to allow it to compile with gcc.
@@ -7323,7 +7323,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Renamed the ``test files" folder to ``test\_files".
 \end{itemize}
 
-\subsection{Modifications for version 1.53 (released 2/9/04)}
+\section{Modifications for version 1.53 (released 2/9/04)}
 \begin{itemize}
 \item Cleaned up commands a little more by writing routine \ttt{getfptr} in smollib2.c and calling it from commands that save data, rather than repeating the code each time.
 \item All routines that dealt with the command framework were moved to their own library, called SimCommands. This also involved a few function name and argument changes, affecting smoldyn.c, smollib.c, smollib.h, smollib2.c, and smollib2.h.
@@ -7338,13 +7338,13 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item When simulation is paused using OpenGL, the simulation time at which it was paused is now displayed to the text window.
 \end{itemize}
 
-\subsection{Modifications for version 1.54 (released 3/3/04)}
+\section{Modifications for version 1.54 (released 3/3/04)}
 \begin{itemize}
 \item Swapped order of commands and OpenGL drawing so that commands are executed before displaying results. Also wrote section 3.2 of the documentation to discuss this ordering and other timing issues.
 \item Wrote documentation section 3.3 on surface effects on reaction rates and added the reactW set of test files.
 \end{itemize}
 
-\subsection{Modifications for version 1.55 (released 8/20/04)}
+\section{Modifications for version 1.55 (released 8/20/04)}
 \begin{itemize}
 \item Improved graphics manipulations and added ability to save image as a TIFF file. This is not documented yet.
 \item Made a few tiny changes in random.c and string2.h and .c.
@@ -7352,7 +7352,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added error strings to commands as well as the macro statement \ttt{SCMDCHECK}.
 \end{itemize}
 
-\subsection{Modifications for version 1.56 (released 1/14/05)}
+\section{Modifications for version 1.56 (released 1/14/05)}
 \begin{itemize}
 \item Made lots of changes in opengl2.c.
 \item \ttt{\#include} files for gl.h and glut.h now use brackets rather than quotes.
@@ -7364,12 +7364,12 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item User and programmer parts of documentation were split to separate files.
 \end{itemize}
 
-\subsection{Modifications for version 1.57 (released 2/17/05)}
+\section{Modifications for version 1.57 (released 2/17/05)}
 \begin{itemize}
 \item Added command \ttt{setrateint}.
 \end{itemize}
 
-\subsection{Modifications for version 1.58 (released 7/22/05)}
+\section{Modifications for version 1.58 (released 7/22/05)}
 \begin{itemize}
 \item Fixed 2-D graphics so they a border is now shown again around the simulation volume.
 \item Added runtime commands \ttt{replacevolmol} and \ttt{volumesource}.
@@ -7377,17 +7377,17 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added position ranges to \ttt{mol} command.
 \end{itemize}
 
-\subsection{Modifications for version 1.59 (released 8/26/05)}
+\section{Modifications for version 1.59 (released 8/26/05)}
 \begin{itemize}
 \item Random number seed is now stored and is displayed before a simulation starts.
 \end{itemize}
 
-\subsection{Modifications for version 1.60 (not released, but given to Karen 9/30/05)}
+\section{Modifications for version 1.60 (not released, but given to Karen 9/30/05)}
 \begin{itemize}
 \item Fixed a small bug in \ttt{checkparams}.
 \end{itemize}
 
-\subsection{Modifications for version 1.70 (released 5/17/06)}
+\section{Modifications for version 1.70 (released 5/17/06)}
 \begin{itemize}
 \item Added reflective, absorbing, and transparent surfaces for 1 to 3 dimensions with panel shapes that can be: rectangle, triangle, and sphere.
 \item Geometry.c and its header Geometry.h are new libraries that are used.
@@ -7399,7 +7399,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added pointers to the live molecule lists called \ttt{topl} (and renamed \ttt{top} to \ttt{topd}), which will differentiate old molecules from the new ``reborn" ones. This is important for treating surfaces after reactions.
 \end{itemize}
 
-\subsection{Modifications for version 1.71 (released 12/8/06)}
+\section{Modifications for version 1.71 (released 12/8/06)}
 \begin{itemize}
 \item Added \ttt{glutInit} call to \ttt{main} function in smoldyn.c.
 \item Changed OpenGL drawing slightly for surfaces, so now 3D surface colors are always the same on the front and back, but can also be semi-transparent, although with OpenGL errors.
@@ -7416,7 +7416,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Tried to stop diffusing molecules from leaking across reflective surfaces.
 \end{itemize}
 
-\subsection{Modifications for version 1.72 (released 2/26/07)}
+\section{Modifications for version 1.72 (released 2/26/07)}
 \begin{itemize}
 \item Finally got reflective surfaces to stop leaking diffusing molecules. This involved many changes in the surface code sections.
 \item Walls are no longer functional when any surfaces are defined, so new surfaces have to be defined to serve as system boundaries. Also, periodic surfaces are now possible.
@@ -7426,7 +7426,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Updated \ttt{savesim} command to accomodate surface changes.
 \end{itemize}
 
-\subsection{Modifications for version 1.73 (released 9/25/07)}
+\section{Modifications for version 1.73 (released 9/25/07)}
 \begin{itemize}
 \item Trivial bug fixed in \ttt{loadsurface}, fixed minor bug regarding periodic surfaces.
 \item Fixed significant bug regarding 2D triangle surfaces.
@@ -7440,7 +7440,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Improvements to Makefiles and improvement of compiling advice.
 \end{itemize}
 
-\subsection{Modifications for version 1.74 (released 10/22/07)}
+\section{Modifications for version 1.74 (released 10/22/07)}
 \begin{itemize}
 \item Coincident surfaces have defined behavior.
 \item New statement \ttt{boundaries} replaces \ttt{low\_wall} and \ttt{high\_wall} (but old ones still work).
@@ -7453,7 +7453,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Replaced the surface statements \ttt{action\_front}, \ttt{action\_back}, and \ttt{action\_both} with \ttt{action}; \ttt{color\_front}, \ttt{color\_back}, and \ttt{color\_both} with \ttt{color}; and \ttt{polygon\_front}, \ttt{polygon\_back}, and \ttt{polygon\_both} with \ttt{polygon}.
 \end{itemize}
 
-\subsection{Modifications for version 1.75 (released 11/6/07)}
+\section{Modifications for version 1.75 (released 11/6/07)}
 \begin{itemize}
 \item Added surface-bound molecules. This has involved changes in the molecule superstructure, surface structures, panel structures, and other structures, changes in the graphics to display these states, new input statements (\ttt{surface\_mol}, \ttt{epsilon}, \ttt{action}, \ttt{neighbor}, changes to \ttt{color}, \ttt{display\_size}, \ttt{difc}, \ttt{surface rate}, \ttt{surface rate\_internal}, reaction statements, and others), and a lot of new functions in the code. Nearly every function in smollib.c required at least some changes to account for this addition. Many additions have not been debugged yet.
 \item New library dependency: Sphere.c and Sphere.h.
@@ -7468,7 +7468,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Starting adding a user manual section to the documentation.
 \end{itemize}
 
-\subsection{Modifications for version 1.76 (released 11/7/07)}
+\section{Modifications for version 1.76 (released 11/7/07)}
 \begin{itemize}
 \item Split smollib.c and smollib.h source code files into smolload.c, smolrun.c, and their headers. Also, moved some functions from smoldyn.c into the libraries.
 \item Renamed some functions.
@@ -7476,7 +7476,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Put most global variables into sim, but killed off the event counters.
 \end{itemize}
 
-\subsection{Modifications for version 1.77 (released 11/18/07)}
+\section{Modifications for version 1.77 (released 11/18/07)}
 \begin{itemize}
 \item Overall, few changes that affect users.
 \item Made it so surfaces outside of the simulation volume are checked, just like those within the volume. This fixes errors that can occur.
@@ -7485,7 +7485,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Made most files in smolrun.c so that they can operate on either complete molecule lists or only those that are in single boxes. This may help for parallelization.
 \end{itemize}
 
-\subsection{Modifications for version 1.78 (released 11/29/07)}
+\section{Modifications for version 1.78 (released 11/29/07)}
 \begin{itemize}
 \item Minor changes with graphics.
 \item Changed the \ttt{overwrite} and \ttt{incrementfile} commands so that they no longer run a second command.
@@ -7505,7 +7505,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added command \ttt{molcountinbox}.
 \end{itemize}
 
-\subsection{Modifications for version 1.79 (released 12/6/07)}
+\section{Modifications for version 1.79 (released 12/6/07)}
 \begin{itemize}
 \item Fixed several bugs in \ttt{scmdexecute}. Commands no longer execute repeatedly after the simulation is finished.
 \item (Several of the following corrections were suggested by Kevin Neff; thanks!)
@@ -7521,7 +7521,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Changed the program license from ``permission is granted for non-commercial use and modification of the code" to LGPL.
 \end{itemize}
 
-\subsection{Modifications for version 1.80 (released 12/22/07)}
+\section{Modifications for version 1.80 (released 12/22/07)}
 \begin{itemize}
 \item Changed the exiting code some so `Q' quits the program.
 \item Commands that don't work now print errors only once and aren't repeated.
@@ -7534,7 +7534,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added basic molecule porting for supporting MOOSE, with a new ``port" surface action. Currently, this is more of a hack than a proper addition. New functions include \ttt{molgetexport} and \ttt{molputimport}, as well as \ttt{mollistnum}, \ttt{moldummyporter}, and \ttt{getnextmol}. Also, there is an \ttt{nlist} element in molecule superstructures, the number of live lists was expanded from 2 to 3, and there is a \ttt{list} element in molecules. \ttt{molsort} required some changes, as did various other functions.
 \end{itemize}
 
-\subsection{Modifications for version 1.81 (released 1/22/08)}
+\section{Modifications for version 1.81 (released 1/22/08)}
 \begin{itemize}
 \item Changed developing environments from Macintosh Codewarrior to Macintosh gcc with XCode as an editor.
 \item Restructured code from smolload.c, smolrun.c, and smollib2.c libraries, to smolmolec.c, smolsurface.c, smolboxes.c, smolgraphics.c and others. All headers are now in smoldyn.h.
@@ -7552,14 +7552,14 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Lots of work went into part I of the documentation, along with many new and improved example files.
 \end{itemize}
 
-\subsection{Modifications for version 1.82 (released 2/28/08)}
+\section{Modifications for version 1.82 (released 2/28/08)}
 \begin{itemize}
 \item Changed \ttt{readmolname} so now a name without a state implies \ttt{MSsoln} rather than \ttt{MSall}, as it was before.
 \item Fixed \ttt{bireact} and \ttt{unireact} so that now molecule identities are checked before reactions are performed to make sure that they didn't just get killed off in a prior reaction.
 \item Reactions were overhauled with all new configuration file commands, new data structures, a lot of new functions, new diagnostics output, changes in every function in smolreact.c, improved example configuration files, and updated text in the user manual. A bug was fixed in which reaction permissions did not always correspond to those that were entered. Another bug was fixed in which reaction products frequently escaped the simulation volume.
 \end{itemize}
 
-\subsection{Modifications for version 1.83 (released 3/14/08)}
+\section{Modifications for version 1.83 (released 3/14/08)}
 \begin{itemize}
 \item Fixed minor bug with allosteric reactions.
 \item Changed order 1 reaction probabilities so that multiple reaction pathways now simulate with the correct rates (example file is unireactn.txt).
@@ -7570,7 +7570,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added drift to molecular motions.
 \end{itemize}
 
-\subsection{Modifications for version 1.84 (released 4/11/08)}
+\section{Modifications for version 1.84 (released 4/11/08)}
 \begin{itemize}
 \item Fixed a very minor bug in \ttt{line2nextbox} function.
 \item Added \ttt{-o} command line option
@@ -7584,7 +7584,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added order 0 and order 1 compartment reactions.
 \end{itemize}
 
-\subsection{Modifications for version 1.85 (released 6/3/08)}
+\section{Modifications for version 1.85 (released 6/3/08)}
 \begin{itemize}
 \item Changed command execution timing for `x' type commands so that they do not execute any more often than the simulation time step.
 \item Added command \ttt{molcountspace}.
@@ -7603,7 +7603,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Renamed allosteric reactions to conformational spread reactions. This included changes in smoldyn.h, smolreact.c, and the documentation.
 \end{itemize}
 
-\subsection{Modifications for version 1.86 (released 11/17/08)}
+\section{Modifications for version 1.86 (released 11/17/08)}
 \begin{itemize}
 \item Small progress on implementing accurate adsorption algorithms.
 \item Added display size checking for molecules.
@@ -7615,13 +7615,13 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Fixed a bug in which molecules that were created only through commands did not interact with surfaces.
 \end{itemize}
 
-\subsection{Modifications for version 1.87 (released 12/7/08)}
+\section{Modifications for version 1.87 (released 12/7/08)}
 \begin{itemize}
 \item Fixed a minor bug in line parsing.
 \item Vastly improved the wrl2smol utility program.
 \end{itemize}
 
-\subsection{Modifications for version 1.88 (released 1/16/09)}
+\section{Modifications for version 1.88 (released 1/16/09)}
 \begin{itemize}
 \item Added accurate adsorption, desorption, and partial transmission algorithms.
 \item Added commands \ttt{fixmolcount} and \ttt{fixmolcountonsurf}, \ttt{molcountheader}.
@@ -7635,7 +7635,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added compartment definitions that logically combine other compartments.
 \end{itemize}
 
-\subsection{Modifications for version 1.89 (released 2/11/09)}
+\section{Modifications for version 1.89 (released 2/11/09)}
 \begin{itemize}
 \item Wrote documentation for ``simulation settings" and started documentation for ``network generation".
 \item Added some code for libMoleculizer linking. This is very preliminary.
@@ -7650,13 +7650,13 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added ``bounce" reaction product placement option. Molecules can now have excluded volume.
 \end{itemize}
 
-\subsection{Modifications for version 2.00 (released 2/17/09)}
+\section{Modifications for version 2.00 (released 2/17/09)}
 \begin{itemize}
 \item Fixed a trivial bug so that the \ttt{time\_start} statement now sets both the start time and the current time.
 \item Updated the version number to 2.00 to reflect the fact that all aspects of simulations with surfaces are now complete, as are a tremendous number of other improvements.
 \end{itemize}
 
-\subsection{Modifications for version 2.01 (released 3/3/09)}
+\section{Modifications for version 2.01 (released 3/3/09)}
 \begin{itemize}
 \item Fixed a bug with compartment volume calculations, and improved compartment setup. Renamed \ttt{compartaddbox} to \ttt{compartupdatebox}, and largely rewrote it.
 \item Fixed a bug in SurfaceParam.c regarding rate calculation for reversible transmission.
@@ -7667,7 +7667,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Substantially revised and improved surface diffusion. Checked all 2-D and 3-D panel shapes for basic functionality.
 \end{itemize}
 
-\subsection{Modifications for version 2.02 (released 5/5/09)}
+\section{Modifications for version 2.02 (released 5/5/09)}
 \begin{itemize}
 \item Changed \ttt{molcount} function so that it now works for unsorted molecule lists as well as for sorted molecule lists. This will affect most molecule counting commands.
 \item Some code modularization so that most statements in \ttt{simreadstring} now work through functions rather than directly. More work is needed for \ttt{surfreadstring}, in particular. Also, decreased dependence of modules on each other.
@@ -7677,21 +7677,21 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added command \ttt{meansqrdisp2}.
 \end{itemize}
 
-\subsection{Modifications for version 2.03 (released 5/22/09)}
+\section{Modifications for version 2.03 (released 5/22/09)}
 \begin{itemize}
 \item Changed build system from a simple makefile to the GNU Autoconf/Automake system. This works for many systems but not all.
 \item Added parallel operation using pthreads. This seems to work well, but doesn't actually lead to much speed up.
 \item Added support for libMoleculizer, which includes a lot of new code.
 \end{itemize}
 
-\subsection{Modifications for version 2.04 (released 6/27/09)}
+\section{Modifications for version 2.04 (released 6/27/09)}
 \begin{itemize}
 \item Lots of improvements to the same changes that were made for version 2.03. Now, all of these features appear to be stable and the build system appears to work for most Mac or Linux systems. However, some documentation is still lacking.
 \item Added boundary absorption for effective unbounded diffusion.
 \item Improved SurfaceParam.c some to remove all dependencies and to make it run a little faster.
 \end{itemize}
 
-\subsection{Modifications for version 2.05 (released 7/23/09)}
+\section{Modifications for version 2.05 (released 7/23/09)}
 \begin{itemize}
 \item Improved Smoldyn build system so that it now works for most Mac and Linux platforms.
 \item Some updates to the documentation, particularly in the compiling section.
@@ -7699,7 +7699,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Changed Smoldyn license from LGPL to GPL because of realization that large parts of the code could easily be used in proprietary software, which would hurt development of the Smoldyn project.
 \end{itemize}
 
-\subsection{Modifications for version 2.06 (released 11/6/09)}
+\section{Modifications for version 2.06 (released 11/6/09)}
 \begin{itemize}
 \item Lots of code cleanup, including formatting changes, removal of unused variables, adding function declarations, etc.
 \item Subversion site cleanup, with removal of unimportant files.
@@ -7715,7 +7715,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item New release shell script.
 \end{itemize}
 
-\subsection{Modifications for version 2.07 (released 11/17/09)}
+\section{Modifications for version 2.07 (released 11/17/09)}
 \begin{itemize}
 \item Trivial updates to \ttt{surface\_mol} and \ttt{compartment\_mol} (to support 0 molecules)
 \item Fixed a bug in \ttt{molexpandlist}.
@@ -7729,13 +7729,13 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Fixed a minor bug with \ttt{neighbor\_dist} statement.
 \end{itemize}
 
-\subsection{Modifications for version 2.08 (unofficially released 11/20/09)}
+\section{Modifications for version 2.08 (unofficially released 11/20/09)}
 \begin{itemize}
 \item Fixed a bug for reactions between 2 surface-bound molecules, where the destination panel was sometimes wrong.
 \item Cleaned up release files some.
 \end{itemize}
 
-\subsection{Modifications for version 2.09 (released 1/6/10)}
+\section{Modifications for version 2.09 (released 1/6/10)}
 \begin{itemize}
 \item Nathan fixed ``make dist" build function.
 \item Fixed a small bug in wrl2smol, in which it didn't print out the input file name.
@@ -7750,7 +7750,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Fixed two minor bugs in opengl2.c that only applied to compiling without opengl support. Re-released 1/20/10.
 \end{itemize}
 
-\subsection{Modifications for version 2.10 (released 3/24/10)}
+\section{Modifications for version 2.10 (released 3/24/10)}
 \begin{itemize}
 \item Lots of work on libmoleculizer. Mostly rewrote smolmoleculizer.c file, and redid most of the Smoldyn moleculizer data structures. More work is needed though.
 \item Fixed a few minor bugs.
@@ -7758,12 +7758,12 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Moved text from the \ttt{INSTALL\_NOTES} file into the manual and killed the file.
 \end{itemize}
 
-\subsection{Modifications for version 2.11 (released 5/4/10)}
+\section{Modifications for version 2.11 (released 5/4/10)}
 \begin{itemize}
 \item Nathan added \ttt{-lglut} flag to standard configure for building.
 \end{itemize}
 
-\subsection{Modifications for version 2.12 (released 6/10/10)}
+\section{Modifications for version 2.12 (released 6/10/10)}
 \begin{itemize}
 \item Changed panel input so that a panel can be input multiple times and the new data will overwrite the old.
 \item Added commands \ttt{replacecmptmol} and \ttt{molcountincmpts}.
@@ -7771,7 +7771,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Changed \ttt{readmolname} to allow it to read empty molecules, and also updated the code where this function was called. Now, many commands allow ``empty" as a molecule species.
 \end{itemize}
 
-\subsection{Modifications for version 2.13 (released 7/15/10)}
+\section{Modifications for version 2.13 (released 7/15/10)}
 \begin{itemize}
 \item Fixed reaction output slightly, so that activation-limited reaction rate is displayed and binding radius is not displayed for order 1 reactions.
 \item Various bug fixes in smolmoleculizer.c.
@@ -7781,19 +7781,19 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Substantial libmoleculizer work. Nathan made generated species have complex-form names rather than mangled names and he improved Python error reporting. I improved diffusion coefficients for generated species, including several new Smoldyn statements. More work is needed though.
 \end{itemize}
 
-\subsection{Modifications for version 2.14 (released 7/18/10)}
+\section{Modifications for version 2.14 (released 7/18/10)}
 \begin{itemize}
 \item Fixed \ttt{\#ifdef} portion of queue.h so that it will compile on Windows correctly.
 \item Added default product placement parameter for continuation reactions.
 \end{itemize}
 
-\subsection{Modifications for version 2.15 (released 7/20/10)}
+\section{Modifications for version 2.15 (released 7/20/10)}
 \begin{itemize}
 \item Fixed bug that I just introduced for version 2.14 with default product placement parameter for continuation reactions.
 \item Fixed bug that didn't allow libmoleculizer to run.
 \end{itemize}
 
-\subsection{Modifications for version 2.16 (released 9/24/10)}
+\section{Modifications for version 2.16 (released 9/24/10)}
 \begin{itemize}
 \item Added statement \ttt{expand\_network}.
 \item Lots of work on libmoleculizer documenting and examples.
@@ -7801,18 +7801,18 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Fixed a bug in which desorbed molecules could escape being checked for surface crossings.
 \end{itemize}
 
-\subsection{Modifications for version 2.17 (released 11/19/10)}
+\section{Modifications for version 2.17 (released 11/19/10)}
 \begin{itemize}
 \item Added compile flag \ttt{-lGLU} to configure.ac file, which seems to be necessary for Ubuntu systems.
 \item In SurfaceParam.c, \ttt{surfaceprob} function, \ttt{SPArevTrans} algorithm section, replaced \lstinline{exp(2*c1*c1)*erfcdD(SQRT2*c1)} with \lstinline{experfcD(SQRT2*c1)} to expand the input domain.
 \end{itemize}
 
-\subsection{Modifications for version 2.18 (released 1/6/11)}
+\section{Modifications for version 2.18 (released 1/6/11)}
 \begin{itemize}
 \item Fixed a small bug in \ttt{molchangeident} function. Before, panel data was retained for molecules that desorbed to \ttt{MSbsoln}, whereas it should not have been.
 \end{itemize}
 
-\subsection{Modifications for version 2.19 (released 2/11/11)}
+\section{Modifications for version 2.19 (released 2/11/11)}
 \begin{itemize}
 \item Converted programmer's documentation from Word to LaTeX.
 \item Changed build configuring so that Libmoleculizer is now disabled by default, but can be enabled using the flag \ttt{--enable-libmoleculizer}. Before, it was enabled by default, but could be disabled.
@@ -7832,7 +7832,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added ``--define" option for command line.
 \end{itemize}
 
-\subsection{Modifications for version 2.20 (released 3/4/11)}
+\section{Modifications for version 2.20 (released 3/4/11)}
 \begin{itemize}
 \item Fixed bug which causes crashes if species change at surface was to ``empty".
 \item Fixed a major bug, which caused Smoldyn to crash if it was compiled without threading support (this included the Windows version).
@@ -7841,7 +7841,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added display\_define statement.
 \end{itemize}
 
-\subsection{Modifications for version 2.21 (released 3/11/11)}
+\section{Modifications for version 2.21 (released 3/11/11)}
 \begin{itemize}
 \item Fixed bugs in Geometry.c for nearest triangle column and nearest triangle points.
 \item Trivial change to opengl2.c, so that it now displays the file name as the window name.
@@ -7852,13 +7852,13 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Improved SmolCrowd user interface.
 \end{itemize}
 
-\subsection{Modifications for version 2.22 (released 3/22/11)}
+\section{Modifications for version 2.22 (released 3/22/11)}
 \begin{itemize}
 \item Fixed a trivial mistake in opengl2.c that I created in version 2.21 that arose when compiling without opengl.
 \item Worked on shared library compilation and hand-coded makefiles. Added libsmoldyn.c and libsmoldyn.h to the Smoldyn source and added the libsmoldyn directory to the Subversion site and distribution.
 \end{itemize}
 
-\subsection{Modifications for version 2.23 (released 6/24/11)}
+\section{Modifications for version 2.23 (released 6/24/11)}
 \begin{itemize}
 \item Wrote most of libsmoldyn.h and libsmoldyn.c.
 \item Improved modularization and dynamic memory allocation for compartments.
@@ -7883,7 +7883,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added a margin to each panel, so that diffusing surface-bound molecules that need to get moved back to panels that they diffused off of (or onto neighboring panels) no longer get moved to the exact panel edge, but to distance margin inside of the panel edge. Adding this involved adding a margin element to the surface superstructure, adding a margin statement, adding the \ttt{surfsetmargin} function, and adding margin parameters to \ttt{movept2panel} and \ttt{movemol2closepanel}.
 \end{itemize}
 
-\subsection{Modifications for version 2.24 (released 7/27/11)}
+\section{Modifications for version 2.24 (released 7/27/11)}
 \begin{itemize}
 \item Modularized graphics input, so all assignments are now made in smolgraphics functions rather than directly in \ttt{simreadstring}.
 \item Added basic graphics support to libsmoldyn.
@@ -7905,13 +7905,13 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Got SWIG working for Python, although more work is needed in AutoTools stuff for SWIG code.
 \end{itemize}
 
-\subsection{Modifications for version 2.25 (released 9/26/11)}
+\section{Modifications for version 2.25 (released 9/26/11)}
 \begin{itemize}
 \item In configure.ac file, line 278, swapped sequence of a couple of lines. For version 2.24, the 3 lines starting with \ttt{"\# This is probably redundant"} were first and then the 2 lines starting with \ttt{OPENGL\_CFLAGS}. I swapped this sequence. See e-mail 9/13 with Pascal Bochet regarding compiling on Ubuntu. Apparently, this change did not fix his problem, but instead he added ``LIBS="-lglut -lGLU"" to his ./configure line and that worked.
 \item Added functions \ttt{surfexpandmaxspecies} and \ttt{rxnexpandmaxspecies}, and also edited \ttt{molenablemols} and \ttt{rxnssalloc}. This should fix bugs that arose when users added species without allocating memory using max\_species.
 \end{itemize}
 
-\subsection{Modifications for version 2.26 (released 3/2/12)}
+\section{Modifications for version 2.26 (released 3/2/12)}
 \begin{itemize}
 \item Added some support for species name entry using enhanced wildcards. This included new matching functions in string2.c, a logic expansion function in string2.c, the function \ttt{molwildcardname}, additions to many parameter setting functions, and additions to \ttt{molcount}. Support is fairly limited so far, and needs to be added to lots of commands and reactions.
 \item Added \ttt{simfuncfree} function.
@@ -7920,7 +7920,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Fixed a minor bug with define statement in which recursive defines sometimes got overlooked.
 \end{itemize}
 
-\subsection{Modifications for version 2.27 (released 7/26/12)}
+\section{Modifications for version 2.27 (released 7/26/12)}
 \begin{itemize}
 \item Merging in VCell changes.
 \item VCell people are now accessing Smoldyn code from hedgehog.fhcrc.org server. They used my user name on 4/10/12 but should be using their own user names from 4/11/12 onwards.
@@ -7943,15 +7943,19 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added a separate VCell main
 \item Added a little stuff to sim struct.
 \item In retrospect, this release was okay, but the build system was far from adequate. It did not cross-compile for Windows and the compiled version did not work on Mac OS 10.5.
+\end{itemize}
 
-\subsection{Modifications for version 2.28 (released 8/28/12)}
+\section{Modifications for version 2.28 (released 8/28/12)}
+\begin{itemize}
 \item Fixed a bug in \ttt{morebireact}, in smolreact.c, where molecule positions were moved to account for periodic boundary wrapping, but the \ttt{posoffset} element was not updated.
 \item Added \ttt{listmols4} command.
 \item Improved the build system. Now, zlib is not a standard dependency.
 \item product\_placement can now be entered multiple times.
 \item Commands no longer output using fprintf, but now use scmdfprintf. This enables output using user-chosen precision. It will also be useful for output from simulations to libsmoldyn, but that hasn't been added yet. Because of this change, there is a whitespace change in essentially all text output files. As a result, the regression tests show that all files differ from version 2.27 to version 2.28. However, I went through the files and verified that there are no other changes.
+\end{itemize}
 
-\subsection{Modifications for version 2.29 (released 4/10/13)}
+\section{Modifications for version 2.29 (released 4/10/13)}
+\begin{itemize}
 \item Fixed a minor bug in \ttt{molismobile}, in smolmol.c, which caused bugs for some species with surface drifts.
 \item Surrounded most VCell code with conditional compiling statements, so it's no longer part of standard Smoldyn builds. The reason was primarily so Libsmoldyn could be C compatible.
 \item Various minor Libsmoldyn fixes (smolAddReaction was missing a check on product states, changed default throwing threshold and debug mode behaviors, and added call to checksimparams to smolDisplaySim).
@@ -7961,8 +7965,10 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added command called executiontime.
 \item Renamed rand\_seed statement to random\_seed, but left it backward compatible.
 \item Added extern "C" stuff to libsmoldyn.h.
+\end{itemize}
 
-\subsection{Modifications for version 2.30 (released 8/21/13)}
+\section{Modifications for version 2.30 (released 8/21/13)}
+\begin{itemize}
 \item Fixed a bug in \ttt{Geo\_Cyl2Rect}, in the Geometry library. It was causing leaking surfaces.
 \item Added function \ttt{checksurfaces1mol}, for checking surfaces after a molecule hits a port. This also required minor changes in \ttt{molchangeident}, \ttt{molkill}, and \ttt{surfinteract}.
 \item Fixed a minor bug in \ttt{surfaddpanel} that didn't allow panels to be redefined.
@@ -7971,13 +7977,17 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added \ttt{ifchange} command.
 \item Added \ttt{residencetime} command.
 \item Changed license from GPL to LGPL to promote Smoldyn's use in other software. In particular, VCell can't use Smoldyn under the GPL license. Also, I think that NSF and other funding agencies prefer LGPL.
+\end{itemize}
 
-\subsection{Modifications for version 2.31 (released 9/9/13)}
+\section{Modifications for version 2.31 (released 9/9/13)}
+\begin{itemize}
 \item Added command called setreactionratemolcount.
 \item Added a line to rxnsetproduct that enables product setting even if the reverse reaction has rate 0.
 \item Modified command meansqrdisp3 so that it weights diffusion coefficients based on molecule lifetimes and also so it works with all states of a species.
+\end{itemize}
 
-\subsection{Modifications for version 2.32 (released 8/29/14)}
+\section{Modifications for version 2.32 (released 8/29/14)}
+\begin{itemize}
 \item Overhaul of wildcard support. This included work on the wildcard match and substitute functions in string2.c, addition of pattern data structure components in the sim->mols superstructure, addition of some pattern handling functions including \ttt{molstring2pattern}, \ttt{molpatternindex}, \ttt{molstring2index1}, and memory allocation functions for patterns and pattern lists, a rewrite of the \ttt{molcount} function, and implementation of wildcards in \ttt{simreadstring}. This task is not complete yet; see below in the wish/ to do list.
 \item Added lattice support by merging nsv branch into trunk. The following functions are new and some of these still require documentation: smolcmd.c: cmdwriteVTK, cmdprintLattice, edits to cmdmolcount, cmdmolcountspace, cmdsavesim; libsmoldyn.c: smolAddLattice, smolGetLatticeIndex, smolGetLatticeIndexNT, smolGetLatticeName, smolAddLatticeMolecules, smolAddLatticePort, smolAddLatticeSpecies, smolAddLatticeReaction; smolport.c: portgetmols2, portputmols2; all of smollattice.c; smolsurface.c: checksurfaces1mol; smolgraphics.c: RenderMolecs.
 \item Documentation was partly updated but both doc1 and doc2 still require many updates.
@@ -7988,37 +7998,49 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Wrote and added SmoldynQuickGuide to the Smoldyn documentation collection.
 \item Fixed a minor bug that recorded periodic boundaries in boxes even when surfaces were defined. This led to surface leaking.
 \item Fixed a minor bug in which the ``keypress" command would cause crashes if the simulation was run without OpenGL support.
+\end{itemize}
 
-\subsection{Modifications for version 2.33 (released 10/9/14)}
+\section{Modifications for version 2.33 (released 10/9/14)}
+\begin{itemize}
 \item Fixed a minor but important bug in changemolident.
 \item Made input names UK English compatible.
 \item Fixed typos in the QuickGuide.
 \item Updated all example files, so they no longer use reaction blocks and they don't use static memory allocation with max\_ statements.
 \item Fixed a bug in which desorbed molecules could cross surfaces without detection.
 \item Added cmdtrackmol function.
+\end{itemize}
 
-\subsection{Modifications for version 2.34 (released 1/8/15)}
+\section{Modifications for version 2.34 (released 1/8/15)}
+\begin{itemize}
 \item Nearly complete BNG conversion code.
 \item Added lattice code to default (pre-compiled) distribution.
 \item Fixed several small bugs.
 \item Changed lattice code so that molecules from continuous space to lattice space only get placed into first subvolume. This leads to more accurate diffusion results.
+\end{itemize}
 
-\subsection{Modifications for version 2.35 (released 4/23/15)}
+\section{Modifications for version 2.35 (released 4/23/15)}
+\begin{itemize}
 \item Fixed substantial bugs in \ttt{rxnsetrate} and \ttt{rxncalcrate}, in smolreact.c. The bug was that unimolecular reactions that had multiple reaction channels (e.g. A $\rightarrow$ B and A $\rightarrow$ C) computed the conditional probability (the probability of reaction given that the prior reactions did not happen) for the second and subsequent reactions incorrectly. This was only a problem with relatively high reaction probabilities.
+\end{itemize}
 
-\subsection{Modifications for version 2.36 (released 6/9/15)}
+\section{Modifications for version 2.36 (released 6/9/15)}
+\begin{itemize}
 \item Fixed a bug in \ttt{doreact} in which bounce reactions did not work when both reactants had exactly the same locations.
 \item Changed the default graphic iteration value from 1 to 20.
 \item All output commands now flush the output buffer after the command is done.
+\end{itemize}
 
-\subsection{Modifications for version 2.37 (released 10/7/15)}
+\section{Modifications for version 2.37 (released 10/7/15)}
+\begin{itemize}
 \item Fixed a bug in parse.c in which global definitions weren't being passed to upstream files.
 \item Added a check at the cmd statement to make sure that simulation times have been entered.
 \item Fixed a bug in which surface-bound molecules diffused onto new panels incorrectly. This required quite a lot of work including many new functions in Geometry.c (all of the exit functions and several new triangle functions), a new function in Sphere.c (\ttt{Sph\_RotateVectWithNormals3D}), expansion of the panel \ttt{points} elements to include edge normals, and lots of work in smolsurface.c. This work included: a complete rewrite of \ttt{movemol2closepanel}, additions to \ttt{surfaddpanel}, \ttt{movept2panel}, \ttt{closestpanelpt}, and the new \ttt{lineexitpanel} and \ttt{paneledgenormal} functions. I think all bugs are fixed but if not, see debugging advice in \ttt{movemol2closepanel}. One result of this fix is that surface-bound molecules that diffuse onto a panel that has a jump action no longer jump when that happens. That feature was added for Hugo's work, but I'm removing it at this point because I think there are better ways of accomplishing the same thing.
 \item Added reaction\_serialnum statement and implemented it. This involved a small amount of code, mostly in smolreact.c.
 \item Added reaction\_log and reaction\_log\_off statements and implemented them. This mostly involved a fairly small amount of code in smolreact.c. Also, I started a new library file called List.c for this. This addition, and the reaction\_serialnum addition, should make it much easier to do particle tracking simulations.
+\end{itemize}
 
-\subsection{Modifications for version 2.38 (released 10/22/15)}
+\section{Modifications for version 2.38 (released 10/22/15)}
+\begin{itemize}
 \item Added line to cmake file to enable building for Macs with OS 10.5 or above.
 \item Changed boundaries statement to allow 'x', 'y' and 'z' inputs for dimension values. Same change to low\_wall, high\_wall, panel rectangle, and some commands.
 \item Added updategraphics command.
@@ -8039,16 +8061,20 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added intersurface reactions, including the reaction\_intersurface statement, the \ttt{RxnSetIntersurfaceRules} function, and implementation in \ttt{morebireact} and \ttt{doreact}.
 \item Fixed a minor bug in smollattice.c which arose when surface panel definitions were changed in version 2.37.
 \item Fixed bugs in \ttt{doreact} that caused surface-bound molecules in bounce type reactions to jump between surface panels. This was caused by incorrect setting of the new panel value.
+\end{itemize}
 
-\subsection{Modifications for version 2.39 (released 1/15/16)}
+\section{Modifications for version 2.39 (released 1/15/16)}
+\begin{itemize}
 \item Fixed a bug in \ttt{Geo\_NearestTrianglePt2}, which led to incorrect answers for points that were outside of the triangle. This fixed a bug that was detected in S7\_surfaces/surfacediffuse/simple3a.txt.
 \item Added \ttt{cmdmolcountspaceradial} function.
 \item Made several very minor modifications requested by VCell. Mostly, changed \#if OPTION\_VCELL to \#ifdef OPTION\_VCELL, but also changed use of NAN and INFINITY.
 \item Added a check to \ttt{surfupdatelists} so that the \ttt{SMLdiffuse} flag is not set if all molecule-surface actions are ``no" or ``transmit" and there are no other details of interest. In other words, this prevents surface checking if there are no surface actions to check for.
 \item Modified \ttt{reassignmolecs}, from smolboxes.c, to make it much faster. Before, if a molecule needed to move boxes, this searched through the current box's molecule list for the molecule, which it then removed. Now, the same routine is used if only reborn molecules are assigned but otherwise this clears all box molecule lists and assigns them from scratch. This is vastly faster if boxes have lots of molecules in them.
 \item Fixed minor bugs in \ttt{meansqrdisp}, \ttt{meansqrdisp2}, and \ttt{meansqrdisp3} which did not allow computations for all axes.
+\end{itemize}
 
-\subsection{Modifications for version 2.40 (released 3/22/16)}
+\section{Modifications for version 2.40 (released 3/22/16)}
+\begin{itemize}
 \item This is somewhat of a beta release, since a lot of things have changed and not all are documented or fully tested.
 \item BioNetGen support now works.
 \item Improved install for Mac slightly and Windows substantially.
@@ -8065,45 +8091,59 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added \ttt{molcountspacepolarangle} command.
 \item Fixed several bugs in surface-bound molecule diffusion.
 \item Started updating the user's manual, but there's much more to be done.
+\end{itemize}
 
-\subsection{Modifications for version 2.41 (released 4/8/16)}
+\section{Modifications for version 2.41 (released 4/8/16)}
+\begin{itemize}
 \item Fixed a trivial bug that caused crashes.
 \item Added a ``Getting Started'' chapter to the User's Manual and reformatted the whole manual.
 \item Added molecule-surface interactions for new species to the BioNetGen code.
 \item Fixed a bug in \ttt{molkill} calls in commands which prevented molecules from being killed.
 \item Added an improved bounce reaction algorithm, for ballistic reflection.
 \item Improved the Windows installation script. It might not work yet, but it's probably closer.
+\end{itemize}
 
-\subsection{Modifications for version 2.42 (released 4/29/16)}
+\section{Modifications for version 2.42 (released 4/29/16)}
+\begin{itemize}
 \item Added command for radial distribution function, also including a \ttt{boxscan} function.
 \item Fixed bugs in excluded volume reacions, so they now work with periodic boundaries and have been thoroughly validated.
 \item Modified all listmols commands so that they now output molecule serial numbers. This causes all of the regression tests to report a different behavior, but that's because of the expanded output, not different simulation results.
+\end{itemize}
 
-\subsection{Modifications for version 2.43 (released 5/18/16)}
+\section{Modifications for version 2.43 (released 5/18/16)}
+\begin{itemize}
 \item Renamed Smoldyn\_doc1 to SmoldynUsersManual, and split Smoldyn\_doc2 to SmoldynCodeDoc and LibsmoldynManual.
 \item Fixed excessive include files for Libsmoldyn. Also fixed some bugs in Libsmoldyn. It now works for the test files.
 \item Added gaussiansource and molcountspace2d commands.
+\end{itemize}
 
-\subsection{Modifications for version 2.44 (released 6/27/16)}
+\section{Modifications for version 2.44 (released 6/27/16)}
+\begin{itemize}
 \item Added reversible reaction definitions. In the process, moved reaction parsing to the new function \ttt{rxnparsereaction} and added function \ttt{molreversepattern}.
 \item Fixed release.sh slightly so that freeglut.dll is included in the windows release.
+\end{itemize}
 
-\subsection{Modifications for version 2.45 (released 7/15/16)}
+\section{Modifications for version 2.45 (released 7/15/16)}
+\begin{itemize}
 \item Fixed bugs in equilmol and modulatemol where they returned the wrong probabilities. These were caused by the change to using molscan in version 2.40.
 \item Fixed minor bug in molreversepattern that causing compiling errors on Red Hat Linux.
 \item Renumbered User Manual chapters to re-align them with the example file directories.
 \item Fixed a bug in strmatheval that read \verb|2^-3| as a binary - sign when it should be a unary - sign.
 \item Fixed a bug in nsv\_print in which it could only print to a fixed size buffer. It now allocates the buffer as needed.
 \item Added some checks to the lattice code to ensure that lattices have an integer number of compartments on each axis, that ports are at compartment boundaries, and that there is at least one compartment on either side of the port.
+\end{itemize}
 
-\subsection{Modifications for version 2.46 (released 7/30/16)}
+\section{Modifications for version 2.46 (released 7/30/16)}
+\begin{itemize}
 \item Added section S94\_archive to the examples files. It currently has files for my 2016 Bioinformatics paper.
 \item Added \ttt{multiplicity} element to the reaction structure and implemented it. As part of this, added a ``reaction\_multiplicity'' statement to the input format.
 \item Major overhaul of \ttt{molpatternindex}. As part of this, it now has 2 levels of updating.
 \item Overhaul of \ttt{RxnTestExist}.
 \item On-the-fly wildcard expansion is now truly on-the-fly so that it expands around individual species as they are populated rather than expanding one entire level at a time. Added several files to the regression tests that all agree with the BioNetGen expansion, making them validated models.
+\end{itemize}
 
-\subsection{Modifications for version 2.47 (released 8/30/16)}
+\section{Modifications for version 2.47 (released 8/30/16)}
+\begin{itemize}
 \item Added a new rules section to the code. This includes a rules portion of the data structure, the smolrules.c file, and functions in that file. In the process, I removed rules from the reaction superstructure. I also replaced the RxnAddRule and RxnExpandRules functions with RuleAddRule and RuleExpandRules functions. This is a cleaner design and should accomodate diffusion and other rule types.
 \item Added rules for molecule properties. These include for diffusion coefficients, diffusion matrices, drifts, surface drifts, molecule lists, display sizes, colors, surface actions, surface rates, and internal surface rates.
 \item Added a reaction template to the rule structure so now reaction modification statements, such as product\_placement, can write to this template. The relevent portions of the template are then copied over when the rule is expanded.
@@ -8114,43 +8154,59 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Updated a lot of commands so that if they request a species name and it doesn't exist, but there are reaction rules, then this isn't an error. Instead, an implicit assumption is made that the species will exist later on.
 \item Fixed bugs in reaction logging.
 \item Fixed a compiling bug in smolmolec.c in which const char* was being converted to char* in a strchr function.
+\end{itemize}
 
-\subsection{Modifications for version 2.48 (released 11/16/16)}
+\section{Modifications for version 2.48 (released 11/16/16)}
+\begin{itemize}
 \item Fixed a minor bug in \ttt{strmathsscanf}.
 \item Added several example files in archive directory for Bioinformatics and MMB papers.
 \item Fixed bug in \ttt{latticeaddmols}.
 \item Added requirement that `dim' has to be entered before reactions because not doing this causes crashes. It's likely required before other things, but I didn't modify others.
+\end{itemize}
 
-\subsection{Modifications for version 2.49 (released 2/17/17)}
+\section{Modifications for version 2.49 (released 2/17/17)}
+\begin{itemize}
 \item Fixed bugs in molcount and molcountspace commands that arose if lattice species didn't align with Smoldyn species.
 \item Made it an error to call the reaction\_log statement multiple times with the same reaction and different filenames. Previously, this was allowed and new filenames overwrote the old ones, but this behavior was confusing because it seemed as though there should be multiple output files.
 \item Wrote SmolEmulate, including 2D emulation code. This is not integrated into Smoldyn yet and is not ready for general release.
 \item Added \ttt{cmdtranslatecmpt} and \ttt{cmddiffusecmpt} commands. In the process, wrote several new functions for surface, panel, and compartment moving. Also, surfaces now have a list of their membrane-bound molecules.
 \item Added function parsing to string2.c, so Smoldyn now recognizes sqrt, sin, cosh, etc.
+\end{itemize}
 
-\subsection{Modifications for version 2.50 (released 2/27/17)}
+\section{Modifications for version 2.50 (released 2/27/17)}
+\begin{itemize}
 \item Added infrastructure for Smoldyn functions. This involved the command \ttt{cmdevaluate}, the functions \ttt{fnmolcount}, \ttt{molscanfn}, \ttt{loadsmolfunctions}, and others. Also renamed \ttt{molscan} to \ttt{molscancmd|}.
 \item Added \ttt{oldpoint} and \ttt{oldfront} elements to surface panels. Now, when a panel is moved, the old location (oldpos) is stored in these old elements and the new ones are updated. Then, molecule adjustment is determined using the correct combination of old and new locations. Molecules still cross surfaces incorrectly if they get squeezed between a moving surface and a static surface (or two moving surfaces), but this is unavoidable. Several functions now include an \ttt{oldpos} input to see if the function should use the old or new panel positions.
 \item Added \ttt{if} command.
 \item Added \ttt{molcountonsurf} function.
 \item Added a molecule\ttt{touch} element that records each time the molecules were touched. It lets functions not recompute if the touch value is the same as it was during a prior call.
+\end{itemize}
 
-\subsection{Modifications for version 2.51 (released 3/15/17)}
+\section{Modifications for version 2.51 (released 3/15/17)}
+\begin{itemize}
 \item Fixed a bug in which surface-bound molecules could leak through another surface. The problem was that the surface-bound molecule code was designed with relatively large panels in mind, and is generally exact for those panels, when they are planar. However, small panels are more complicated. As a result, I added the \ttt{pnlx} element to the molecule structure to keep track of the prior panel. Also, I changed the reflection algorithm in \ttt{dosurfinteract} so now the back-up plan in the case that reflection does not place the molecule on the correct side of the reflecting panel is to put the molecule back where it started from. The prior back-up plan was to fix the molecule to the correct side of the reflecting surface, but this made the system extremely sensitive to any future molecule adjustments. I also added the \ttt{fixpt2panelnocross} function which fixes a point to a panel but doesn't cross any other panels in the process. The final result works well, but it is still conceivable to have molecule leaks in rare situations.... See Modifications for version 2.74.
+\end{itemize}
 
-\subsection{Modifications for version 2.52 (released 5/16/17)}
+\section{Modifications for version 2.52 (released 5/16/17)}
+\begin{itemize}
 \item Martin Robinson fixed a minor bug in smolcmd.c that had to do with the lattice code.
+\end{itemize}
 
-\subsection{Modifications for version 2.53 (released 5/25/17)}
+\section{Modifications for version 2.53 (released 5/25/17)}
+\begin{itemize}
 \item Fixed minor bugs in smolcmd.c that had to do with the lattice code. Part of the version 2.49 modifications was that I ``fixed bugs in molcount and molcountspace commands that arose if lattice species didn't align with Smoldyn species.'' However, I now think the code was correct originally (at version 2.48) and that these changes for version 2.49 were incorrect. Martin effectively reverted one of them in molcountspace for version 2.52. I just finished that reversion and also reverted the one in molcount. Now, that portion of the code is identical to how it was in 2.48 and it seems to run well. I still don't know what prompted me to make these changes in the first place.
 \item Documented some of the nsvc.cpp functions.
 \item In strloadmathfunctions, which is in string2.c, the code now assigns function pointers to variables before sending them off to strevalfunction. This provides the context that C++ compilers need to determine which address to choose for the functions because their names are overloaded.
+\end{itemize}
 
-\subsection{Modifications for version 2.54 (released 8/27/17)}
+\section{Modifications for version 2.54 (released 8/27/17)}
+\begin{itemize}
 \item Added a line to \ttt{molpatternindex} that sets the \ttt{PDrule} element of the \ttt{index} variable if update is requested, \ttt{index} already existed, and the element wasn't already set. The only thing this does is to prevent a bug warning in the output.
 \item Fixed two small bugs in lineXpanel for sphere and cylinder crossing checking. These failed if the two points were the same because then the geometry function returned NaN and then that failed the test. The solution was to move to negative logic so that NaN would have the correct result. These failure arose because I changed to fixpt2panelnocross and that checks for lines crossing panels, often with the same beginning and ending points. Added surfacedrift2 and 3 to the regression files because these were the ones that failed.
+\end{itemize}
 
-\subsection{Modifications for version 2.55 (released 7/16/18)}
+\section{Modifications for version 2.55 (released 7/16/18)}
+\begin{itemize}
 \item Added a `time' option to the \ttt{random\_seed} statement for setting the value to the current time.
 \item Added math functionality for command timing.
 \item Trivial improvement to wall output dimensions from numbers to letters.
@@ -8159,23 +8215,29 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item The Windows install wasn't working because the BioNetGen directory was called bin rather than BioNetGen. I think that's fixed by now.
 \item Added several lines of code to the adsorb section of dosurfinteract so that surface-bound molecules that adsorb onto a new surface end up on the correct side of the original surface, as well as on the correct side of the new surface. In particular, molecules starting in the up or down states end up equally distributed above and below the original surface.
 \item Largely rewrote \ttt{molsetlistlookup} so that it now sets the table for both \ttt{MSsoln} and \ttt{MSbsoln}. This change also required expanding the listlookup element slightly in the memory alloction function to allow for the \ttt{MSbsoln} option. The listlookup values are always set to the same lists for both solution phase options. As another part of this change, \ttt{molismobile} now allows for a \ttt{MSbsoln} input.
+\end{itemize}
 
-\subsection{Modifications for version 2.56 (released 9/18/18)}
+\section{Modifications for version 2.56 (released 9/18/18)}
+\begin{itemize}
 \item Fixed a bug that arose when the system was expanded and then some molecules were killed. System expansion triggered boxupdateparams which then removed molecules from boxes but didn't clear the mptr->box value and then boxremovemol crashed due to the molecule not being in the box. Fix involved allowing for molecule not in box in boxremovemol and not adding dead molecules to boxes in boxupdateparams. In the process, I discovered that molecule assignment may be done more often than necessary.
 \item Removed a call to molsort from cmdgaussiansource. I'm fairly certain it was unnecessary, and tests showed that it still worked without it.
 \item Lots of struggles with MinGW. The version at /usr/local/gcc-4.8.0-qt-4.8.4-for-mingw32/win32-gcc/bin/i586-mingw32-gcc didn't work. I got it with MacPorts but that didn't work either. Yet more versions also didn't work. I finally killed off all of them and tried fresh. Solved MinGW compiling but not with LibTiff, which remains to be solved. See the MinGW cross-compiling documentation section.
 \item The MinGW compiler is more strict and found several minor bugs. Fixed some of them, but there are still possible string overwrite and truncation issues that it complains about.
 \item Implemented most of lambda-rho algorithm. As part of this, I did a lot of work on the SmolEmulate utility, computed reaction rate lookup tables for non-unit reaction probabilities, debugged the numrxnrateprob and bindingradiusprob functions, and then updated all calls to numrxnrate and bindingradius to these probabilistic functions. These updated functions call the original functions in the usual case that the reaction probability is 1. The functions in rxnparam.c are generally good now, but still not quite perfect.
 \item An another part of lambda-rho, added the input file statement ``reaction\_chi'' and implemented it. This addition seems to work reasonably well, but Smoldyn isn't always able to align the simulated and requested reaction rates yet. In particular, it has trouble with the pgem, pgemmax, and pgemmaxw reverse parameters.
+\end{itemize}
 
-\subsection{Modifications for version 2.57 (released 3/21/19)}
+\section{Modifications for version 2.57 (released 3/21/19)}
+\begin{itemize}
 \item Moved Smoldyn source from the Fred Hutchinson Center's ``hedgehog'' subversion server to github, where it is called ``Smoldyn\_Official''.
 \item Fixed minor bugs in cmdwriteVTK that caused compiling errors when compiling with OPTION\_VTK turned on.
 \item Added support for scientific notation in string math parsing.
 \item Added option for species change upon surface action. Example is \ttt{s7\_surfaces/ReflectToNewSpecies.txt}.
 \item Major change with serial numbers to enable single molecule tracking where two molecules can bind together and retain both serial numbers and then dissociate and have their original serial numbers. Changed molecule serial numbers to \ttt{unsigned long long}, but left most other serial number values as \ttt{long int}.
+\end{itemize}
 
-\subsection{Modifications for version 2.58 (released 3/29/19)}
+\section{Modifications for version 2.58 (released 3/29/19)}
+\begin{itemize}
 \item Fixed minor bug in string2.c that caused loss of numerical precision when using \ttt{strmathsscanf}.
 \item Changed the serial number coding for single-molecule tracking some, which also had some effects on the user's input format.
 \item Fixed important bug in \ttt{molscancmd} which caused it to scan over some molecules twice in some cases. For example, if called from \ttt{cmdkillmolprob}, this would test molecules twice to see if they should be killed, leading to incorrect kill probabilities. The problem was that some commands change the \ttt{sortl} elements, making them bad things to assume aren't changing.
@@ -8183,30 +8245,40 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Re-released 4/2/19 with following changes:
 \item In CMakeLists.txt, I changed the minimum deployment for Mac from OS 10.5 to 10.9. This removed a compiling warning about libstdc++ being discontinued.
 \item Copied libstdc++-6.dll from /opt/local/x86\_64-w64-mingw32 to Smoldyn-official/windows. Also, edited the windows install.bat file so that this dll is copied when Smoldyn is installed. This will hopefully fix an error that Kevin Chen told me about.
+\end{itemize}
 
-\subsection{Modifications for version 2.59 (released 5/15/19)}
+\section{Modifications for version 2.59 (released 5/15/19)}
+\begin{itemize}
 \item Trivial changes to the code to remove compiler errors and warnings.
 \item Major effort to compile for Windows. I failed at getting cross-compiling working and actually made it worse by replacing a cross-compiler that worked for non-graphics Smoldyn to one that didn't work at all. Instead, I now compile by hand on a Windows computer. This still doesn't support LibTiff or NSV but at least it does work.
+\end{itemize}
 
-\subsection{Modifications for version 2.60 (released 6/7/19)}
+\section{Modifications for version 2.60 (released 6/7/19)}
+\begin{itemize}
 \item Further improvements on Windows support. This release now builds SmolCrowd and wrl2smol on a Windows computer. It also uses static linking so that dll files aren't needed. I also improved the Windows install script.
 \item Modified the BNG2\_path statement so that it now reads the entire line of text after the statement word rather than just the first word in the line, thus allowing for spaces in file names.
 \item Fixed a trivial bug for the ``stipple'' statement, which was trying to read hex code with the math parser.
+\end{itemize}
 
-\subsection{Modifications for version 2.61 (released 7/22/19)}
+\section{Modifications for version 2.61 (released 7/22/19)}
+\begin{itemize}
 \item Rewrote boxscansphere, which is called by the commands radialdistribution and radialdistribution2. This function only worked for systems that had their low corner of space at (0, 0, 0) and that used periodic boundaries. Now, it works for all systems.
 \item Fixed a very minor bug in \ttt{Geo\_CylisXaabb3}, in which the code didn't check for a zero denominator, although I don't think this actually affected results at all.
 \item When boxes determine what panels are in them, the edge boxes used to extend to $\pm$\ttt{MAX\_DBL}. However, this caused problems in some geometry functions, so I defined a new global variable called \ttt{VERYLARGE}, which I set to $10^{20}$, which is now effectively the edge of simulated space, at least for determining what panels are in what boxes.
+\end{itemize}
 
-\subsection{Modifications for version 2.62 (released 10/14/20)}
+\section{Modifications for version 2.62 (released 10/14/20)}
+\begin{itemize}
 \item Extended the pointsource, volumesource, and gaussiansource commands so that they now allow non-integer numbers of molecules to be requested. If a non-integer value is requested, these functions choose a Poisson-distributed random number of molecules.
 \item Windows version is now compiled with MSVC and includes support for hybrid simulation with NSV package and saving images with LibTiff.
 \item Added Python support, which was mostly Dilawar Singh's work. This includes the pybind11 library and new Python code. The pre-compiled Mac version now comes with a Python wheel. The Python wheel can also be downloaded from PyPI with pip. This also included substantial editing of the Libsmoldyn documentation.
 \item Substantial CMakeLists.txt clean-up, along with updates to the build system documentation.
 \item Cross-compiling from Mac to Windows with MinGW works again, but not with graphics, so this was used for the SmolCrowd and wrl2smol utilities, but not for Smoldyn.
 \item Dilawar added several things that I haven't addressed yet: Travis continuous integration, Doxygen, readthedocs website compatibility, and several scripts.
+\end{itemize}
 
-\subsection{Modifications for version 2.63 (released 12/15/20)}
+\section{Modifications for version 2.63 (released 12/15/20)}
+\begin{itemize}
 \item Documented Dilawar's work on Python bindings in code documentation and Libsmoldyn manual.
 \item Dilawar added test for \ttt{SMOLDYN\_NO\_PROMPT} environment variable, which is essentially the same as setting the \ttt{sim->quitatend} flag.
 \item I made lots of minor fixes in the Python bindings, including fixing the Python example files. Dilawar made more fixes and also added many more Python example files.
@@ -8220,8 +8292,10 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Fixed some bugs with \ttt{reassignmolecs} function. First of all, it's now called as the system is set up, before the simulation starts. Also, it now runs even if there is only 1 box, which is a little less efficient in rare cases, but more reliable.
 \item Tried to get freeglut to work, without success.
 \item Added Chapter 15 to user's manual on Python bindings.
+\end{itemize}
 
-\subsection{Modifications for version 2.64 (released 3/25/21)}
+\section{Modifications for version 2.64 (released 3/25/21)}
+\begin{itemize}
 \item Dilawar rewrote the documentation conversions, in the docs directory.
 \item Added \ttt{warnescapeecmpt} command.
 \item Fixed a minor bug in which reversible reactions that took place on surfaces led to an initial unbinding separation that didn't address surface crossing, which led to products leaking across the surface.
@@ -8229,8 +8303,10 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Merged the Libsmoldyn user's manual into the regular user's manual.
 \item Had problems with static libtiff for Mac, so downloaded a new version and put the compiled static library in Smoldyn/Mac.
 \item Minor change in CMakeLists.txt so that the version number could be input from the command line.
+\end{itemize}
 
-\subsection{Modifications for version 2.65 (released 5/18/21)}
+\section{Modifications for version 2.65 (released 5/18/21)}
+\begin{itemize}
 \item Dilawar moved some functionality from smoldyn.py to module.cpp, in order to support loading simulations from files using Python.
 \item Fixed several bugs that arose when displaying diagnostics with partially set up structures.
 \item Dilawar added a changelog.md file to the package.
@@ -8244,8 +8320,10 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Fixed \ttt{smolReadConfigString} so that it now works again, for both Libsmoldyn and the Python low-level interface.
 \item Added \ttt{smolSetSimFlags} and \ttt{smolRunCommand} functions to Libsmoldyn and also to the Python low-level interface.
 \item Fixed minor issues with \ttt{smolRunTimeStep} and commands, which were causing commands to not run after the first time step.
+\end{itemize}
 
-\subsection{Modifications for version 2.66 (released 6/18/21)}
+\section{Modifications for version 2.66 (released 6/18/21)}
+\begin{itemize}
 \item Substantial work on filaments. Some example files work, but several still don't.
 \item Dilawar fixed documentation formatting issues for the readthedocs site.
 \item Various additions for compatibility with Biosimulators.
@@ -8254,29 +8332,41 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Improved error reporting for Libsmoldyn \ttt{smolPrepareSimFromFile} and \ttt{smolLoadSimFromFile} functions.
 \item Added a test for Perl availability in bngrunBNGL, in smolbng.c.
 \item Added smolGetSpecies function to libsmoldyn. I haven't tested it yet.
+\end{itemize}
 
-\subsection{Modifications for version 2.67 (released 11/2/21)}
+\section{Modifications for version 2.67 (released 11/2/21)}
+\begin{itemize}
 \item Dilawar fixed a typo in the filament code.
 \item Fixed the \ttt{longrangeforce} command, where an index value could be off by one.
 \item Jonathan Karr and Dilawar updated the Biosimulators links.
+\end{itemize}
 
-\subsection{Modifications for version 2.68 (released 7/18/22)}
+\section{Modifications for version 2.68 (released 7/18/22)}
+\begin{itemize}
 \item Added \ttt{listmolssurf} command.
+\end{itemize}
 
-\subsection{Modifications for version 2.69 (released 10/17/22)}
+\section{Modifications for version 2.69 (released 10/17/22)}
+\begin{itemize}
 \item Fixed bug in which commands added mid-simulation were not added to the command queue.
 \item Fixed bug in the Python interface, in which commands with an `@' timing type weren't accepting an ``on'' time.
+\end{itemize}
 
-\subsection{Modifications for version 2.70 (released 10/24/22)}
+\section{Modifications for version 2.70 (released 10/24/22)}
+\begin{itemize}
 \item Fixed bug, or maybe just a lack of feature availablility, in libsmoldyn and Python interface in which reaction probabilities could not be set for bimolecular reactions.
+\end{itemize}
 
-\subsection{Modifications for version 2.71 (released 2/5/23)}
+\section{Modifications for version 2.71 (released 2/5/23)}
+\begin{itemize}
 \item Fixed bug in which graphics were being called from Python API even when they were turned off. This arose from \ttt{gl2glutInit} being called in Simulation.cpp \ttt{Simulation::runSim} for all cases; it's now called in smolgraphics.c \ttt{smolsimulategl} instead.
 \item Made it an error to enter command timing with either non-integer values for integer type commands, or to enter timing steps that are less than or equal to zero.
 \item Improved command timing so that all commands that execute at a particular time are performed with integer commands first, then float commands (unchanged from before) and also, within these lists, in the order that they are listed in the configuration file (new functionality).
 \item Added \ttt{translatemol} command. This involved several other changes. Added \ttt{molmovemol} function and also called this function from \ttt{longrangeforce} rather than moving molecules locally (in general, very few functions, including especially those in the commands, should be allowed to move molecules by themselves). Added \ttt{checkwalls1mol} for wall checking for a single molecule at a time. Moved \ttt{molchangeident} to a different region of the file. In string2.c, added a \ttt{const} declaration to both \ttt{strevalfunction} and \ttt{strmathevalint} and cleaned up the code slightly. Also, edited \ttt{strmatheval} so that the \ttt{expression} input isn't changed by this function and is now a \ttt{const}.
+\end{itemize}
 
-\subsection{Modifications for version 2.72 (released 8/17/23)}
+\section{Modifications for version 2.72 (released 8/17/23)}
+\begin{itemize}
 \item Made some minor modifications in smolgraphics.c. Tiff files were saving using the latest screen update, which occurs asynchronously, rather than at the requested time, which is now fixed. To do this, I added a \ttt{swapbuffers} input to \ttt{RenderSim} and also now draw the output without swapping buffers before recording tiff files. I also removed redundant system drawings by testing if it was just drawn, and then not bothering to redraw if unnecessary.
 \item Changed \ttt{molchangeident} to include a \ttt{crsspt} input parameter. This is used to rescale molecule motions in cases where the diffusion coefficient changes at a surface crossing.
 \item Improved \ttt{surfaceoutput} so that it displays more details about molecule-surface interactions, particularly with verbose output.
@@ -8298,15 +8388,19 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Fixed a bug in \ttt{Geo\_SphereReflectSphere} that caused problems with excluded volume reactions, using the ``bounce -2'' setting. This function implements the reflection method that I described in my 2017 paper. Previously, it was designed under the assumption that all collisions occur at the front of a molecule, meaning the direction that it's traveling toward. However, collisions can also occur at the back, which was leading to incorrect vector reflection. This is now fixed and has been validated some, but still needs additional validation.
 \item Merged an automated pull request that might fix dependabot alerts about out of date scipy.
 \item Removed \ttt{public std::unary\_function<type, type>} instances from tree\_iterator.hpp (part of NSV code) because this is deprecated.
+\end{itemize}
 
-\subsection{Modifications for version 2.73 (released 2/27/24)}
+\section{Modifications for version 2.73 (released 2/27/24)}
+\begin{itemize}
 \item Investigated diffusion coefficients in crowded systems. I now believe that the overlap method is better than the reflection method. This is discussed in the reactions chapter of the Smoldyn manual. I changed the default behavior to overlap method.
 \item Added a line to the CMake file. In the Python module section, edited a line to read \ttt{find\_package(Python3 3.10 EXACT COMPONENTS Interpreter Development REQUIRED)}, where the new portion is the Python 3.10 requirement. This prevents an error of \ttt{invalid command 'bdist\_wheel'} because it now uses the same Python version for everything. This was reverted afterward. The below \ttt{PYTHON\_VERSION} update fixes this problem.
 \item Edited Smoldyn/source/pybind11/tests/requirements.txt to simplify the file and hopefully stop warnings from the gitHub dependabot.
 \item Added \ttt{PYTHON\_VERSION} as an option to the build, with new code in the master CMakeLists.txt file. Using this fixes the problem of building for one Python version and running a different one.
 \item Fixed bug in cmdsetreactionratemolcount. It wasn't loading the species name correctly, leading to a non-functional command. I'm not sure why it wasn't caught earlier, but it wasn't.
+\end{itemize}
 
-\subsection{Modifications for version 2.74 (released 1/22/25)}
+\section{Modifications for version 2.74 (released 1/22/25)}
+\begin{itemize}
 \item Changed Mac install and uninstall scripts so that individual commands use sudo, but the whole script does not. This is important because sudo should not be used with pip.
 \item Lots of work on filaments, including changes to data structures, input syntax, examples, and most functions in smolfilament.c. Removed the biology enumeration because this is better handled with a standard library approach. Removed the \ttt{frontseg} element, which allowed filament segments to be stored in their array in a shifted position rather than up against the front end; this worked but had minimal benefit and added substantial complication. Filament dynamics now basically work in both 2D and 3D. Improved filament graphics.
 \item Improved code robustness when encountering input file parsing errors.
@@ -8316,8 +8410,10 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Fixed a few minor issues with lighting in smolgraphics.c, including mostly documentation.
 \item Added command \ttt{cmdprintFilament}, primarily for debugging purposes.
 \item Fixed a bug in the reflect portion of the \ttt{dosurfinteract} function. This runs the reflection with \ttt{surfacereflect}, moves the crossing point to the correct side of the panel, and then changes panels for surface-bound molecules if needed. For up to version 2.50, molecules were then automatically moved to the correct panel side, just in case they didn't reflect correctly. I changed this in version 2.51 (see the notes for that release), so that the code started checking whether molecules ended up on the correct side and then moved any failed molecules back to their starting points. This addressed problems that arose with the examples/ S95\_regressions/ surfacediffuse.txt file, which uses a large number of tiny surface panels. An undesirable side effect of this change occured for molecules inside spheres or cylinders (e.g. dumbell.txt), where a molecule that started inside the surface could cross the surface and be reflected but still end up outside due to a long diffusion step. The check caught the result and put the molecule back where it started from, thereby preventing any leaking but also leading to incorrect diffusion simulation. If the check hadn't existed, the molecule would have reflected a second time, which would have been the correct simulation method and still prevented leaks. However, simulation errors were minor enough that they weren't caught. In 1/2025, Fabian Ormersbach found a problem which I determined arose from molecules inside 2D cylinders simultaneously diffusing out of the cylinder and across a periodic boundary, and then the check here put these molecules back in their starting points but the \ttt{posoffset} parameter was not reset. The solution was to realize that the check is only needed for surface-bound molecules; the function also displays a warning when molecules are returned to prior locations. This modification changes the regression results for several files (dumbbell.txt, surf2.txt, surf3.txt) but everything appears to simulate correctly. Added regression file surfacesmsd.txt.
+\end{itemize}
 
-\subsection{Modifications for version 2.75 (released 7/30/25)}
+\section{Modifications for version 2.75 (released 7/30/25)}
+\begin{itemize}
 \item The functions \ttt{checksurfaces}, \ttt{checksurfaces1mol}, and \ttt{dosurfinteract} all have checks to make sure that molecules are being placed correctly, putting them back to their prior location if not. Downgraded these errors to warnings, increased thresholds from 50 to 100 failures, and added debugging output during verbose simulations. Found that the \ttt{checksurfaces} warning can trigger if a molecule starts just inside a concave surface and bounces right along the inside of the surface; this triggers a warning and the molecule is moved back, but is actually simulated correctly.
 \item Improved error messages and the manual for unbounded emitters. A user declared an emitter at the corner of a box of surfaces, and it was unclear why it didn't work correctly. It turned out that the unbounded emitter was supposed to be inside the box, not at the corner.
 \item Cleaned up filament code, including particularly the Euler, RK2, and RK4 integration functions.
@@ -8328,8 +8424,10 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added node mobility to the filament data structure and a new \ttt{node\_mobility} statement.
 \item Added command \ttt{cmdRotateFilamentToY}.
 \item Added and also renamed several filament example files.
+\end{itemize}
 
-\subsection{Modifications for version 2.76 (released 10/21/26)}
+\section{Modifications for version 2.76 (released 10/21/26)}
+\begin{itemize}
 \item Added test for coincident surface panels. This is a new test in \ttt{checksurfaceparams} and a new function \ttt{srfcoincidentpanels}, both in smolsurface.c. This only looks for panels that are identical to each other, including with a rotated point sequence or front/back flipped. It does not detect overlap in only one region of a panel, such as a pair of partially coincident rectangles.
 \item Fixed a minor bug in \ttt{strunits}, which created errors if units were used and commands included numbers; the problem was that default units only apply while a configuration file is being read, so there are no default units mid-simulation when a command is being parsed. As a result, Smoldyn couldn't convert the command values. Now, Smoldyn still can't convert values in commands, but this doesn't create an error.
 \item Implemented use of \ttt{strmatherror} for error reporting. Before, math errors were generated but never read. I created the \ttt{CHECKM} macro, which behaves the same as the \ttt{CHECKS} macro, except that it also checks for math errors and appends math error strings to the error outputs. It should be used after every call to \ttt{strmathsscanf}. I didn't create a new macro within smolcmd.c, but those calls to \ttt{strmathsscanf} also check for math errors now.
@@ -8345,6 +8443,10 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Used Claude to overhaul filaments. See docs/2026-10-12\_filament\_session\_summary.md. Renamed filament ends from front/back to plus/minus, renamed \ttt{branchspots} to \ttt{branchnodes}, allowed branches to attach by either end. Generalized endstates to allow open, capped, and shrink states, all of which apply to either end. Added support for filament removal.
 \item More Claude filament work. Supported filament networks that aren't just tree-shaped, but arbitrary web-shaped. In the process, created junction data structure. This also supports loop-shaped filaments.
 \item More Claude filament work. Overhauled the numerical filament integration to correct errors in implicit integration and implement the Gauss-Newton Jacobian in implicit integration rather than the finite difference code that I wrote. Also, improved torque integration with implicit integration. A major issue that I was unaware of is that there was coupling between geometric twist and roll values that created spurious torques; this was fixed. Added support for negative force constants to imply constrained parameters. With these updates, integration is supposed to be very good at this point and highly stable for implicit integration (I think that junctions are still effectively explicit, but everything else is implicit).
+\end{itemize}
+
+\section{Modifications for version 2.76 (not released yet)}
+\begin{itemize}
 \item New library dependency: Filaments.c and Filaments.h, with documentation in Filaments.tex. These compute equilibrium filament statistics, such as persistence lengths. Added the persistence length to the filament type output (\ttt{filtypeOutput}).
 \item Added \ttt{persistence\_length} and \ttt{persistence\_length\_twist} filament type statements, which set the bending and twisting force constants from persistence lengths, with new filament type elements \ttt{persist}, \ttt{persisttwist}, and \ttt{kpsiset}, and new function \ttt{filtypeApplyPersistence}. If only \ttt{persistence\_length} is entered, the torsional persistence length defaults to 3 times the persistence length. Added the torsional persistence length to \ttt{filtypeOutput}.
 \item Added the segment length standard deviation, $\sqrt{kT/k_{len}}$, to \ttt{filtypeOutput}, and the joint angle standard deviations, $\sqrt{kT/k}$, using new function \ttt{filAngleStdDevString}.
@@ -8356,7 +8458,6 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added an optional end state to the parts of \ttt{surface\_interaction}, entered in parentheses as in \ttt{plus(open)}, so that the interaction only applies to the listed ends while they are in that state. Added the \ttt{endstate} element to \ttt{filsurfinteractstruct}, an \ttt{endstate} argument to \ttt{filtypeAddSurfInteract}, and the function \ttt{filSurfInteractApplies}, which replaces the direct \ttt{filpart} tests.
 \item Added the ``branch'' surface interaction action, \ttt{FSAbranch}, with a distance (stored in \ttt{capdist}) and a branching rate (stored in \ttt{rate}), so that filament nodes within the distance of a surface branch at that rate. Split \ttt{filBranchAtNode} out of \ttt{filBranchDynamics}, without changing \ttt{branch\_rate} results, and added \ttt{filSurfBranchOn} and \ttt{filSurfBranchDynamics}. \ttt{branch\_min\_spacing} and reflect interactions apply to these branches too.
 \item Capped the exponential factor of the barbed end elongation rate at 2, so the rate is now \ttt{a*min(exp(-k*F),2)-b} and pulling forces can at most double $a$ (\ttt{filEndVelocity}).
-
 \end{itemize}
 
 

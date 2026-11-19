@@ -1,4 +1,6 @@
-# Growing filaments pushing against surfaces that carry different loads.
+# Growing filaments pushing against surface.
+# Includes filament-filament repulsion
+
 
 graphics opengl_good
 
@@ -7,7 +9,7 @@ boundaries x 0 100
 boundaries y 0 100
 
 time_start 0
-time_stop 150
+time_stop 100
 time_step 0.01
 random_seed 2
 boxsize 10
@@ -46,17 +48,16 @@ mobility 1
 branch_rate 0.005
 branch_min_spacing 5
 branch_angle 1
+end_state plus barbed
 #capping_rate 0.05
-elongation_rate 1
+elongation_rate plus barbed 1
 surface_interaction floor front all repel 20 2
 surface_interaction lid front all repel 20 2
-filament_interaction pusher1 softwall 100
+filament_interaction pusher1 softwall 20
 end_filament_type
 
 
 random_filament pusher1:a1 3   50 10  1.571
-#random_filament pusher1:a2 3   60 10  1.571
-filament pusher1:a1 end_state plus barbed
 
 cmd E applysurfaceforce lid 0 -5
 
