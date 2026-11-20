@@ -10,7 +10,7 @@ filament end's state, a surface interaction that causes branching, and an
 example of branching near a surface, commits of the user's own edits, a fix
 to the Implicit filament integrator, and a 3-D actin example.
 Everything below was committed and pushed to `master` on
-github.com/ssandrews/Smoldyn, in commits 33c376d through 2893df0.
+github.com/ssandrews/Smoldyn, in commits 33c376d through 68ae3f1.
 
 ## Working conventions used
 
@@ -437,9 +437,20 @@ near the lid at 0.425/s and capping at 0.35/s.
     1 ms step in this viscosity, so most steps need many substeps. A partial
     run reached 4 s of simulated time in about 25 minutes. Over that time,
     the lid rose 0.21 um and drifted sideways about 1 nm. Anchoring the minus
-    ends, a branch angle spring, and longer segments didn't help much. Claude
-    asked whether to trade realism for speed with a higher viscosity, a lower
-    mobility, or a shorter run, and the user hasn't answered.
+    ends, a branch angle spring, and longer segments didn't help much.
+- **Faster example (68ae3f1):** at the user's request, Claude raised the
+  viscosity from 0.25 to 250 zJ s/um^3, which is 1000 times the real value.
+  - Short test runs gave speedups of about 1.2x at 2.5, 4.7x at 25, and 24x
+    at 250.
+  - The full 20 s run at 250 took 4 minutes, with no errors. It grew from
+    40 to 281 filaments, and the lid fell about 0.4 um onto the filaments,
+    then rose to 1.1 um above its start.
+  - A run at 25, which is plausible for cytoplasm, reached 10 s in the same
+    time, so 20 s would take about 10-15 minutes. Claude stopped it.
+  - The viscosity only slows thermal motion. Elongation, branching, capping,
+    equilibrium shapes, and the lid's motion don't depend on it, since the lid
+    has its own mobility. The file's comments explain this. No side-by-side
+    run at the real viscosity was done, because it takes hours.
 
 ## Left as is
 
