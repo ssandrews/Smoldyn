@@ -11,14 +11,19 @@
 #
 # Units are um, s, and zJ, so forces are in zJ/um = fN.
 #
+# The viscosity is 250 zJ s/um^3, which is 1000 times the fluid viscosity of
+# 0.25 zJ s/um^3 (0.25 mPa s). With the real value, short actin filaments tumble by
+# several radians per millisecond, so the Implicit integrator divides most time steps into
+# many substeps, and 20 s takes hours. The higher viscosity slows the filaments' thermal
+# motions, but it doesn't change their equilibrium shapes, elongation, branching, or
+# capping, or the lid's motion, which has its own mobility, so the results are similar and
+# 20 s takes a few minutes.
+#
 # The mobility comes from the viscosity, but the rotational mobility is entered
-# separately, because the value that the viscosity gives for 7 nm diameter segments,
-# about 5e5 /(s zJ), makes segments roll by tens of radians in each time step, and twist
-# relaxes in about a nanosecond. The twist dynamics don't matter here, and the rotational
-# mobility doesn't change the equilibrium twist, so this uses a much smaller value.
-# Even so, short actin filaments tumble by several radians per millisecond in a fluid this
-# thin, so the Implicit integrator divides most time steps into many substeps, and the
-# simulation is slow, taking well over 30 minutes for 20 s.
+# separately, because the value that the viscosity gives for 7 nm diameter segments makes
+# segments roll by large angles in each time step. The twist dynamics don't matter here,
+# and the rotational mobility doesn't change the equilibrium twist, so this uses a smaller
+# value.
 #
 # smoldyn actinBox3D.txt
 
@@ -70,7 +75,7 @@ kT 4.28					# 37 C
 standard_length 0.05	# 50 nm segments, about 18 monomers
 persistence_length 17
 force_length 1e5		# segment length standard deviation of about 4 nm
-viscosity 0.25			# 0.25 mPa s = 0.25 zJ s/um^3
+viscosity 250			# zJ s/um^3; 1000 times the real value, so that it runs faster (see above)
 rotational_mobility 20	# reduced; see above
 end_state plus barbed
 elongation_rate plus barbed 0.122 0.00063 0.0038
